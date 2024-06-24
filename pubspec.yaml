@@ -20,6 +20,7 @@ dependencies:
     sdk: flutter
   flutter_animation_progress_bar: ^2.3.1
   cupertino_icons: ^1.0.2
+  path:
   get_storage:
   get:
   intl:
@@ -35,6 +36,7 @@ dependencies:
   shared_preferences: ^2.0.15
   pie_chart:
   flutter_alarm_clock: ^0.0.2
+  mysql1: 
 
 
 dev_dependencies:

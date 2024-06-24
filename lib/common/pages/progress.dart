@@ -47,7 +47,7 @@ class _ProgressPageState extends State<ProgressPage> {
       "Deleted": 3.51,
     };
 
-    print(Get.put(TaskController()).taskList[0].isCompleted!.toDouble());
+    //print(Get.put(TaskController()).taskList[0].isCompleted!.toDouble());
 
     return Scaffold(
       appBar: AppBar(

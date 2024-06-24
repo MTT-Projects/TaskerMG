@@ -1,9 +1,13 @@
-import 'package:dos/db/db_helper.dart';
+import 'package:dos/db/db_local.dart';
 import 'package:get/get.dart';
 
 import '../models/task.dart';
+import 'maincontroller.dart';
 
 class TaskController extends GetxController {
+  // ignore: non_constant_identifier_names
+  MainController MC = MainController();
+
   @override
   void onReady() {
     getTasks();
@@ -12,31 +16,34 @@ class TaskController extends GetxController {
 
   var taskList = <Task>[].obs;
 
-  Future<int> addTask({Task? task}) async {
-    return await DBHelper.insert(task);
+  Future<int> addTask({Task? task}) async {    
+    return await LocalDB.db.insert("task", task!.toJson()) ?? 1;
   }
 
-  //get all the data from table
   void getTasks() async {
-    List<Map<String, dynamic>> tasks = await DBHelper.query();
-    taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
+    // Obtener el ID del proyecto actual desde MainController
+    final currentProjectID = MC.getVar('currentProject');
+
+    if (currentProjectID != null) {
+      // Realizar consulta con cláusula WHERE para filtrar por ID de proyecto
+      List<Map<String, dynamic>> tasks = await LocalDB.db.query("task", where: 'projectID = ?', whereArgs: [currentProjectID]);
+      taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
+    } else {
+      taskList.clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
+    }
   }
 
   void delete(Task task) {
-    DBHelper.delete(task);
+    LocalDB.db.delete("task", where: 'id =? ', whereArgs: [task.id]);
     getTasks();
   }
 
-  void markTaskCompleted(int id) async {
-    await DBHelper.update(id);
+  void updateTask(Task task) async {
+    LocalDB.db.rawUpdate('''
+        UPDATE task
+        SET status = ?
+        WHERE id = ?
+    ''', [task.status, task.id]);
     getTasks();
   }
-
-/*
-  getCount() async {
-    int getval = await DBHelper.getCount();
-    getTasks();
-    return getval;
-  }
-  */
 }

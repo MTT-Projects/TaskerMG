@@ -103,7 +103,7 @@ class _LogsState extends State<Logs> {
             itemBuilder: (_, index) {
               Task task = _taskController.taskList[index];
 
-              if (task.isCompleted == 1) {
+              if (task.status == 'Completada') {
                 return AnimationConfiguration.staggeredList(
                   position: index,
                   child: SlideAnimation(
@@ -129,36 +129,6 @@ class _LogsState extends State<Logs> {
   }
 
   _showOverdueTasks() {
-    return Expanded(
-      child: Obx(() {
-        return ListView.builder(
-            itemCount: _taskController.taskList.length,
-            itemBuilder: (_, index) {
-              Task task = _taskController.taskList[index];
-
-              String dt1 = DateFormat.yMd().format(DateTime.now());
-              if (task.date!.compareTo(dt1) < 0 && task.isCompleted == 0) {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              } else {
-                return Container();
-              }
-            });
-      }),
-    );
+    
   }
 }

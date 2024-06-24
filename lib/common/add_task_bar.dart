@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_alarm_clock/flutter_alarm_clock.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../controllers/maincontroller.dart';
 
 import '../models/task.dart';
 
@@ -260,20 +261,16 @@ class _AddTaskPageState extends State<AddTaskPage> {
       );
     }
   }
+  MainController MC = MainController();
 
   _addTaskToDb() async {
     int value = await _taskController.addTask(
       task: Task(
-        note: _noteController.text,
+        projectID: MC.getVar('currentProject'),
+        createdUserID: MC.getVar('userID'),
+        description: _noteController.text,
         title: _titleController.text,
-        date: DateFormat.yMd().format(_selectedDate),
-        startTime: _startTime,
-        endTime: _endTime,
-        //remind: _selectedRemind,
-        repeat: _selectedRepeat,
-        color: _selectedColor,
-        isCompleted: 0,
-        //alarmTime: _alarmValue,
+        deadline: _selectedDate
       ),
     );
     print("New id " + "$value");

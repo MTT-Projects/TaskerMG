@@ -4,7 +4,8 @@ CREATE TABLE user (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    creationDate DATETIME DEFAULT CURRENT_TIMESTAMP
+    creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE project (
@@ -14,6 +15,7 @@ CREATE TABLE project (
     deadline DATE,
     proprietaryID INT,
     creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (proprietaryID) REFERENCES user(userID) ON DELETE CASCADE
 );
 
@@ -35,6 +37,7 @@ CREATE TABLE task (
     status ENUM('Pendiente', 'En Proceso', 'Completada') DEFAULT 'Pendiente',
     creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     createdUserID INT,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE,
     FOREIGN KEY (createdUserID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -53,6 +56,7 @@ CREATE TABLE messageChat (
     userID INT,
     content TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -63,6 +67,7 @@ CREATE TABLE taskComment (
     userID INT,
     comment TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (taskID) REFERENCES task(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -72,6 +77,7 @@ CREATE TABLE attachment (
     userID INT,
     filePath VARCHAR(255) NOT NULL,
     uploadDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
 
@@ -98,6 +104,7 @@ CREATE TABLE activityLog (
     activityType VARCHAR(100) NOT NULL,
     activityDetails JSON,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
 );
@@ -107,5 +114,11 @@ CREATE TABLE projectGoal (
     projectID INT,
     goalDescription TEXT NOT NULL,
     isCompleted BOOLEAN DEFAULT FALSE,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
 );
+
+
+//crear proyecto de  prueba
+INSERT INTO user (username, name, email, password) VALUES ('admin', 'Administrador', 'test@test.com', '$2y$10$3')
+INSERT INTO project (name, description, proprietaryID, deadline) VALUES ('Proyecto de Prueba', 'Este es un proyecto de prueba', 1, '2024-12-31')

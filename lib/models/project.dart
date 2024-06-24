@@ -1,17 +1,41 @@
 import "package:dos/models/task.dart";
 
 class Project {
-  final int? id;
-  final String? name;
-  final String? description;
-  final String? imageurl;
-  final List<Task>? tasks;
+  int? projectID;
+  String? name;
+  String? description;
+  DateTime? deadline;
+  int? proprietaryID;
+  DateTime? creationDate;
+  DateTime? lastUpdate;
 
   Project({
-    this.id,
-    this.name, 
-    this.description, 
-    this.imageurl,
-    this.tasks
-    });
+    this.projectID,
+    this.name,
+    this.description,
+    this.deadline,
+    this.proprietaryID,
+    this.creationDate,
+    this.lastUpdate,
+  });
+
+  factory Project.fromJson(Map<String, dynamic> json) => Project(
+        projectID: json['projectID'],
+        name: json['name'],
+        description: json['description'],
+        deadline: DateTime.parse(json['deadline']),
+        proprietaryID: json['proprietaryID'],
+        creationDate: DateTime.parse(json['creationDate']),
+        lastUpdate: DateTime.parse(json['lastUpdate']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'projectID': projectID,
+        'name': name,
+        'description': description,
+        'deadline': deadline?.toIso8601String(),
+        'proprietaryID': proprietaryID,
+        'creationDate': creationDate?.toIso8601String(),
+        'lastUpdate': lastUpdate?.toIso8601String(),
+      };
 }

@@ -68,76 +68,7 @@ class _HomePageState extends State<HomePage> {
               Task task = _taskController.taskList[index];
               print(task.toJson());
 
-              if (task.repeat == 'Daily') {
-                DateTime date =
-                    DateFormat.jm().parse(task.startTime.toString());
-                var myTime = DateFormat("HH:mm").format(date);
-                notifyHelper.scheduledNotification(
-                    int.parse(myTime.toString().split(":")[0]),
-                    int.parse(myTime.toString().split(":")[1]),
-                    task);
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            _showBottomSheet(context,
-                                task); // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              }
-
-              if (task.repeat == 'Weekly') {
-                final weeklyimp = _selectedDate.add(const Duration(days: 7));
-                //task.date == DateFormat.yMd().format(weeklyimp);
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            _showBottomSheet(context,
-                                task); // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              }
-
-              if (task.date == DateFormat.yMd().format(_selectedDate)) {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            _showBottomSheet(context,
-                                task); // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              } else {
-                return Container();
-              }
+              
             });
       }),
     );
@@ -147,7 +78,7 @@ class _HomePageState extends State<HomePage> {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.only(top: 4),
-        height: task.isCompleted == 1
+        height: task.status == 'Completada'
             ? MediaQuery.of(context).size.height * 0.24
             : MediaQuery.of(context).size.height * 0.32,
         color: Get.isDarkMode ? darkGreyClr : Colors.white,
@@ -162,12 +93,12 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const Spacer(),
-            task.isCompleted == 1
+            task.status == 'Completada'
                 ? Container()
                 : _bottomSheetButton(
                     label: "Task Completed",
                     onTap: () {
-                      _taskController.markTaskCompleted(task.id!);
+                      //_taskController.markTaskCompleted(task.id!);
                       Get.back();
                     },
                     clr: primaryClr,
@@ -286,19 +217,7 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: const <Widget>[
-              Text(
-                'Linear progress indicator with a fixed color',
-                style: TextStyle(fontSize: 20),
-              ),
-              LinearProgressIndicator(
-                value: 0.5,
-                semanticsLabel: 'Linear progress indicator',
-              ),
-            ],
-          ),
+          
           MyButton(
             label: "+ Add Task",
             onTab: () async {

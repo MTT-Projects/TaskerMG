@@ -56,7 +56,7 @@ class NotifyHelper {
     await flutterLocalNotificationsPlugin.zonedSchedule(
         task.id!.toInt(),
         task.title,
-        task.note,
+        task.description,
         _convertTime(hour, minutes),
         //tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
         const NotificationDetails(
@@ -66,7 +66,7 @@ class NotifyHelper {
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
-        payload: "${task.title} |" + "${task.note}|");
+        payload: "${task.title} |" + "${task.description}|");
   }
 
   tz.TZDateTime _convertTime(int hour, int minutes) {

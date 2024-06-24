@@ -1,66 +1,49 @@
-import 'package:sqflite/sqflite.dart';
-
-import '../models/task.dart';
+import 'package:mysql1/mysql1.dart';
 
 class DBHelper {
-  static Database? _db;
-  static final int _version = 1;
-  static final String _tableName = "tasks";
+  static MySqlConnection? _connection;
+  static ConnectionSettings? _settings;
 
-  static Future<void> initDb() async {
-    if (_db != null) {
-      return;
-    }
-    try {
-      String _path = await getDatabasesPath() +
-          'tasks.db'; // '${await getDatabasesPath()}tasks.db';
-      _db =
-          await openDatabase(_path, version: _version, onCreate: (db, version) {
-        print("Creating a new one");
-        return db.execute(
-          "CREATE TABLE $_tableName ("
-          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-          "title STRING, note TEXT, date STRING, "
-          "startTime STRING, endTime STRING, "
-          //"remind INTEGER, "
-          "repeat STRING, "
-          "color INTEGER, "
-          //"alarmTime STRING, "
-          "isCompleted INTEGER)",
-        );
-      });
-    } catch (e) {
-      print(e);
+  DBHelper._();
+
+  static final DBHelper instance = DBHelper._();
+
+  static Future<void> initialize() async {
+    _settings = ConnectionSettings(
+      host: 'tasker-db-matiw172.d.aivencloud.com',
+      port: 11312,
+      user: 'avnadmin',
+      password: 'AVNS_10qhYse1CcZic175-9l',
+      db: 'taskermg_db',
+    );
+    await _connect();
+  }
+
+  static Future<void> _connect() async {
+    if (_connection == null) {
+      if (_settings == null) {
+        throw Exception('DBHelper is not initialized. Call initialize() first.');
+      }
+      _connection = await MySqlConnection.connect(_settings!);
     }
   }
 
-  static Future<int> insert(Task? task) async {
-    print("Insert function called");
-    return await _db?.insert(_tableName, task!.toJson()) ?? 1;
+  static Future<MySqlConnection> get connection async {
+    if (_connection == null) {
+      throw Exception('DBHelper connection is not initialized.');
+    }
+    return _connection!;
   }
 
-  static Future<List<Map<String, dynamic>>> query() async {
-    print("query function called");
-    return await _db!.query(_tableName);
+  static Future<void> closeConnection() async {
+    if (_connection != null) {
+      await _connection!.close();
+      _connection = null;
+    }
   }
 
-  static delete(Task task) async {
-    return await _db!.delete(_tableName, where: 'id =? ', whereArgs: [task.id]);
+  static Future<void> query(String sql, List<dynamic> values) async {
+    final conn = await connection;
+    await conn.query(sql, values);
   }
-
-  static update(int id) async {
-    return await _db!.rawUpdate('''
-        UPDATE tasks
-        SET isCompleted = ?
-        WHERE id = ?
-    ''', [1, id]);
-  }
-
-/*
-  static getCount() async {
-    var x = await _db!.rawQuery('SELECT COUNT (*) from  $_tableName ');
-    int count = Sqflite.firstIntValue(x)!.toInt();
-    return count;
-  }
-  */
 }
