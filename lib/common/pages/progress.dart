@@ -1,4 +1,4 @@
-import 'package:dos/db/db_helper.dart';
+import 'package:taskermg/db/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pie_chart/pie_chart.dart';

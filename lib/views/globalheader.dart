@@ -1,4 +1,5 @@
-import 'package:dos/common/theme.dart';
+
+import 'package:taskermg/common/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';

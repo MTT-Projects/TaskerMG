@@ -1,6 +1,6 @@
-import 'package:dos/db/db_local.dart';
-import 'package:dos/db/db_helper.dart';
-import 'package:dos/utils/AppLog.dart';
+import 'package:taskermg/db/db_local.dart';
+import 'package:taskermg/db/db_helper.dart';
+import 'package:taskermg/utils/AppLog.dart';
 import 'package:get/get.dart';
 
 import '../models/task.dart';
@@ -28,7 +28,7 @@ class TaskController extends GetxController {
 
   return await LocalDB.db.rawInsert(
       "INSERT INTO tasks (title, description, status, projectID, deadline) VALUES (?, ?, ?, ?, ?)",
-      [task!.title, task.description, task.status, task.projectID, task.deadline?.toIso8601String()]);
+      [task.title, task.description, task.status, task.projectID, task.deadline?.toIso8601String()]);
 
       
 }

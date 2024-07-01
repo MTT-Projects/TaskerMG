@@ -1,7 +1,7 @@
-import 'package:dos/common/theme.dart';
-import 'package:dos/common/widgets/button.dart';
-import 'package:dos/common/widgets/input_field.dart';
-import 'package:dos/controllers/task_controller.dart';
+import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/common/widgets/button.dart';
+import 'package:taskermg/common/widgets/input_field.dart';
+import 'package:taskermg/controllers/task_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_alarm_clock/flutter_alarm_clock.dart';
 import 'package:get/get.dart';

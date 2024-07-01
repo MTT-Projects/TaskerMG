@@ -1,11 +1,11 @@
-import 'package:dos/common/add_task_bar.dart';
-import 'package:dos/common/pages/logs.dart';
-import 'package:dos/common/pages/progress.dart';
-import 'package:dos/common/theme.dart';
-import 'package:dos/controllers/task_controller.dart';
+import 'package:taskermg/common/add_task_bar.dart';
+import 'package:taskermg/common/pages/logs.dart';
+import 'package:taskermg/common/pages/progress.dart';
+import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/controllers/task_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
-import 'package:dos/common/home_page.dart';
+import 'package:taskermg/common/home_page.dart';
 import 'package:get/get.dart';
 //import 'package:flutter_native_splash/flutter_native_splash.dart';
 
@@ -106,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.white,
             ),
             title: Text(
-              "Terminados",
+              "Terminataskermg",
               style: TextStyle(color: Color(0xFFFFFFFF)),
             ),
           ),

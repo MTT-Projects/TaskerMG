@@ -1,7 +1,7 @@
-import 'package:dos/common/widgets/splash.dart';
-import 'package:dos/db/db_helper.dart';
-import 'package:dos/db/db_local.dart';
-import 'package:dos/services/theme_services.dart';
+import 'package:taskermg/common/widgets/splash.dart';
+import 'package:taskermg/db/db_helper.dart';
+import 'package:taskermg/db/db_local.dart';
+import 'package:taskermg/services/theme_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -21,7 +21,6 @@ Future<void> main() async {
   var str = localdb.toString();
   AppLog.d("Local DB initialized as {}");
   MC.setVar('currentProject', 2);
-  MC.setVar('currentUser', 1);
   runApp(const MyApp());
 }
 

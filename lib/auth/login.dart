@@ -1,8 +1,7 @@
-import 'package:dos/common/home_page.dart';
-import 'package:dos/controllers/user_controller.dart';
-import 'package:dos/db/db_helper.dart';
+import 'package:taskermg/common/home_page.dart';
+
+import 'package:taskermg/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -29,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> login(String username, String password) async {
     var response = await UserController.login(username, password);
     if (response == true) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
       await storage.write(key: 'isLoggedIn', value: "true");
       await storage.write(key: 'username', value: username);
       await storage.write(key: 'password', value: password);

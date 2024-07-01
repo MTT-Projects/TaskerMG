@@ -1,4 +1,4 @@
-name: dos
+name: taskermg
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -41,12 +41,15 @@ dependencies:
   lottie: 
   path_provider: ^2.0.0
   flutter_secure_storage: ^8.1.0
+  json_annotation: ^4.8.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_native_splash: ^2.2.15
   flutter_lints: ^2.0.1
+  build_runner: ^2.3.3
+  json_serializable: ^6.6.2
 
 flutter_native_splash:
   image: assets/images/launchericon.png

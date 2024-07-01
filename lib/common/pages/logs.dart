@@ -1,4 +1,4 @@
-import 'package:dos/common/theme.dart';
+import 'package:taskermg/common/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import '../widgets/task_tile.dart';
-import 'package:dos/common/pages/profile.dart';
+import 'package:taskermg/common/pages/profile.dart';
 import '../../views/globalheader.dart';
 
 class Logs extends StatefulWidget {

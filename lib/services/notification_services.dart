@@ -1,4 +1,4 @@
-import 'package:dos/common/pages/notified_page.dart';
+import 'package:taskermg/common/pages/notified_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -83,8 +83,17 @@ class NotifyHelper {
   Future<void> _configureLocalTimezone() async {
     tz.initializeTimeZones();
     final String timeZone = await FlutterNativeTimezone.getLocalTimezone();
+    try
+    {
     tz.setLocalLocation(tz.getLocation(timeZone));
+    }
+    catch(e)
+    {
+      tz.setLocalLocation(tz.getLocation("Asia/Kolkata"));
+      print(e);
+    }
   }
+
 
   void requestIOSPermissions() {
     flutterLocalNotificationsPlugin

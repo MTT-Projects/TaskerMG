@@ -1,9 +1,14 @@
-import 'package:dos/common/menu.dart';
+// ignore_for_file: library_private_types_in_public_api
+
+import 'package:taskermg/auth/login.dart';
+import 'package:taskermg/common/menu.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 
 class OnBoardingPage extends StatefulWidget {
+  const OnBoardingPage({super.key});
+
   @override
   _OnBoardingPageState createState() => _OnBoardingPageState();
 }
@@ -14,9 +19,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   void _onIntroEnd(context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (_) => const MyHomePage(
-                title: 'Meselal',
-              )),
+          builder: (_) => const LoginScreen()),
     );
   }
 

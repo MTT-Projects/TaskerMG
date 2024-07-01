@@ -3,6 +3,7 @@ import 'package:lottie/lottie.dart';
 import '../controllers/user_controller.dart';
 import '../models/user.dart';
 import 'login.dart';
+import '../utils/AppLog.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -65,7 +66,7 @@ class _SignUpState extends State<SignUp> {
                       borderRadius: BorderRadius.circular(25),
                       color: Colors.transparent,
                       border: Border.all(
-                          color: Color.fromRGBO(103, 58, 183, 1), width: 5),
+                          color: const Color.fromRGBO(103, 58, 183, 1), width: 5),
                     ),
                     child: Lottie.asset('Assets/lotties/register.json'),
                   ),
@@ -97,7 +98,7 @@ class _SignUpState extends State<SignUp> {
 
                   //Username Field
                   Container(
-                    margin: EdgeInsets.all(8),
+                    margin: const EdgeInsets.all(8),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -243,7 +244,7 @@ class _SignUpState extends State<SignUp> {
                                       builder: (context) =>
                                           const LoginScreen()));
                             } else {
-                              print(response.toString());
+                              AppLog.d(response.toString());
                               showpopuperror(response.toString());
                             }
                           }
