@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../common/pages/profile.dart';
+import '../services/theme_services.dart';
 
 AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded}) {
   return AppBar(
@@ -22,7 +23,17 @@ AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded}) {
         ),
       ),
     ),
-
+    leading: GestureDetector(
+        onTap: () {
+          ThemeServices().switchTheme();
+                // notifyHelper.scheduledNotification();
+        },
+        child: Icon(
+          Get.isDarkMode ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+          size: 20,
+          color: Get.isDarkMode ? Colors.white : Colors.black,
+        ),
+      ),
     actions: [
       GestureDetector(
         onTap: () {
@@ -31,6 +42,7 @@ AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded}) {
         child: FloatingActionButton(
           onPressed: () async {
             print('Menu');  
+            Get.to(() => const ProfilePage());
           },
           backgroundColor: Colors.transparent,
           child: const Icon(Icons.menu, color: Colors.white, size: 30,),

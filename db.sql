@@ -1,3 +1,9 @@
+Drop database taskermg_db;
+
+Create database taskermg_db;
+
+use taskermg_db;
+
 CREATE TABLE user (
     userID INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
@@ -27,7 +33,7 @@ CREATE TABLE userProject (
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
 );
 
-CREATE TABLE task (
+CREATE TABLE tasks (
     taskID INT AUTO_INCREMENT PRIMARY KEY,
     projectID INT,
     title VARCHAR(100) NOT NULL,
@@ -46,7 +52,7 @@ CREATE TABLE taskAssignment (
     assignmentID INT AUTO_INCREMENT PRIMARY KEY,
     taskID INT,
     userID INT,
-    FOREIGN KEY (taskID) REFERENCES task(taskID) ON DELETE CASCADE,
+    FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
 
@@ -68,7 +74,7 @@ CREATE TABLE taskComment (
     comment TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (taskID) REFERENCES task(taskID) ON DELETE CASCADE,
+    FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
 
@@ -86,7 +92,7 @@ CREATE TABLE taskAttachment (
     attachmentID INT,
     taskID INT,
     FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
-    FOREIGN KEY (taskID) REFERENCES task(taskID) ON DELETE CASCADE
+    FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE
 );
 
 CREATE TABLE messageAttachment (

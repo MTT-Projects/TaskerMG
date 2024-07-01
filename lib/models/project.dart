@@ -1,4 +1,5 @@
-import "package:dos/models/task.dart";
+import 'package:sqflite/sqflite.dart';
+import '../utils/AppLog.dart';
 
 class Project {
   int? projectID;
@@ -38,4 +39,11 @@ class Project {
         'creationDate': creationDate?.toIso8601String(),
         'lastUpdate': lastUpdate?.toIso8601String(),
       };
+
+  static Future<void> createTable(Database db) async {
+    await db.execute('''
+    crete 
+    ''');
+    AppLog.d("Table Project created");
+  }
 }

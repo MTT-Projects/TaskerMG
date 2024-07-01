@@ -129,6 +129,34 @@ class _LogsState extends State<Logs> {
   }
 
   _showOverdueTasks() {
-    
+    return Expanded(
+      child: Obx(() {
+        return ListView.builder(
+            itemCount: _taskController.taskList.length,
+            itemBuilder: (_, index) {
+              Task task = _taskController.taskList[index];
+              if (task.status == 'Vencida') {
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  child: SlideAnimation(
+                      child: FadeInAnimation(
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            // task is _taskController.taskList[index]
+                          },
+                          child: TaskTile(task),
+                        ),
+                      ],
+                    ),
+                  )),
+                );
+              } else {
+                return Container();
+              }
+            });
+      }),
+    );
   }
 }

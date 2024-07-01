@@ -20,7 +20,7 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
 
     if (_seen) {
       Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => const MyHomePage(
+          builder: (context) => MyHomePage(
                 title: 'Meselal',
               )));
     } else {
@@ -35,9 +35,9 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
-        child: Text('Loading...'),
+        child: Image.asset('Assets/images/mylogo.png', width: 250),
       ),
     );
   }

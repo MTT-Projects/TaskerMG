@@ -1,3 +1,5 @@
+import '../utils/AppLog.dart';
+
 class MainController {
   // Singleton
   static final MainController _instance = MainController._internal();
@@ -16,6 +18,7 @@ class MainController {
   }
 
   void setVar(String key, dynamic value) {
+    AppLog.d("Setting $key to $value");
     _dynamicVariables[key] = value;
   }
 }

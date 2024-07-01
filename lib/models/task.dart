@@ -1,3 +1,6 @@
+import 'package:sqflite/sqflite.dart';
+import '../utils/AppLog.dart';
+
 class Task {
   int? id;
   int? projectID;
@@ -35,17 +38,17 @@ class Task {
     };
   }
 
-  Map<String,dynamic> toJson(){
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['projectID'] = this.projectID;
-    data['title'] = this.title;
-    data['description'] = this.description;
-    data['deadline'] = this.deadline;
-    data['priority'] = this.priority;
-    data['status'] = this.status;
-    data['createdUserID'] = this.createdUserID;
-    data['lastUpdate'] = this.lastUpdate;
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['projectID'] = projectID;
+    data['title'] = title;
+    data['description'] = description;
+    data['deadline'] = deadline?.toIso8601String();
+    data['priority'] = priority;
+    data['status'] = status;
+    data['createdUserID'] = createdUserID;
+    data['lastUpdate'] = lastUpdate?.toIso8601String();
     return data;
   }
 
@@ -54,11 +57,11 @@ class Task {
     projectID = json['projectID'];
     title = json['title'];
     description = json['description'];
-    deadline = json['deadline'];
+    deadline = json['deadline'] != null ? DateTime.parse(json['deadline']) : null;
     priority = json['priority'];
     status = json['status'];
     createdUserID = json['createdUserID'];
-    lastUpdate = json['lastUpdate'];
+    lastUpdate = json['lastUpdate'] != null ? DateTime.parse(json['lastUpdate']) : null;
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
@@ -67,12 +70,31 @@ class Task {
       projectID: map['projectID'],
       title: map['title'],
       description: map['description'],
-      deadline: DateTime.parse(map['deadline']),
+      deadline: map['deadline'] != null ? DateTime.parse(map['deadline']) : null,
       priority: map['priority'],
       status: map['status'],
       createdUserID: map['createdUserID'],
-      lastUpdate: DateTime.parse(map['lastUpdate']),
+      lastUpdate: map['lastUpdate'] != null ? DateTime.parse(map['lastUpdate']) : null,
     );
+  }
+
+  static Future<void> createTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        projectID INTEGER,
+        title TEXT NOT NULL,
+        description TEXT,
+        deadline TEXT,
+        priority TEXT DEFAULT 'Media' CHECK(priority IN ('Baja', 'Media', 'Alta')),
+        status TEXT DEFAULT 'Pendiente' CHECK(status IN ('Pendiente', 'En Proceso', 'Completada')),
+        createdUserID INTEGER,
+        lastUpdate TEXT,
+        FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE,
+        FOREIGN KEY (createdUserID) REFERENCES user(userID) ON DELETE CASCADE
+      );
+    ''');
+    AppLog.i('Table tasks created');
   }
 }
 

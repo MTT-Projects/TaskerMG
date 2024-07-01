@@ -1,37 +1,27 @@
 import 'package:sqflite/sqflite.dart';
-
 import '../models/task.dart';
+import '../utils/AppLog.dart';
 
 class LocalDB {
   static Database? _db;
   static final int _version = 1;
   static final String _tableName = "tasks";
 
-  static Future<void> initDb() async {
+  static Future<Database?> initDb() async {
     if (_db != null) {
-      return;
+      return _db;
     }
     try {
-      String _path = await getDatabasesPath() +
-          'tasks.db'; // '${await getDatabasesPath()}tasks.db';
-      _db =
-          await openDatabase(_path, version: _version, onCreate: (db, version) {
-        print("Creating a new one");
-        return db.execute(
-          "CREATE TABLE $_tableName ("
-          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-          "title STRING, note TEXT, date STRING, "
-          "startTime STRING, endTime STRING, "
-          //"remind INTEGER, "
-          "repeat STRING, "
-          "color INTEGER, "
-          //"alarmTime STRING, "
-          "isCompleted INTEGER)",
-        );
+      String _path = '${await getDatabasesPath()}taskerMG_db.db'; // '${await getDatabasesPath()}tasks.db';
+      _db = await openDatabase(_path, version: _version, onCreate: (db, version) async {
+        AppLog.d("Creating a new one");
+        await Task.createTable(db);  // Asegúrate de esperar a que la tabla se cree
+        AppLog.d("Database initialized");
       });
     } catch (e) {
-      print(e);
+      AppLog.e(e.toString());
     }
+    return _db;
   }
 
   static Database get db {
@@ -45,7 +35,7 @@ class LocalDB {
 
   static Future<int> insert(Task? task) async {
     print("Insert function called");
-    return await _db?.insert(_tableName, task!.toJson()) ?? 1;
+    return await _db?.insert(_tableName, task!.toMap()) ?? 1;
   }
 
   static Future<List<Map<String, dynamic>>> query() async {
@@ -53,11 +43,11 @@ class LocalDB {
     return await _db!.query(_tableName);
   }
 
-  static delete(Task task) async {
-    return await _db!.delete(_tableName, where: 'id =? ', whereArgs: [task.id]);
+  static Future<int> delete(Task task) async {
+    return await _db!.delete(_tableName, where: 'id = ?', whereArgs: [task.id]);
   }
 
-  static update(int id) async {
+  static Future<int> update(int id) async {
     return await _db!.rawUpdate('''
         UPDATE tasks
         SET isCompleted = ?
@@ -65,7 +55,7 @@ class LocalDB {
     ''', [1, id]);
   }
 
-/*
+  /*
   static getCount() async {
     var x = await _db!.rawQuery('SELECT COUNT (*) from  $_tableName ');
     int count = Sqflite.firstIntValue(x)!.toInt();

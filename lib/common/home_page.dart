@@ -16,6 +16,7 @@ import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.da
 import '../controllers/task_controller.dart';
 import '../models/task.dart';
 import '../views/globalheader.dart';
+import '../utils/AppLog.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -60,15 +61,32 @@ class _HomePageState extends State<HomePage> {
 //trial
 
   _showTasks() {
+    AppLog.d("TaskList: ${_taskController.taskList}");
     return Expanded(
       child: Obx(() {
         return ListView.builder(
             itemCount: _taskController.taskList.length,
             itemBuilder: (_, index) {
               Task task = _taskController.taskList[index];
-              print(task.toJson());
+              AppLog.i("Task n'{$index}':${task.toJson()}");
 
-              
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                child: SlideAnimation(
+                    child: FadeInAnimation(
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          _showBottomSheet(context,
+                              task); // task is _taskController.taskList[index]
+                        },
+                        child: TaskTile(task),
+                      ),
+                    ],
+                  ),
+                )),
+              );
             });
       }),
     );
@@ -217,7 +235,6 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          
           MyButton(
             label: "+ Add Task",
             onTab: () async {

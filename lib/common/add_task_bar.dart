@@ -261,17 +261,17 @@ class _AddTaskPageState extends State<AddTaskPage> {
       );
     }
   }
+
   MainController MC = MainController();
 
   _addTaskToDb() async {
     int value = await _taskController.addTask(
       task: Task(
-        projectID: MC.getVar('currentProject'),
-        createdUserID: MC.getVar('userID'),
-        description: _noteController.text,
-        title: _titleController.text,
-        deadline: _selectedDate
-      ),
+          projectID: MC.getVar('currentProject'),
+          createdUserID: MC.getVar('userID'),
+          description: _noteController.text,
+          title: _titleController.text,
+          deadline: _selectedDate),
     );
     print("New id " + "$value");
   }

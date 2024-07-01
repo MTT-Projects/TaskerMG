@@ -35,6 +35,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    return tasksScreen(context) ;
+  }
+
+  Widget projectsScreen() {
+    return Scaffold(
+      body: Image.asset('assets/images/logo.png'),
+    );
+  }
+
+  Scaffold tasksScreen(BuildContext context) {
     return Scaffold(
       body: <Widget>[
         HomePage(),
@@ -54,7 +64,6 @@ class _MyHomePageState extends State<MyHomePage> {
         tilesPadding: const EdgeInsets.symmetric(
           vertical: 8.0,
         ),
-
         items: const <BubbleBottomBarItem>[
           BubbleBottomBarItem(
             backgroundColor: bluishClr,
@@ -72,33 +81,35 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           BubbleBottomBarItem(
-              backgroundColor: bluishClr,
-              icon: Icon(
-                Icons.timelapse_outlined,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.timelapse,
-                color: Colors.white,
-              ),
-              title: Text(
-                "En progreso",
-                style: TextStyle(color:  Color(0xFFFFFFFF)),
-              )),
+            backgroundColor: bluishClr,
+            icon: Icon(
+              Icons.timelapse_outlined,
+              color: Colors.black,
+            ),
+            activeIcon: Icon(
+              Icons.timelapse,
+              color: Colors.white,
+            ),
+            title: Text(
+              "En progreso",
+              style: TextStyle(color: Color(0xFFFFFFFF)),
+            ),
+          ),
           BubbleBottomBarItem(
-              backgroundColor: bluishClr,
-              icon: Icon(
-                Icons.check_circle_outline_outlined,
-                color: Colors.black,
-              ),
-              activeIcon: Icon(
-                Icons.check_circle,
-                color: Colors.white,
-              ),
-              title: Text(
-                "Terminados",
-                style: TextStyle(color:  Color(0xFFFFFFFF)),
-              ))
+            backgroundColor: bluishClr,
+            icon: Icon(
+              Icons.check_circle_outline_outlined,
+              color: Colors.black,
+            ),
+            activeIcon: Icon(
+              Icons.check_circle,
+              color: Colors.white,
+            ),
+            title: Text(
+              "Terminados",
+              style: TextStyle(color: Color(0xFFFFFFFF)),
+            ),
+          ),
         ],
       ),
     );

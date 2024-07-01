@@ -37,7 +37,7 @@ dependencies:
   pie_chart:
   flutter_alarm_clock: ^0.0.2
   mysql1: 
-
+  webview_flutter: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -47,7 +47,7 @@ dev_dependencies:
 
 flutter_native_splash:
   image: assets/images/launchericon.png
-  color: "#fafafa"
+  color: "#000000"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
