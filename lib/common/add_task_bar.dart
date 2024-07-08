@@ -271,7 +271,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
           createdUserID: MC.getVar('userID'),
           description: _noteController.text,
           title: _titleController.text,
-          deadline: _selectedDate),
+          deadline: _selectedDate,
+          lastUpdate: DateTime.now(),)
     );
     print("New id " + "$value");
   }

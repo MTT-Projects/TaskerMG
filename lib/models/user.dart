@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import '../utils/AppLog.dart';
 
 class User {
+  int? loc_id;
   int? userID;
   String username;
   String? name;
@@ -11,6 +12,7 @@ class User {
   DateTime? lastUpdate;
 
   User({
+    this.loc_id,
     this.userID,
     required this.username,
     this.name,
@@ -21,6 +23,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
+        loc_id: json['loc_id'],
         userID: json['userID'],
         username: json['username'],
         name: json['name'],
@@ -31,6 +34,7 @@ class User {
       );
 
   Map<String, dynamic> toJson() => {
+        'loc_id': loc_id,
         'userID': userID,
         'username': username,
         'name': name,
@@ -43,7 +47,8 @@ class User {
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE user (
-        userID INT AUTO_INCREMENT PRIMARY KEY,
+        loc_id INTEGER PRIMARY KEY AUTOINCREMENT PRIMARY KEY,
+        userID INT,
         username VARCHAR(100) NOT NULL UNIQUE,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(100) NOT NULL UNIQUE,

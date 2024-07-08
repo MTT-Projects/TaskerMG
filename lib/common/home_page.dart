@@ -116,16 +116,16 @@ class _HomePageState extends State<HomePage> {
                 : _bottomSheetButton(
                     label: "Task Completed",
                     onTap: () {
-                      //_taskController.markTaskCompleted(task.id!);
+                      _taskController.markTaskCompleted(task);
                       Get.back();
                     },
-                    clr: primaryClr,
+                    clr: AppColors.primaryColor,
                     context: context,
                   ),
             _bottomSheetButton(
               label: "Delete Task",
               onTap: () {
-                _taskController.delete(task);
+                _taskController.deleteTask(task);
                 Get.back();
               },
               clr: Colors.red[300]!,
@@ -142,10 +142,7 @@ class _HomePageState extends State<HomePage> {
               clr: Colors.white,
               isClosed: true,
               context: context,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
+            )
           ],
         ),
       ),
@@ -197,7 +194,7 @@ class _HomePageState extends State<HomePage> {
         height: 90,
         width: 70,
         initialSelectedDate: DateTime.now(),
-        selectionColor: primaryClr,
+        selectionColor: AppColors.primaryColor,
         selectedTextColor: Colors.white,
         dateTextStyle: GoogleFonts.lato(
           textStyle: const TextStyle(

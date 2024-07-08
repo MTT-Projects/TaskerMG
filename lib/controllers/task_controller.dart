@@ -1,9 +1,12 @@
+// ignore_for_file: avoid_init_to_null
+
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import 'package:get/get.dart';
 
 import '../models/task.dart';
+import '../models/activity_log.dart';
 import '../services/notification_services.dart';
 import 'maincontroller.dart';
 
@@ -21,45 +24,100 @@ class TaskController extends GetxController {
 
   var taskList = <Task>[].obs;
 
-  Future<int> addTask({Task? task}) async {
-  await DBHelper.query(
-      "INSERT INTO tasks (title, description, status, projectID, deadline) VALUES (?, ?, ?, ?, ?)",
-      [task!.title, task.description, task.status, task.projectID, task.deadline?.toIso8601String()]);
+  Future<int> addTask({required Task task}) async {
+    int locId = await LocalDB.insertTask(task);
 
-  return await LocalDB.db.rawInsert(
-      "INSERT INTO tasks (title, description, status, projectID, deadline) VALUES (?, ?, ?, ?, ?)",
-      [task.title, task.description, task.status, task.projectID, task.deadline?.toIso8601String()]);
-
-      
-}
-
-  void getTasks() async {
-    AppLog.d("Getting tasks from Project: ${MC.getVar('currentProject')}");
-    // Obtener el ID del proyecto actual desde MainController
-    final currentProjectID = MC.getVar('currentProject');
-
-    if (currentProjectID != null) {
-      // Realizar consulta con cláusula WHERE para filtrar por ID de proyecto
-      List<Map<String, dynamic>> tasks = await LocalDB.db
-          .query("tasks", where: 'projectID = ?', whereArgs: [currentProjectID]);
-      taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
-    } else {
-      taskList
-          .clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
-    }
+    // Registrar la actividad
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MC.getVar('userID'),
+      projectID: task.projectID,
+      activityType: 'create',
+      activityDetails: {
+        'table': 'tasks',
+        'loc_id': locId,
+      },
+      timestamp: DateTime.now(),
+      lastUpdate: DateTime.now(),
+    ));
+    return locId;
   }
 
-  void delete(Task task) {
-    LocalDB.db.delete("tasks", where: 'id =? ', whereArgs: [task.id]);
+  Future<RxList<Task>> getTasks([project]) async {
+    AppLog.d("Getting tasks from Project: ${MC.getVar('currentProject')}");
+    final currentProjectID = project ?? MC.getVar('currentProject');
+
+    if (currentProjectID != null) {
+      List<Map<String, dynamic>> tasks = await LocalDB.db.query(
+          "tasks",
+          where: 'projectID = ?',
+          whereArgs: [currentProjectID],
+      );
+      taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
+    } else {
+      taskList.clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
+    }
+    return taskList;
+  }
+
+  void markTaskCompleted(Task task){
+    task.status = 'Completada';
+    task.lastUpdate = DateTime.now();
+    updateTask(task);
+
+    // Registrar la actividad
+    LocalDB.insertActivityLog(ActivityLog(
+      userID: MC.getVar('userID'),
+      projectID: task.projectID,
+      activityType: 'update',
+      activityDetails: {
+        'table': 'tasks',
+        'loc_id': task.locId,
+      },
+      timestamp: DateTime.now(),
+      lastUpdate: DateTime.now(),
+    ));
+    
+  }
+
+  void deleteTask(Task task) async {
+    await LocalDB.db.delete(
+        "tasks", where: 'loc_id = ?', whereArgs: [task.locId]);
+
+    // Registrar la actividad
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MC.getVar('userID'),
+      projectID: task.projectID,
+      activityType: 'delete',
+      activityDetails: {
+        'table': 'tasks',
+        'loc_id': task.locId,
+      },
+      timestamp: DateTime.now(),
+      lastUpdate: DateTime.now(),
+    ));
     getTasks();
   }
 
   void updateTask(Task task) async {
-    LocalDB.db.rawUpdate('''
-        UPDATE tasks
-        SET status = ?
-        WHERE id = ?
-    ''', [task.status, task.id]);
+    await LocalDB.db.update(
+        "tasks",
+        task.toMap(),
+        where: 'loc_id = ?',
+        whereArgs: [task.locId],
+    );
+
+    // Registrar la actividad
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MC.getVar('userID'),
+      projectID: task.projectID,
+      activityType: 'update',
+      activityDetails: {
+        'table': 'tasks',
+        'loc_id': task.locId,
+      },
+      timestamp: DateTime.now(),
+      lastUpdate: DateTime.now(),
+    ));
     getTasks();
   }
 }

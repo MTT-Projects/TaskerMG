@@ -54,7 +54,7 @@ class NotifyHelper {
 
   scheduledNotification(int hour, int minutes, Task task) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
-        task.id!.toInt(),
+        task.locId!.toInt(),
         task.title,
         task.description,
         _convertTime(hour, minutes),

@@ -9,16 +9,16 @@ import 'package:taskermg/common/home_page.dart';
 import 'package:get/get.dart';
 //import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+class TasksPage extends StatefulWidget {
+  const TasksPage({Key? key, required this.title}) : super(key: key);
   final String title;
 
   @override
   // ignore: library_private_types_in_public_api
-  _MyHomePageState createState() => _MyHomePageState();
+  _TasksPagesState createState() => _TasksPagesState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _TasksPagesState extends State<TasksPage> {
   late int currentIndex;
 
   @override

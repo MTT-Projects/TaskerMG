@@ -88,6 +88,7 @@ class UserController extends GetxController {
       setUser(userObj);
 
       MC.setVar('currentUser', userObj.userID);
+      MC.setVar('userID', userObj.userID);
     }
   }
 

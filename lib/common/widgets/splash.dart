@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../controllers/user_controller.dart';
-import '../home_page.dart';
+import '../dashboard.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -47,7 +47,7 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
       var response = await UserController.login(savedUsername, savedPassword);
       if (response == true) {
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => HomePage()));
+            MaterialPageRoute(builder: (context) => Dashboard()));
         return;
       }
     }

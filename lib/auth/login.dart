@@ -1,10 +1,8 @@
-import 'package:taskermg/common/home_page.dart';
-
+import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import 'signup.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,13 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final username = TextEditingController();
   final password = TextEditingController();
 
-  //A bool variable for show and hide password
+  // Variable booleana para mostrar y ocultar la contraseña
   bool isVisible = false;
   bool isLoginTrue = false;
 
   final storage = const FlutterSecureStorage();
 
-  //Now we should call this function in login button
+  // Ahora deberíamos llamar a esta función en el botón de inicio de sesión
   Future<void> login(String username, String password) async {
     var response = await UserController.login(username, password);
     if (response == true) {
@@ -35,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Si el inicio de sesión es correcto, redirige a la página principal
       if (!mounted) return;
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
+          context, MaterialPageRoute(builder: (context) => Dashboard()));
     } else {
       // Si no, muestra un mensaje de error
       setState(() {
@@ -44,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  //We have to create global key for our form
+  // Tenemos que crear una clave global para nuestro formulario
   final formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -53,24 +51,23 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(10.0),
-            //We put all our textfield to a form to be controlled and not allow as empty
+            // Ponemos todos nuestros campos de texto en un formulario para ser controlados y no permitir que estén vacíos
             child: Form(
               key: formKey,
               child: Column(
                 children: [
-                  //Username field
+                  // Campo de nombre de usuario
 
-                  //Before we show the image, after we copied the image we need to define the location in pubspec.yaml
+                  // Antes de mostrar la imagen, después de copiar la imagen, necesitamos definir la ubicación en pubspec.yaml
                   Container(
                     margin: const EdgeInsets.all(30.0),
-    padding: const EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(10.0),
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25),
                       color: Colors.transparent,
-                      border: Border.all(color: Colors.deepPurple, width: 10
-                      ),
+                      border: Border.all(color: Colors.deepPurple, width: 10),
                     ),
                     child: Lottie.asset('Assets/lotties/login2.json',
                         width: 200, height: 200),
@@ -88,19 +85,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: username,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "username is required";
+                          return "El nombre de usuario es obligatorio";
                         }
                         return null;
                       },
                       decoration: const InputDecoration(
                         icon: Icon(Icons.person),
                         border: InputBorder.none,
-                        hintText: "Username",
+                        hintText: "Nombre de usuario",
                       ),
                     ),
                   ),
 
-                  //Password field
+                  // Campo de contraseña
                   Container(
                     margin: const EdgeInsets.all(8),
                     padding:
@@ -112,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: password,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "password is required";
+                          return "La contraseña es obligatoria";
                         }
                         return null;
                       },
@@ -120,12 +117,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                           icon: const Icon(Icons.lock),
                           border: InputBorder.none,
-                          hintText: "Password",
+                          hintText: "Contraseña",
                           suffixIcon: IconButton(
                               onPressed: () {
-                                //In here we will create a click to show and hide the password a toggle button
+                                // Aquí crearemos un clic para mostrar y ocultar la contraseña, un botón de alternancia
                                 setState(() {
-                                  //toggle button
+                                  // botón de alternancia
                                   isVisible = !isVisible;
                                 });
                               },
@@ -136,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 10),
-                  //Login button
+                  // Botón de inicio de sesión
                   Container(
                     height: 55,
                     width: MediaQuery.of(context).size.width * .9,
@@ -146,40 +143,40 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                         onPressed: () {
                           if (formKey.currentState!.validate()) {
-                            //Login method will be here
+                            // El método de inicio de sesión estará aquí
                             login(username.text, password.text);
 
-                            //Now we have a response from our sqlite method
-                            //We are going to create a user
+                            // Ahora tenemos una respuesta de nuestro método sqlite
+                            // Vamos a crear un usuario
                           }
                         },
                         child: const Text(
-                          "LOGIN",
+                          "INICIAR SESIÓN",
                           style: TextStyle(color: Colors.white),
                         )),
                   ),
 
-                  //Sign up button
+                  // Botón de registro
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Don't have an account?"),
+                      const Text("¿No tienes una cuenta?"),
                       TextButton(
                           onPressed: () {
-                            //Navigate to sign up
+                            // Navegar a registrarse
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => const SignUp()));
                           },
-                          child: const Text("SIGN UP"))
+                          child: const Text("REGÍSTRATE"))
                     ],
                   ),
 
-                  // We will disable this message in default, when user and pass is incorrect we will trigger this message to user
+                  // Desactivaremos este mensaje por defecto, cuando el usuario y la contraseña sean incorrectos, activaremos este mensaje para el usuario
                   isLoginTrue
                       ? const Text(
-                          "Username or passowrd is incorrect",
+                          "El nombre de usuario o la contraseña son incorrectos",
                           style: TextStyle(color: Colors.red),
                         )
                       : const SizedBox(),

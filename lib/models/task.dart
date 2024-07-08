@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import '../utils/AppLog.dart';
 
 class Task {
-  int? id;
+  int? locId;
+  int? taskID;
   int? projectID;
   String? title;
   String? description;
@@ -13,20 +13,22 @@ class Task {
   DateTime? lastUpdate;
 
   Task({
-    this.id,
+    this.locId,
+    this.taskID,
     this.projectID,
     this.title,
     this.description,
     this.deadline,
-    this.priority,
-    this.status,
+    this.priority = 'Media',
+    this.status = 'Pendiente',
     this.createdUserID,
     this.lastUpdate,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'loc_id': locId,
+      'taskID': taskID,
       'projectID': projectID,
       'title': title,
       'description': description,
@@ -38,9 +40,24 @@ class Task {
     };
   }
 
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      locId: json['loc_id'],
+      taskID: json['taskID'],
+      projectID: json['projectID'],
+      title: json['title'],
+      description: json['description'],
+      deadline: DateTime.parse(json['deadline']),
+      priority: json['priority'],
+      status: json['status'],
+      createdUserID: json['createdUserID'],
+      lastUpdate: DateTime.parse(json['lastUpdate']),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
+    data['loc_id'] = locId;
     data['projectID'] = projectID;
     data['title'] = title;
     data['description'] = description;
@@ -52,36 +69,11 @@ class Task {
     return data;
   }
 
-  Task.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    projectID = json['projectID'];
-    title = json['title'];
-    description = json['description'];
-    deadline = json['deadline'] != null ? DateTime.parse(json['deadline']) : null;
-    priority = json['priority'];
-    status = json['status'];
-    createdUserID = json['createdUserID'];
-    lastUpdate = json['lastUpdate'] != null ? DateTime.parse(json['lastUpdate']) : null;
-  }
-
-  factory Task.fromMap(Map<String, dynamic> map) {
-    return Task(
-      id: map['id'],
-      projectID: map['projectID'],
-      title: map['title'],
-      description: map['description'],
-      deadline: map['deadline'] != null ? DateTime.parse(map['deadline']) : null,
-      priority: map['priority'],
-      status: map['status'],
-      createdUserID: map['createdUserID'],
-      lastUpdate: map['lastUpdate'] != null ? DateTime.parse(map['lastUpdate']) : null,
-    );
-  }
-
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        taskID INTEGER,
         projectID INTEGER,
         title TEXT NOT NULL,
         description TEXT,
@@ -94,7 +86,5 @@ class Task {
         FOREIGN KEY (createdUserID) REFERENCES user(userID) ON DELETE CASCADE
       );
     ''');
-    AppLog.i('Table tasks created');
   }
 }
-

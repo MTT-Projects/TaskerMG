@@ -1,4 +1,6 @@
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/models/project.dart';
+import '../utils/AppLog.dart';
 
 class DBHelper {
   static MySqlConnection? _connection;
@@ -48,7 +50,7 @@ class DBHelper {
     try {
       return await conn.query(sql, values);
     } catch (e) {
-      print("Error en query: $e");
+      AppLog.d("Error en query: $e");
       return errorCatcher(e.toString());
     }
   }

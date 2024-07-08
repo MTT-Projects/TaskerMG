@@ -12,7 +12,6 @@ import 'controllers/maincontroller.dart';
 
 MainController MC = MainController();
 Future<void> main() async {
-  
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await DBHelper.initialize();
@@ -20,7 +19,7 @@ Future<void> main() async {
   var localdb = await LocalDB.initDb();
   var str = localdb.toString();
   AppLog.d("Local DB initialized as {}");
-  MC.setVar('currentProject', 2);
+  MC.setVar('currentProject', 1);
   runApp(const MyApp());
 }
 
@@ -31,7 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Meselal',
+      title: 'TaskerMG',
       theme: Themes.light,
       darkTheme: Themes.dark,
       themeMode: ThemeServices().theme,

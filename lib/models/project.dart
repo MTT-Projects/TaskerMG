@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
-import '../utils/AppLog.dart';
 
 class Project {
+  int? locId;
   int? projectID;
   String? name;
   String? description;
@@ -11,6 +11,7 @@ class Project {
   DateTime? lastUpdate;
 
   Project({
+    this.locId,
     this.projectID,
     this.name,
     this.description,
@@ -20,30 +21,45 @@ class Project {
     this.lastUpdate,
   });
 
-  factory Project.fromJson(Map<String, dynamic> json) => Project(
-        projectID: json['projectID'],
-        name: json['name'],
-        description: json['description'],
-        deadline: DateTime.parse(json['deadline']),
-        proprietaryID: json['proprietaryID'],
-        creationDate: DateTime.parse(json['creationDate']),
-        lastUpdate: DateTime.parse(json['lastUpdate']),
-      );
+  Map<String, dynamic> toMap() {
+    return {
+      'loc_id': locId,
+      'projectID': projectID,
+      'name': name,
+      'description': description,
+      'deadline': deadline?.toIso8601String(),
+      'proprietaryID': proprietaryID,
+      'creationDate': creationDate?.toIso8601String(),
+      'lastUpdate': lastUpdate?.toIso8601String(),
+    };
+  }
 
-  Map<String, dynamic> toJson() => {
-        'projectID': projectID,
-        'name': name,
-        'description': description,
-        'deadline': deadline?.toIso8601String(),
-        'proprietaryID': proprietaryID,
-        'creationDate': creationDate?.toIso8601String(),
-        'lastUpdate': lastUpdate?.toIso8601String(),
-      };
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
+      locId: json['loc_id'],
+      projectID: json['projectID'],
+      name: json['name'],
+      description: json['description'],
+      deadline: DateTime.parse(json['deadline']),
+      proprietaryID: json['proprietaryID'],
+      creationDate: DateTime.parse(json['creationDate']),
+      lastUpdate: DateTime.parse(json['lastUpdate']),
+    );
+  }
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-    crete 
+      CREATE TABLE projects (
+        loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        projectID INTEGER,
+        name TEXT NOT NULL,
+        description TEXT,
+        deadline TEXT,
+        proprietaryID INTEGER,
+        creationDate TEXT,
+        lastUpdate TEXT,
+        FOREIGN KEY (proprietaryID) REFERENCES user(userID) ON DELETE CASCADE
+      );
     ''');
-    AppLog.d("Table Project created");
   }
 }
