@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:taskermg/common/ProjectDashboard.dart';
 import 'package:taskermg/controllers/project_controller.dart';
 import 'package:taskermg/models/project.dart';
 import 'package:taskermg/common/theme.dart';
@@ -11,15 +12,17 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../controllers/maincontroller.dart';
 import '../controllers/task_controller.dart';
 import '../db/db_local.dart';
+import '../utils/AppLog.dart';
 import 'add_project.dart';
-import 'home_page.dart';
+import 'tasks_page.dart';
 
 class ProjectPage extends StatelessWidget {
   final ProjectController _projectController = Get.put(ProjectController());
-
+  final MainController MC = MainController();
   @override
   Widget build(BuildContext context) {
     _projectController.getProjects();
+    
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: Obx(() {
@@ -71,8 +74,8 @@ class ProjectCard extends StatelessWidget {
             onTap: () {
               print("tapped ${project.locId}");
               MainController MC = MainController();
-              MC.setVar('currentProject', project.locId);
-              Get.to(() => HomePage());
+              MC.setVar('currentProject', project.projectID ?? project.locId);
+              Get.to(() => ProyectDashboard(project: project));
             },
             onLongPress:(){
               PC.deleteProject(project);
@@ -178,7 +181,7 @@ class ProjectCard extends StatelessWidget {
 Future<Map<String, dynamic>> getTaskInfo(Project project) async {
   var taskController = TaskController();
   var tasks = await taskController
-      .getTasks(project.locId); // Usa el ID del proyecto
+      .getTasks( project.projectID ?? project.locId); // Usa el ID del proyecto
   int totalTasks = tasks.length;
   int completedTasks = 0;
   for (var task in tasks) {

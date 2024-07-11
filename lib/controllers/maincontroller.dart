@@ -14,6 +14,7 @@ class MainController {
   final Map<String, dynamic> _dynamicVariables = {};
 
   dynamic getVar(String key) {
+    AppLog.d("Getting $key, value: ${_dynamicVariables[key]}" );
     return _dynamicVariables[key];
   }
 

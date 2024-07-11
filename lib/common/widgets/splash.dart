@@ -11,6 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../controllers/user_controller.dart';
 import '../dashboard.dart';
+import '../sync_screen.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -38,6 +39,8 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
   Future<void> checkIsLogin() async {
     bool isLoggedIn =
         await storage.read(key: 'isLoggedIn') == 'true' ? true : false;
+    bool firstSync =
+        await storage.read(key: 'firstSync') == 'true' ? true : false;
     String? savedUsername = await storage.read(key: 'username');
     
     String? savedPassword = await storage.read(key: 'password');
@@ -46,8 +49,15 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
       // Intenta iniciar sesión automáticamente
       var response = await UserController.login(savedUsername, savedPassword);
       if (response == true) {
+        if(firstSync){        
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => Dashboard()));
+            MaterialPageRoute(builder: (context) => Dashboard()));}
+            else
+            {
+              Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => SyncScreen()));
+            }
+
         return;
       }
     }

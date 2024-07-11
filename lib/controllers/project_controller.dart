@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
-import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/models/activity_log.dart';
 import 'package:taskermg/utils/AppLog.dart';
+import '../models/dbRelations.dart';
 import '../models/project.dart';
+
+import 'dbRelationscontroller.dart';
 import 'maincontroller.dart';
 
 class ProjectController extends GetxController {
@@ -12,7 +16,11 @@ class ProjectController extends GetxController {
 
   @override
   void onReady() {
-    getProjects();
+    try {
+      getProjects();
+    } catch (e) {
+      AppLog.e("Error getting projects: $e");
+    }
     super.onReady();
   }
 
@@ -21,40 +29,88 @@ class ProjectController extends GetxController {
   Future<void> addProject(Project project) async {
     int locId = await LocalDB.insertProject(project);
 
+    // Asignar el proyecto al usuario actual
+    DbRelationsCtr.addUserProject(MC.getVar('userID'), project.projectID ?? locId);
+
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MC.getVar('userID'),
       projectID: locId,
       activityType: 'create',
       activityDetails: {
-        'table': 'projects',
-        'loc_id': locId,
+        'table': 'project',
+        'locId': locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
     ));
-    AppLog.d("Project added with loc_id: $locId");
+    AppLog.d("Project added with locId: $locId with data: ${project.toJson()}");
   }
 
   void getProjects() async {
     AppLog.d("Getting projects for User: ${MC.getVar('userID')}");
     final userID = MC.getVar('userID');
+    final localDBinit = MC.getVar('initLDB');
 
-    if (userID != null) {
-      List<Map<String, dynamic>> projects = await LocalDB.db.query(
-          "projects",
-          where: 'proprietaryID = ?',
-          whereArgs: [userID],
-      );
-      projectList.assignAll(projects.map((data) => Project.fromJson(data)).toList());
+    if (userID != null && localDBinit == true) {
+      //applog all projects
+      List<Map<String, dynamic>> allprojects = await LocalDB.db.rawQuery('''
+        SELECT *
+        FROM 
+          project p  
+      ''');
+      //list all userproject
+      List<Map<String, dynamic>> alluserprojects = await LocalDB.db.rawQuery('''
+        SELECT *
+        FROM 
+          userProject up  
+      ''');
+
+      AppLog.d("All Projects: ${jsonEncode(allprojects)}");
+      AppLog.d("All UserProjects: ${jsonEncode(alluserprojects)}");
+
+      List<Map<String, dynamic>> projects = await LocalDB.db.rawQuery('''
+        SELECT 
+          p.locId,
+          p.projectID, 
+          p.name, 
+          p.description, 
+          p.deadline, 
+          p.creationDate, 
+          p.lastUpdate 
+        FROM 
+          project p
+        JOIN 
+          userProject up 
+          ON (CASE 
+                WHEN p.projectID IS NOT NULL THEN p.projectID = up.projectID 
+                ELSE p.locId = up.projectID 
+              END)
+        JOIN 
+          user u 
+          ON (CASE 
+                WHEN u.userID IS NOT NULL THEN u.userID = up.userID 
+                ELSE u.userID = up.locId 
+              END)
+        WHERE 
+          u.userID = ? 
+      ''', [userID]);
+      projectList
+          .assignAll(projects.map((data) => Project.fromJson(data)).toList());
+      
     } else {
-      projectList.clear(); // Limpiar la lista si no hay un usuario actual seleccionado
+      AppLog.d("No user selected or LocalDB not initialized");
+      projectList
+          .clear(); // Limpiar la lista si no hay un usuario actual seleccionado
     }
   }
 
   void deleteProject(Project project) async {
-    await LocalDB.db.delete(
-        "projects", where: 'loc_id = ?', whereArgs: [project.locId]);
+    AppLog.d("Deleting project with locId: ${project.locId} and data ${project.toJson()}");
+    await LocalDB.db.rawQuery(
+      'DELETE FROM project WHERE locId = ?',
+      [project.locId],
+    );
 
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
@@ -62,8 +118,8 @@ class ProjectController extends GetxController {
       projectID: project.locId,
       activityType: 'delete',
       activityDetails: {
-        'table': 'projects',
-        'loc_id': project.locId,
+        'table': 'project',
+        'locId': project.locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
@@ -73,24 +129,13 @@ class ProjectController extends GetxController {
 
   void updateProject(Project project) async {
     await LocalDB.db.update(
-        "projects",
-        project.toMap(),
-        where: 'loc_id = ?',
-        whereArgs: [project.locId],
+      "project",
+      project.toMap(),
+      where: 'locId = ?',
+      whereArgs: [project.locId],
     );
 
-    // Registrar la actividad
-    await LocalDB.insertActivityLog(ActivityLog(
-      userID: MC.getVar('userID'),
-      projectID: project.locId,
-      activityType: 'update',
-      activityDetails: {
-        'table': 'projects',
-        'loc_id': project.locId,
-      },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
-    ));
+    
     getProjects();
   }
 }

@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:mysql1/mysql1.dart' as mysql;
+import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/utils/AppLog.dart';
 
 import '../models/user.dart';
@@ -49,7 +50,7 @@ class UserController extends GetxController {
 
         // Compara el hash generado con el hash almacenado
         if (hashedPassword == storedHash) {
-          setUserdataFromDB(username);
+          await setUserdataFromDB(username);
           return true;
         }
       }
@@ -83,12 +84,33 @@ class UserController extends GetxController {
         'lastUpdate': user['lastUpdate'].toString()
       };
 
+      //subir datos a LocalDB
+      try {
+        //verificar si ya existe en la localDB
+        var userExists = await LocalDB.rawQuery(
+            'SELECT * FROM user WHERE userID = ${user['userID']}');
+        if (userExists.isEmpty) {
+          LocalDB.rawQuery(
+              '''INSERT INTO user (userID, username, name, email, password, creationDate, salt, lastUpdate) 
+          VALUES (
+          ${user['userID']}, 
+          '${user['username']}', 
+          '${user['name']}', 
+          '${user['email']}', 
+          '${user['password']}', 
+          '${user['creationDate']}', 
+          '${user['salt']}', 
+          '${user['lastUpdate']}')''');
+        }
+      } catch (e) {
+        AppLog.e("Error al subir datos a LocalDB: $e");
+      }
       // Decodificar el JSON
       var userObj = User.fromJson(userData);
       setUser(userObj);
 
-      MC.setVar('currentUser', userObj.userID);
-      MC.setVar('userID', userObj.userID);
+      MC.setVar('currentUser', userObj.userID ?? userObj.locId);
+      MC.setVar('userID', userObj.userID ?? userObj.locId);
     }
   }
 
@@ -118,4 +140,6 @@ class UserController extends GetxController {
     const storage = FlutterSecureStorage();
     await storage.deleteAll();
   }
+
+  
 }

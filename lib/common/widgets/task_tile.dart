@@ -2,6 +2,7 @@ import 'package:taskermg/common/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/theme_services.dart';
 
 import '../../models/task.dart';
 
@@ -12,6 +13,7 @@ class TaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      color: AppColors.backgroundColor2,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       width: MediaQuery.of(context).size.width,
       margin: const EdgeInsets.only(bottom: 12),
@@ -19,8 +21,15 @@ class TaskTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         //  width: SizeConfig.screenWidth * 0.78,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          //color: _getBGClr(task?.color ?? 0),
+          borderRadius: BorderRadius.circular(10),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.secondaryColor,
+              AppColors.primaryColor,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
         child: Row(children: [
           Expanded(

@@ -23,7 +23,7 @@ class Project {
 
   Map<String, dynamic> toMap() {
     return {
-      'loc_id': locId,
+      'locId': locId,
       'projectID': projectID,
       'name': name,
       'description': description,
@@ -34,9 +34,35 @@ class Project {
     };
   }
 
+  //to map static
+  static Map<String, dynamic> toMapStatic(Project project) {
+    return {
+      'locId': project.locId,
+      'projectID': project.projectID,
+      'name': project.name,
+      'description': project.description,
+      'deadline': project.deadline?.toIso8601String(),
+      'proprietaryID': project.proprietaryID,
+      'creationDate': project.creationDate?.toIso8601String(),
+      'lastUpdate': project.lastUpdate?.toIso8601String(),
+    };
+  }
+
+  //to json
+  Map<String, dynamic> toJson() => {
+        'locId': locId,
+        'projectID': projectID,
+        'name': name,
+        'description': description,
+        'deadline': deadline?.toIso8601String(),
+        'proprietaryID': proprietaryID,
+        'creationDate': creationDate?.toIso8601String(),
+        'lastUpdate': lastUpdate?.toIso8601String(),
+      };
+
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      locId: json['loc_id'],
+      locId: json['locId'],
       projectID: json['projectID'],
       name: json['name'],
       description: json['description'],
@@ -49,9 +75,9 @@ class Project {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE projects (
-        loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        projectID INTEGER,
+      CREATE TABLE project (
+        locId INTEGER PRIMARY KEY AUTOINCREMENT,
+        projectID INTEGER UNIQUE,
         name TEXT NOT NULL,
         description TEXT,
         deadline TEXT,

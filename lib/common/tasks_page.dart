@@ -1,4 +1,7 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:date_picker_timeline/date_picker_timeline.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/add_task_bar.dart';
 import 'package:taskermg/common/pages/profile.dart';
 import 'package:taskermg/common/theme.dart';
@@ -18,14 +21,14 @@ import '../models/task.dart';
 import '../views/globalheader.dart';
 import '../utils/AppLog.dart';
 
-class HomePage extends StatefulWidget {
-  HomePage({Key? key}) : super(key: key);
+class TasksPage extends StatefulWidget {
+  TasksPage({Key? key}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<TasksPage> createState() => _TasksPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _TasksPageState extends State<TasksPage> {
   var screenTitle = "Pendientes";
   DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
@@ -39,15 +42,16 @@ class _HomePageState extends State<HomePage> {
     notifyHelper.requestIOSPermissions();
   }
 
+  int _filterIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: globalheader(context.theme.backgroundColor, screenTitle),
-      backgroundColor: context.theme.backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       body: Column(
         children: [
           _addTaskbar(),
-          _addDateBar(),
           const SizedBox(
             height: 10,
           ),
@@ -57,39 +61,70 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-//
-//trial
-
   _showTasks() {
     AppLog.d("TaskList: ${_taskController.taskList}");
     return Expanded(
       child: Obx(() {
-        return ListView.builder(
-            itemCount: _taskController.taskList.length,
-            itemBuilder: (_, index) {
-              Task task = _taskController.taskList[index];
-              AppLog.i("Task n'{$index}':${task.toJson()}");
+        List<Task> filteredTasks = [];
+        if (_filterIndex >= 0) {
+          filteredTasks = _taskController.taskList.where((task) {
+            if (_filterIndex == 0) return task.status == 'Pendiente';
+            if (_filterIndex == 1) return task.status == 'En Proceso';
+            if (_filterIndex == 2) return task.status == 'Completada';
+            return true;
+          }).toList();
+        } else {
+          filteredTasks = _taskController.taskList;
+        }
 
-              return AnimationConfiguration.staggeredList(
-                position: index,
-                child: SlideAnimation(
-                    child: FadeInAnimation(
+        if (filteredTasks.isEmpty) {
+          return Center(
+            child: Lottie.asset('Assets/lotties/done3.json',
+                width: 200, height: 200,
+                fit: BoxFit.cover, filterQuality: FilterQuality.high),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: filteredTasks.length,
+          itemBuilder: (_, index) {
+            Task task = filteredTasks[index];
+            AppLog.i("Task n'{$index}':${task.toJson()}");
+
+            return AnimationConfiguration.staggeredList(
+              position: index,
+              child: SlideAnimation(
+                child: FadeInAnimation(
                   child: Row(
                     children: [
                       GestureDetector(
                         onTap: () {
-                          _showBottomSheet(context,
-                              task); // task is _taskController.taskList[index]
+                          _showBottomSheet(context, task);
+                          AppLog.d("Selected Task: ${task.toJson()}");
                         },
                         child: TaskTile(task),
                       ),
                     ],
                   ),
-                )),
-              );
-            });
+                ),
+              ),
+            );
+          },
+        );
       }),
     );
+  }
+
+  String _getEmptyMessage() {
+    if (_filterIndex == 0) {
+      return 'Sin tareas pendientes, prueba agregar una';
+    } else if (_filterIndex == 1) {
+      return 'Sin tareas en proceso, prueba agregar una';
+    } else if (_filterIndex == 2) {
+      return 'Sin tareas completadas, prueba agregar una';
+    } else {
+      return 'No hay tareas disponibles';
+    }
   }
 
   _showBottomSheet(BuildContext context, Task task) {
@@ -114,7 +149,7 @@ class _HomePageState extends State<HomePage> {
             task.status == 'Completada'
                 ? Container()
                 : _bottomSheetButton(
-                    label: "Task Completed",
+                    label: "Marcar como Completada",
                     onTap: () {
                       _taskController.markTaskCompleted(task);
                       Get.back();
@@ -123,7 +158,7 @@ class _HomePageState extends State<HomePage> {
                     context: context,
                   ),
             _bottomSheetButton(
-              label: "Delete Task",
+              label: "Eliminar Tarea",
               onTap: () {
                 _taskController.deleteTask(task);
                 Get.back();
@@ -135,7 +170,7 @@ class _HomePageState extends State<HomePage> {
               height: 20,
             ),
             _bottomSheetButton(
-              label: "Close",
+              label: "Cerrar",
               onTap: () {
                 Get.back();
               },
@@ -186,60 +221,74 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _addDateBar() {
+  _addTaskbar() {
     return Container(
-      margin: const EdgeInsets.only(top: 20, left: 20),
-      child: DatePicker(
-        DateTime.now(),
-        height: 90,
-        width: 70,
-        initialSelectedDate: DateTime.now(),
-        selectionColor: AppColors.primaryColor,
-        selectedTextColor: Colors.white,
-        dateTextStyle: GoogleFonts.lato(
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey,
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      height: 40, // Height for the horizontal ListView
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          IconButton(
+            padding: const EdgeInsets.all(0),
+            onPressed: () {
+              setState(() {
+                _filterIndex = -1;
+                screenTitle = "Todas las tareas";
+              });
+            },
+            icon: Icon(
+              Icons.filter_list_off,
+              color: Get.isDarkMode ? Colors.white : Colors.black,
+            ),
           ),
-        ),
-        dayTextStyle: GoogleFonts.lato(
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey,
+          _filterButton(
+            index: 0,
+            icon: Icons.timelapse,
+            label: 'Pendiente',
           ),
-        ),
-        monthTextStyle: GoogleFonts.lato(
-          textStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey,
+          _filterButton(
+            index: 1,
+            icon: Icons.work,
+            label: 'En Proceso',
           ),
-        ),
-        onDateChange: (date) {
-          setState(() {
-            _selectedDate = date;
-          });
-        },
+          _filterButton(
+            index: 2,
+            icon: Icons.check_circle,
+            label: 'Completada',
+          ),
+        ],
       ),
     );
   }
 
-  _addTaskbar() {
-    return Container(
-      margin: const EdgeInsets.only(left: 20, right: 20, top: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          MyButton(
-            label: "+ Add Task",
-            onTab: () async {
-              await Get.to(() => const AddTaskPage());
-              _taskController.getTasks();
-            },
-          )
-        ],
+  _filterButton(
+      {required int index, required IconData icon, required String label}) {
+    bool isSelected = _filterIndex == index;
+    return TextButton.icon(
+      style: TextButton.styleFrom(
+        textStyle: TextStyle(color: Colors.black, fontSize: 10),
+        backgroundColor: isSelected
+            ? AppColors.secondaryColor
+            : AppColors.secBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.0),
+        ),
+      ),
+      onPressed: () {
+        setState(() {
+          _filterIndex = index;
+          screenTitle = label;
+        });
+      },
+      icon: Icon(
+        icon,
+        color: isSelected ? AppColors.textColor : AppColors.primaryColor,
+      ),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? AppColors.textColor : AppColors.primaryColor,
+        ),
       ),
     );
   }

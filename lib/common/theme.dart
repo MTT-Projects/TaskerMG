@@ -166,3 +166,33 @@ TextStyle get subTitleStyle {
     color: Get.isDarkMode ? Color.fromRGBO(255, 255, 255, 1) : Color.fromRGBO(96, 96, 96, 1),
   ));
 }
+
+ThemeData get lightDatePickerTheme {
+    return ThemeData.light().copyWith(
+      colorScheme: ColorScheme.light(
+        primary: AppColors.primaryColor,
+        onPrimary: Colors.white,
+        surface: AppColors.cardColor,
+        onSurface: Colors.black,
+      ),
+      dialogBackgroundColor: AppColors.backgroundColor,
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(primary: AppColors.primaryColor),
+      ),
+    );
+  }
+
+  ThemeData get darkDatePickerTheme {
+    return ThemeData.dark().copyWith(
+      colorScheme: ColorScheme.dark(
+        primary: AppColors.primaryColor,
+        onPrimary: Colors.white,
+        surface: AppColors.cardColor,
+        onSurface: Colors.white,
+      ),
+      dialogBackgroundColor: AppColors.backgroundColor,
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(primary: AppColors.primaryColor),
+      ),
+    );
+  }

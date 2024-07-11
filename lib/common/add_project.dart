@@ -90,7 +90,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
       context: context,
       builder: (BuildContext context) {
         return Theme(
-          data: Get.isDarkMode ? _darkDatePickerTheme() : _lightDatePickerTheme(),
+          data: Get.isDarkMode ? darkDatePickerTheme : lightDatePickerTheme,
           child: Builder(
             builder: (context) {
               return Dialog(
@@ -167,35 +167,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
     );
   }
 
-  ThemeData _lightDatePickerTheme() {
-    return ThemeData.light().copyWith(
-      colorScheme: ColorScheme.light(
-        primary: AppColors.primaryColor,
-        onPrimary: Colors.white,
-        surface: AppColors.cardColor,
-        onSurface: Colors.black,
-      ),
-      dialogBackgroundColor: AppColors.backgroundColor,
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(primary: AppColors.primaryColor),
-      ),
-    );
-  }
-
-  ThemeData _darkDatePickerTheme() {
-    return ThemeData.dark().copyWith(
-      colorScheme: ColorScheme.dark(
-        primary: AppColors.primaryColor,
-        onPrimary: Colors.white,
-        surface: AppColors.cardColor,
-        onSurface: Colors.white,
-      ),
-      dialogBackgroundColor: AppColors.backgroundColor,
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(primary: AppColors.primaryColor),
-      ),
-    );
-  }
+  
 
   _saveProject() {
     final name = _nameController.text;
@@ -210,7 +182,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
       name: name,
       description: description,
       deadline: _selectedDeadline,
-      proprietaryID: MC.getVar('currentUser'), // Cambia esto por el ID del usuario actual
+      proprietaryID: MC.getVar('currentUser'), 
       creationDate: DateTime.now(),
       lastUpdate: DateTime.now(),
     );

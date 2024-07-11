@@ -3,7 +3,7 @@
 /// 1) AppLog.i("Info Message");
 /// 2) AppLog.i("Home Page", tag: "User Logging");
 class AppLog {
-  static const String _DEFAULT_TAG_PREFIX = "FlutterApp";
+  static const String _DEFAULT_TAG_PREFIX = "TaskerMG";
 
   ///use Log.v. Print all Logs
   static const int VERBOSE = 2;

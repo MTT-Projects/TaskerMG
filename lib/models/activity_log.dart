@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 
 class ActivityLog {
@@ -23,12 +24,12 @@ class ActivityLog {
 
   Map<String, dynamic> toMap() {
     return {
-      'loc_id': locId,
+      'locId': locId,
       'activityID': activityID,
       'userID': userID,
       'projectID': projectID,
       'activityType': activityType,
-      'activityDetails': activityDetails,
+      'activityDetails': activityDetails != null ? jsonEncode(activityDetails) : null,
       'timestamp': timestamp?.toIso8601String(),
       'lastUpdate': lastUpdate?.toIso8601String(),
     };
@@ -36,28 +37,40 @@ class ActivityLog {
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) {
     return ActivityLog(
-      locId: json['loc_id'],
+      locId: json['locId'],
       activityID: json['activityID'],
       userID: json['userID'],
       projectID: json['projectID'],
       activityType: json['activityType'],
-      activityDetails: json['activityDetails'],
+      activityDetails: json['activityDetails'] != null ? jsonDecode(json['activityDetails']) : null,
       timestamp: DateTime.parse(json['timestamp']),
       lastUpdate: DateTime.parse(json['lastUpdate']),
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'locId': locId,
+        'activityID': activityID,
+        'userID': userID,
+        'projectID': projectID,
+        'activityType': activityType,
+        'activityDetails': activityDetails != null ? jsonEncode(activityDetails) : null,
+        'timestamp': timestamp?.toIso8601String(),
+        'lastUpdate': lastUpdate?.toIso8601String(),
+      };
+
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE activityLog (
-        loc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        activityID INTEGER,
+        locId INTEGER PRIMARY KEY AUTOINCREMENT,
+        activityID INTEGER UNIQUE,
         userID INTEGER,
         projectID INTEGER,
         activityType TEXT,
         activityDetails TEXT,
         timestamp TEXT,
-        lastUpdate TEXT
+        lastUpdate TEXT,
+        isSynced INTEGER DEFAULT 0
       )
     ''');
   }

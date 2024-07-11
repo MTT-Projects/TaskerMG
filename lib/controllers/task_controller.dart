@@ -34,7 +34,7 @@ class TaskController extends GetxController {
       activityType: 'create',
       activityDetails: {
         'table': 'tasks',
-        'loc_id': locId,
+        'locId': locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
@@ -71,7 +71,7 @@ class TaskController extends GetxController {
       activityType: 'update',
       activityDetails: {
         'table': 'tasks',
-        'loc_id': task.locId,
+        'locId': task.locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
@@ -81,7 +81,7 @@ class TaskController extends GetxController {
 
   void deleteTask(Task task) async {
     await LocalDB.db.delete(
-        "tasks", where: 'loc_id = ?', whereArgs: [task.locId]);
+        "tasks", where: 'locId = ?', whereArgs: [task.locId]);
 
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
@@ -90,7 +90,7 @@ class TaskController extends GetxController {
       activityType: 'delete',
       activityDetails: {
         'table': 'tasks',
-        'loc_id': task.locId,
+        'locId': task.locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
@@ -102,7 +102,7 @@ class TaskController extends GetxController {
     await LocalDB.db.update(
         "tasks",
         task.toMap(),
-        where: 'loc_id = ?',
+        where: 'locId = ?',
         whereArgs: [task.locId],
     );
 
@@ -113,11 +113,13 @@ class TaskController extends GetxController {
       activityType: 'update',
       activityDetails: {
         'table': 'tasks',
-        'loc_id': task.locId,
+        'locId': task.locId,
       },
       timestamp: DateTime.now(),
       lastUpdate: DateTime.now(),
     ));
     getTasks();
   }
+
+  static updateRemoteID(param0, param1) {}
 }

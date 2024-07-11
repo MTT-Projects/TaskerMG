@@ -18,8 +18,7 @@ Future<void> main() async {
   AppLog.d("DB initialized");
   var localdb = await LocalDB.initDb();
   var str = localdb.toString();
-  AppLog.d("Local DB initialized as {}");
-  MC.setVar('currentProject', 1);
+  AppLog.d("Local DB initialized as ${localdb}");
   runApp(const MyApp());
 }
 
