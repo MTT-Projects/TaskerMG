@@ -21,7 +21,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final TaskController _taskController = Get.put(TaskController());
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  DateTime _selectedDeadline = DateTime.now();
+  DateTime _selectedDeadline = DateTime.now().toUtc();
   String _selectedPriority = 'Media';
   String _selectedStatus = 'Pendiente';
 
@@ -154,20 +154,18 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
   }
 
-  MainController MC = MainController();
-
   _addTaskToDb() async {
     int value = await _taskController.addTask(
       task: Task(
-        projectID: MC.getVar('currentProject'),
-        createdUserID: MC.getVar('userID'),
+        projectID: MainController.getVar('currentProject'),
+        createdUserID: MainController.getVar('userID'),
         title: _titleController.text,
         description: _descriptionController.text,
         deadline: _selectedDeadline,
         priority: _selectedPriority,
         status: _selectedStatus,
-        lastUpdate: DateTime.now(),
-        creationDate: DateTime.now(),
+        lastUpdate: DateTime.now().toUtc(),
+        creationDate: DateTime.now().toUtc(),
       ),
     );
     print("Nuevo ID: $value");

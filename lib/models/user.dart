@@ -10,6 +10,7 @@ class User {
   String password;
   DateTime? creationDate;
   DateTime? lastUpdate;
+  String? firebaseToken;
 
   User({
     this.locId,
@@ -20,6 +21,7 @@ class User {
     required this.password,
     this.creationDate,
     this.lastUpdate,
+    this.firebaseToken,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -31,6 +33,7 @@ class User {
         password: json['password'],
         creationDate: DateTime.parse(json['creationDate']),
         lastUpdate: DateTime.parse(json['lastUpdate']),
+        firebaseToken: json['firebaseToken'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -42,6 +45,7 @@ class User {
         'password': password,
         'creationDate': creationDate?.toIso8601String(),
         'lastUpdate': lastUpdate?.toIso8601String(),
+        'firebaseToken': firebaseToken,
       };
 
   Map<String, dynamic> toMap() {
@@ -54,6 +58,7 @@ class User {
       'password': password,
       'creationDate': creationDate?.toIso8601String(),
       'lastUpdate': lastUpdate?.toIso8601String(),
+      'firebaseToken': firebaseToken,
     };
   }
   
@@ -68,7 +73,8 @@ class User {
         password VARCHAR(255) NOT NULL,
         creationDate TEXT,
         salt VARCHAR(255) NOT NULL,
-        lastUpdate TEXT
+        lastUpdate TEXT,
+        firebaseToken TEXT
       );
     ''');
     AppLog.d("Table User created");

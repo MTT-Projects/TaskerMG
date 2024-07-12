@@ -2,77 +2,89 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/settings_page.dart';
 import 'package:taskermg/common/theme.dart';
-import '../utils/Dashboardcontroller.dart';
-import '../common/projects_page.dart'; // Asegúrate de que la ruta sea correcta
+import 'package:taskermg/controllers/project_controller.dart';
+import 'package:taskermg/utils/Dashboardcontroller.dart';
 
 class Dashboard extends StatelessWidget {
-  final DashboardController _dashboardController =
-      Get.put(DashboardController());
+  final DashboardController _dashboardController = Get.put(DashboardController());
+  final ProjectPage projectPage = ProjectPage();
+
+  
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return WillPopScope(
+      onWillPop: () async {
+        ProjectPage.projectController.getProjects();
+        return true;
+      },
+      child: Container(
         color: context.theme.secondaryHeaderColor,
         child: SafeArea(
-            child: Scaffold(
-          backgroundColor: AppColors.backgroundColor,
-          appBar: AppBar(
-            title: Text('DASHBOARD', style: headingStyleInv),
-            backgroundColor: AppColors.secBackgroundColor,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(50),
-                  bottomRight: Radius.circular(50)),
-            ),
-            elevation: 0,
-            actions: [
-              Builder(
-                builder: (context) {
-                  return IconButton(
-                    icon: Icon(Icons.menu, color: AppColors.backgroundColor),
-                    onPressed: () {
-                      Scaffold.of(context).openEndDrawer();
-                    },
-                  );
-                },
+          child: Scaffold(
+            backgroundColor: AppColors.backgroundColor,
+            appBar: AppBar(
+              title: Text('DASHBOARD', style: headingStyleInv),
+              backgroundColor: AppColors.secBackgroundColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(50),
+                    bottomRight: Radius.circular(50)),
               ),
-            ],
+              elevation: 0,
+              actions: [
+                Builder(
+                  builder: (context) {
+                    return IconButton(
+                      icon: Icon(Icons.menu, color: AppColors.backgroundColor),
+                      onPressed: () {
+                        Scaffold.of(context).openEndDrawer();
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+            body: Container(
+                decoration: BoxDecoration(color: AppColors.secBackgroundColor),
+                child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                    ),
+                    child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.only(topLeft: Radius.circular(40)),
+                            color: AppColors.backgroundColor),
+                        child: Obx(() {
+                          return IndexedStack(
+                            index: _dashboardController.selectedIndex.value,
+                            children: [
+                              projectPage,
+                              Center(
+                                  child: Text('Pantalla de Contactos',
+                                      style: headingStyle)),
+                              SettingsScr(),
+                            ],
+                          );
+                        })))),
+            endDrawer: CustomDrawer(),
           ),
-          body: Container(
-              decoration: BoxDecoration(color: AppColors.secBackgroundColor),
-              child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(50),
-                  ),
-                  child: Container(
-                      decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.only(topLeft: Radius.circular(40)),
-                          color: AppColors.backgroundColor),
-                      child: Obx(() {
-                        return IndexedStack(
-                          index: _dashboardController.selectedIndex.value,
-                          children: [
-                            ProjectPage(),
-                            Center(
-                                child: Text('Pantalla de Contactos',
-                                    style: headingStyle)),
-                            SettingsScr(),
-                          ],
-                        );
-                      })))),
-          endDrawer: CustomDrawer(),
-        )));
+        ),
+      ),
+    );
   }
 }
 
 class CustomDrawer extends StatelessWidget {
   final DashboardController _dashboardController = Get.find();
-
+final ProjectController projectController = Get.put(ProjectController());
   @override
   Widget build(BuildContext context) {
+    projectController.getProjects();
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -98,8 +110,7 @@ class CustomDrawer extends StatelessWidget {
               accountName: Text("Usuario"),
               accountEmail: Text("usuario@example.com"),
               decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(50)),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(50)),
                 gradient: LinearGradient(
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,

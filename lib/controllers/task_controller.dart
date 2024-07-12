@@ -13,8 +13,6 @@ import 'maincontroller.dart';
 class TaskController extends GetxController {
 
   var notifyHelper = NotifyHelper();
-  // ignore: non_constant_identifier_names
-  MainController MC = MainController();
 
   @override
   void onReady() {
@@ -29,22 +27,22 @@ class TaskController extends GetxController {
 
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
-      userID: MC.getVar('userID'),
+      userID: MainController.getVar('userID'),
       projectID: task.projectID,
       activityType: 'create',
       activityDetails: {
         'table': 'tasks',
         'locId': locId,
       },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
     ));
     return locId;
   }
 
   Future<RxList<Task>> getTasks([project]) async {
-    AppLog.d("Getting tasks from Project: ${MC.getVar('currentProject')}");
-    final currentProjectID = project ?? MC.getVar('currentProject');
+    AppLog.d("Getting tasks from Project: ${MainController.getVar('currentProject')}");
+    final currentProjectID = project ?? MainController.getVar('currentProject');
 
     if (currentProjectID != null) {
       List<Map<String, dynamic>> tasks = await LocalDB.db.query(
@@ -61,22 +59,8 @@ class TaskController extends GetxController {
 
   void markTaskCompleted(Task task){
     task.status = 'Completada';
-    task.lastUpdate = DateTime.now();
-    updateTask(task);
-
-    // Registrar la actividad
-    LocalDB.insertActivityLog(ActivityLog(
-      userID: MC.getVar('userID'),
-      projectID: task.projectID,
-      activityType: 'update',
-      activityDetails: {
-        'table': 'tasks',
-        'locId': task.locId,
-      },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
-    ));
-    
+    task.lastUpdate = DateTime.now().toUtc();
+    updateTask(task);    
   }
 
   void deleteTask(Task task) async {
@@ -85,20 +69,20 @@ class TaskController extends GetxController {
 
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
-      userID: MC.getVar('userID'),
+      userID: MainController.getVar('userID'),
       projectID: task.projectID,
       activityType: 'delete',
       activityDetails: {
         'table': 'tasks',
         'locId': task.locId,
       },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
     ));
     getTasks();
   }
 
-  void updateTask(Task task) async {
+  Future<void> updateTask(Task task) async {
     await LocalDB.db.update(
         "tasks",
         task.toMap(),
@@ -108,15 +92,16 @@ class TaskController extends GetxController {
 
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
-      userID: MC.getVar('userID'),
+      userID: MainController.getVar('userID'),
       projectID: task.projectID,
       activityType: 'update',
       activityDetails: {
         'table': 'tasks',
         'locId': task.locId,
+        'taskID': task.taskID,
       },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
     ));
     getTasks();
   }

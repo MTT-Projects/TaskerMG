@@ -1,11 +1,17 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/utils/sync/sync_projects.dart';
+import 'package:taskermg/utils/sync/sync_tasks.dart';
+import 'package:taskermg/utils/sync/sync_user_projects.dart';
 import 'package:taskermg/utils/AppLog.dart';
+import 'package:taskermg/utils/sync/sync_projects.dart';
+import 'package:taskermg/utils/sync/sync_tasks.dart';
+import 'package:taskermg/utils/sync/sync_user_projects.dart';
 import '../controllers/sync_controller.dart';
 
 class SyncScreen extends StatefulWidget {
@@ -18,7 +24,13 @@ class SyncScreen extends StatefulWidget {
 class _SyncScreenState extends State<SyncScreen> {
   String _message = 'Sincronizando información...';
   SyncController syncController = SyncController();
-  MainController MC = MainController();
+  double _progress = 0.0;
+  List<String> _syncSteps = [
+    'Sincronizando proyectos...',
+    'Sincronizando tareas...',
+    'Sincronizando relaciones...',
+    // Agrega más pasos de sincronización aquí
+  ];
 
   @override
   void initState() {
@@ -27,29 +39,51 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Future<void> syncData() async {
-    var userID = MC.getVar('userID');
+    var userID = MainController.getVar('currentUser');
     AppLog.d('Iniciando sincronización de datos de usuario: $userID');
-    setNewMessage('Sincronizando proyectos...');
-    await syncController.syncProjects(userID);
-    
-    setNewMessage('Sincronizando tareas...');
-    await syncController.syncTasks(userID);
 
-    setNewMessage('Sincronizando relaciones...');
-    await syncController.syncRelations(userID);
-    
-
-    // Agrega más llamadas de sincronización aquí si es necesario
+    for (int i = 0; i < _syncSteps.length; i++) {
+      setNewMessage(_syncSteps[i]);
+      await _performSyncStep(i, userID);
+      setProgress((i + 1) / _syncSteps.length);
+    }
 
     setNewMessage('Sincronización completa.');
-    await Future.delayed(Duration(seconds: 2)); // Esperar 2 segundos antes de continuar
+    await Future.delayed(
+        Duration(seconds: 2)); // Esperar 2 segundos antes de continuar
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => Dashboard()),
+    );
+  }
 
-
+  Future<void> _performSyncStep(int stepIndex, dynamic userID) async {
+    switch (stepIndex) {
+      case 0:
+        await SyncProjects.pullProjects();
+        await SyncProjects.pushProjects();
+        break;
+      case 1:
+        await SyncTasks.pullTasks();
+        await SyncTasks.pushTasks();
+        break;
+      case 2:
+        await SyncUserProjects.pullUserProjects();
+        await SyncUserProjects.pushUserProjects();
+        break;
+      // Agrega más casos para otros pasos de sincronización
+    }
   }
 
   void setNewMessage(String message) {
     setState(() {
       _message = message;
+    });
+  }
+
+  void setProgress(double progress) {
+    setState(() {
+      _progress = progress;
     });
   }
 
@@ -78,7 +112,15 @@ class _SyncScreenState extends State<SyncScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            //button continue
+            SizedBox(height: 20),
+            // Progress indicator
+            LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: Colors.grey,
+              color: AppColors.primaryColor,
+            ),
+            SizedBox(height: 20),
+            // Button to continue
             ElevatedButton(
               onPressed: () {
                 Navigator.pushReplacement(

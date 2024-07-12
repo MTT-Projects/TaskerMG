@@ -19,6 +19,7 @@ class DbRelationsCtr extends GetxController {
     UserProject userProject = UserProject(
       userID: userid,
       projectID: projectid,
+      lastUpdate: DateTime.now().toUtc(),
     );
     var valuelocID = await LocalDB.insertUserProject(userProject);
 
@@ -35,8 +36,8 @@ class DbRelationsCtr extends GetxController {
         'table': 'userProject',
         'locId': valuelocID,
       },
-      timestamp: DateTime.now(),
-      lastUpdate: DateTime.now(),
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
     ));
   }
 
@@ -51,7 +52,7 @@ class DbRelationsCtr extends GetxController {
   }
 
   //update user to project
-  static Future<void> updateUserProject(UserProject userProject) async {
+  Future<void> updateUserProject(UserProject userProject) async {
     await LocalDB.db.update(
       "userProject",
       userProject.toMap(),

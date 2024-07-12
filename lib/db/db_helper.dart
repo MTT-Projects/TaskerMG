@@ -48,7 +48,8 @@ class DBHelper {
   static Future<dynamic> query(String sql, List<dynamic> values) async {
     final conn = await connection;
     try {
-      return await conn.query(sql, values);
+      var result = await conn.query(sql, values);
+      return result;
     } catch (e) {
       AppLog.d("Error en query: $e");
       return errorCatcher(e.toString());

@@ -3,6 +3,7 @@
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/services/AuthService.dart';
 
 import '../../auth/login.dart';
 
@@ -20,7 +21,7 @@ class ProfilePage extends StatelessWidget {
               borderRadius: BorderRadius.circular(8), color: Colors.deepPurple),
           child: TextButton(
               onPressed: () async {
-                await UserController.logout();
+                await AuthService.logout();
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
                     builder: (context) => const LoginScreen()));
               },

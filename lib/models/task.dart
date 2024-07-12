@@ -79,6 +79,7 @@ class Task {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['locId'] = locId;
+    data['taskID'] = taskID;
     data['projectID'] = projectID;
     data['title'] = title;
     data['description'] = description;

@@ -16,10 +16,11 @@ class Project {
     this.name,
     this.description,
     this.deadline,
-    this.proprietaryID,
+    required this.proprietaryID,
     this.creationDate,
     this.lastUpdate,
   });
+  
 
   Map<String, dynamic> toMap() {
     return {

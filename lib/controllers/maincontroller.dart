@@ -11,15 +11,15 @@ class MainController {
   MainController._internal();
 
   // Variables globales
-  final Map<String, dynamic> _dynamicVariables = {};
+  static final Map<String, dynamic> _dynamicVariables = {};
 
-  dynamic getVar(String key) {
+  static dynamic getVar(String key) {
     AppLog.d("Getting $key, value: ${_dynamicVariables[key]}" );
     return _dynamicVariables[key];
   }
 
-  void setVar(String key, dynamic value) {
+   static setVar(String key, dynamic value) {
     AppLog.d("Setting $key to $value");
     _dynamicVariables[key] = value;
-  }
+   }
 }

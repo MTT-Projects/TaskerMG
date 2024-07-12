@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:taskermg/services/AuthService.dart';
 import '../controllers/user_controller.dart';
 import '../models/user.dart';
 import 'login.dart';
@@ -235,7 +236,7 @@ class _SignUpState extends State<SignUp> {
                             );
 
                             var response =
-                                await UserController.register(newUser);
+                                await AuthService.register(newUser);
                             if (response == true) {
                               // ignore: use_build_context_synchronously
                               Navigator.push(

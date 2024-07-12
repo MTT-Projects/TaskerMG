@@ -7,8 +7,9 @@ class UserProject {
   int? userProjectID;
   int? userID;
   int? projectID;
+  DateTime? lastUpdate;
 
-  UserProject({this.locId, this.userProjectID, this.userID, this.projectID});
+  UserProject({this.locId, this.userProjectID, this.userID, this.projectID, this.lastUpdate});
 
   Map<String, dynamic> toMap() {
     return {
@@ -16,6 +17,7 @@ class UserProject {
       'userProjectID': userProjectID,
       'userID': userID,
       'projectID': projectID,
+      'lastUpdate': lastUpdate?.toIso8601String(),
     };
   }
 
@@ -25,6 +27,7 @@ class UserProject {
       userProjectID: json['userProjectID'],
       userID: json['userID'],
       projectID: json['projectID'],
+      lastUpdate: DateTime.parse(json['lastUpdate']),
     );
   }
 
@@ -35,6 +38,7 @@ class UserProject {
       userProjectID: map['userProjectID'],
       userID: map['userID'],
       projectID: map['projectID'],
+      lastUpdate: DateTime.parse(map['lastUpdate']),
     );
   }
 
@@ -43,6 +47,7 @@ class UserProject {
         'userProjectID': userProjectID,
         'userID': userID,
         'projectID': projectID,
+        'lastUpdate': lastUpdate?.toIso8601String(),
       };
 
   static Future<void> createTable(Database db) async {
@@ -52,6 +57,7 @@ class UserProject {
         userProjectID INT UNIQUE,
         userID INT,
         projectID INT,
+        lastUpdate TEXT,
         FOREIGN KEY (userID) REFERENCES user(locId) ON DELETE CASCADE,
         FOREIGN KEY (projectID) REFERENCES project(locId) ON DELETE CASCADE
       );

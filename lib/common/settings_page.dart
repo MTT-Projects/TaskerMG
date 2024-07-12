@@ -1,16 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/db/db_local.dart';
+import 'package:taskermg/services/AuthService.dart';
 import 'package:taskermg/services/theme_services.dart';
 
 import '../auth/login.dart';
-import '../controllers/user_controller.dart';
 
 class SettingsScr extends StatefulWidget {
   const SettingsScr({super.key});
@@ -70,7 +67,7 @@ class _SettingsScrState extends State<SettingsScr> {
             Text('Logout', style: titleStyle),
             TextButton(
               onPressed: () async {
-                await UserController.logout();
+                await AuthService.logout();
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
                     builder: (context) => const LoginScreen()));
               },
@@ -89,7 +86,7 @@ class _SettingsScrState extends State<SettingsScr> {
               icon: Icon(Icons.cloud_upload),
               onPressed: () async {
                 SyncController syncController = Get.put(SyncController());
-                syncController.syncLocaltoRemote();
+                syncController.pushData();
                 Get.snackbar('Sync to Cloud', 'Data has been synced to cloud');
               },
             )

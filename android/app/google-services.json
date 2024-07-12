@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "101704024650",
+    "project_id": "taskermg-e2001",
+    "storage_bucket": "taskermg-e2001.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101704024650:android:0c04cd6abb99a837589cb3",
+        "android_client_info": {
+          "package_name": "com.mttprojects.taskermg"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGSF0ew2ivWs2Ycghuqf2-h1Fuf9ws88U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

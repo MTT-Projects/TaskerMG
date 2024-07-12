@@ -8,6 +8,7 @@ import 'package:taskermg/common/intro_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taskermg/services/AuthService.dart';
 
 import '../../controllers/user_controller.dart';
 import '../dashboard.dart';
@@ -47,8 +48,8 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
     
     if (isLoggedIn && savedUsername != null && savedPassword != null) {
       // Intenta iniciar sesión automáticamente
-      var response = await UserController.login(savedUsername, savedPassword);
-      if (response == true) {
+      var response = await AuthService.login(savedUsername, savedPassword);
+      if (response != null) {
         if(firstSync){        
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => Dashboard()));}

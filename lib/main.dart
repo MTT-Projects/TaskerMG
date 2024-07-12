@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:taskermg/common/widgets/splash.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -8,9 +9,7 @@ import 'package:get_storage/get_storage.dart';
 
 import 'common/theme.dart';
 import 'utils/AppLog.dart';
-import 'controllers/maincontroller.dart';
 
-MainController MC = MainController();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
@@ -19,6 +18,9 @@ Future<void> main() async {
   var localdb = await LocalDB.initDb();
   var str = localdb.toString();
   AppLog.d("Local DB initialized as ${localdb}");
+
+  await Firebase.initializeApp();
+  
   runApp(const MyApp());
 }
 

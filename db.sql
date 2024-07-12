@@ -1,8 +1,6 @@
-Drop database taskermg_db;
-
-Create database taskermg_db;
-
-use taskermg_db;
+DROP DATABASE IF EXISTS taskermg_db;
+CREATE DATABASE taskermg_db;
+USE taskermg_db;
 
 CREATE TABLE user (
     userID INT AUTO_INCREMENT PRIMARY KEY,
@@ -10,18 +8,27 @@ CREATE TABLE user (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    creationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     salt VARCHAR(255) NOT NULL,
-    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    firebaseToken TEXT
+);
+
+CREATE TABLE profileData (
+  profileDataID INT AUTO_INCREMENT PRIMARY KEY,
+  userID INT,
+  profilePic VARCHAR(255),
+  lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
 
 CREATE TABLE project (
     projectID INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    deadline DATE,
+    deadline TIMESTAMP,
     proprietaryID INT,
-    creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    creationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (proprietaryID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -30,6 +37,7 @@ CREATE TABLE userProject (
     userProjectID INT AUTO_INCREMENT PRIMARY KEY,
     userID INT,
     projectID INT,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
 );
@@ -39,10 +47,10 @@ CREATE TABLE tasks (
     projectID INT,
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    deadline DATE,
+    deadline TIMESTAMP,
     priority ENUM('Baja', 'Media', 'Alta') DEFAULT 'Media',
     status ENUM('Pendiente', 'En Proceso', 'Completada') DEFAULT 'Pendiente',
-    creationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    creationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdUserID INT,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE,
@@ -53,6 +61,7 @@ CREATE TABLE taskAssignment (
     assignmentID INT AUTO_INCREMENT PRIMARY KEY,
     taskID INT,
     userID INT,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -62,7 +71,7 @@ CREATE TABLE messageChat (
     projectID INT,
     userID INT,
     content TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
@@ -73,7 +82,7 @@ CREATE TABLE taskComment (
     taskID INT,
     userID INT,
     comment TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
@@ -83,7 +92,7 @@ CREATE TABLE attachment (
     attachmentID INT AUTO_INCREMENT PRIMARY KEY,
     userID INT,
     filePath VARCHAR(255) NOT NULL,
-    uploadDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    uploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
@@ -91,15 +100,17 @@ CREATE TABLE attachment (
 CREATE TABLE taskAttachment (
     taskAttachmentID INT AUTO_INCREMENT PRIMARY KEY,
     attachmentID INT,
-    taskID INT,
+    taskCommentID INT,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
-    FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE
+    FOREIGN KEY (taskCommentID) REFERENCES taskComment(commentID) ON DELETE CASCADE
 );
 
 CREATE TABLE messageAttachment (
     messageAttachmentID INT AUTO_INCREMENT PRIMARY KEY,
     attachmentID INT,
     messageID INT,
+    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
     FOREIGN KEY (messageID) REFERENCES messageChat(messageID) ON DELETE CASCADE
 );
@@ -110,7 +121,7 @@ CREATE TABLE activityLog (
     projectID INT,
     activityType VARCHAR(100) NOT NULL,
     activityDetails JSON,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
@@ -124,8 +135,3 @@ CREATE TABLE projectGoal (
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
 );
-
-
-//crear proyecto de  prueba
-INSERT INTO user (username, name, email, password) VALUES ('admin', 'Administrador', 'test@test.com', '$2y$10$3')
-INSERT INTO project (name, description, proprietaryID, deadline) VALUES ('Proyecto de Prueba', 'Este es un proyecto de prueba', 1, '2024-12-31')

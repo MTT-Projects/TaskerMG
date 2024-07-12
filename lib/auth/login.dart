@@ -3,6 +3,7 @@ import 'package:taskermg/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taskermg/services/AuthService.dart';
 import 'signup.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -24,8 +25,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Ahora deberíamos llamar a esta función en el botón de inicio de sesión
   Future<void> login(String username, String password) async {
-    var response = await UserController.login(username, password);
-    if (response == true) {
+    var response = await AuthService.login(username, password);
+    if (response != null) {
       await storage.write(key: 'isLoggedIn', value: "true");
       await storage.write(key: 'username', value: username);
       await storage.write(key: 'password', value: password);

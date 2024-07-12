@@ -3,6 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/theme.dart';
 
 import '../controllers/maincontroller.dart';
@@ -17,11 +18,10 @@ class AddProjectPage extends StatefulWidget {
 }
 
 class _AddProjectPageState extends State<AddProjectPage> {
-  final MainController MC = Get.put(MainController());
   final ProjectController _projectController = Get.put(ProjectController());
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  DateTime _selectedDeadline = DateTime.now();
+  DateTime _selectedDeadline = DateTime.now().toUtc();
 
   @override
   Widget build(BuildContext context) {
@@ -182,12 +182,13 @@ class _AddProjectPageState extends State<AddProjectPage> {
       name: name,
       description: description,
       deadline: _selectedDeadline,
-      proprietaryID: MC.getVar('currentUser'), 
-      creationDate: DateTime.now(),
-      lastUpdate: DateTime.now(),
+      proprietaryID: MainController.getVar('currentUser'), 
+      creationDate: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
     );
 
     _projectController.addProject(project);
+    ProjectPage.projectController.getProjects();
     Get.back();
   }
 }
