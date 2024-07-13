@@ -9,7 +9,12 @@ class UserProject {
   int? projectID;
   DateTime? lastUpdate;
 
-  UserProject({this.locId, this.userProjectID, this.userID, this.projectID, this.lastUpdate});
+  UserProject(
+      {this.locId,
+      this.userProjectID,
+      this.userID,
+      this.projectID,
+      this.lastUpdate});
 
   Map<String, dynamic> toMap() {
     return {
@@ -63,75 +68,6 @@ class UserProject {
       );
     ''');
     AppLog.d("Table userProject created");
-  }
-}
-
-class TaskComment {
-  int? locId;
-  int? taskCommentID;
-  int? taskID;
-  int? userID;
-  String? comment;
-  DateTime? creationDate;
-  DateTime? lastUpdate;
-
-  TaskComment(
-      {this.locId,
-      this.taskCommentID,
-      this.taskID,
-      this.userID,
-      this.comment,
-      this.creationDate,
-      this.lastUpdate});
-
-  Map<String, dynamic> toMap() {
-    return {
-      'locId': locId,
-      'taskCommentID': taskCommentID,
-      'taskID': taskID,
-      'userID': userID,
-      'comment': comment,
-      'creationDate': creationDate?.toIso8601String(),
-      'lastUpdate': lastUpdate?.toIso8601String(),
-    };
-  }
-
-  static TaskComment fromJson(Map<String, dynamic> json) {
-    return TaskComment(
-      locId: json['locId'],
-      taskCommentID: json['taskCommentID'],
-      taskID: json['taskID'],
-      userID: json['userID'],
-      comment: json['comment'],
-      creationDate: DateTime.parse(json['creationDate']),
-      lastUpdate: DateTime.parse(json['lastUpdate']),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'locId': locId,
-        'taskCommentID': taskCommentID,
-        'taskID': taskID,
-        'userID': userID,
-        'comment': comment,
-        'creationDate': creationDate?.toIso8601String(),
-        'lastUpdate': lastUpdate?.toIso8601String(),
-      };
-
-  static Future<void> createTable(Database db) async {
-    await db.execute('''
-Create Table taskComment(
-      locId INTEGER PRIMARY KEY AUTOINCREMENT,
-      taskCommentID INT UNIQUE,
-      taskID INT,
-      userID INT,
-      comment TEXT,
-      creationDate TEXT,
-      lastUpdate TEXT,
-      FOREIGN KEY (taskID) REFERENCES task(locId) ON DELETE CASCADE,
-      FOREIGN KEY (userID) REFERENCES user(locId) ON DELETE CASCADE);
-    ''');
-    AppLog.d("Table taskComment created");
   }
 }
 
@@ -194,6 +130,74 @@ Create Table taskAssigment(
       FOREIGN KEY (taskID) REFERENCES task(locId) ON DELETE CASCADE,
       FOREIGN KEY (userID) REFERENCES user(locId) ON DELETE CASCADE);
     ''');
+    AppLog.d("Table taskAssigment created");
+  }
+}
+
+class TaskAttachment {
+  int? locId;
+  int? taskAttachmentID;
+  int? attachmentID;
+  int? taskCommentID;
+  DateTime? lastUpdate;
+
+  TaskAttachment(
+      {this.locId,
+      this.taskAttachmentID,
+      this.attachmentID,
+      this.taskCommentID,
+      this.lastUpdate});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'locId': locId,
+      'taskAttachmentID': taskAttachmentID,
+      'attachmentID': attachmentID,
+      'taskCommentID': taskCommentID,
+      'lastUpdate': lastUpdate?.toIso8601String(),
+    };
+  }
+
+  //tomap static
+  static TaskAttachment fromMap(Map<String, dynamic> map) {
+    return TaskAttachment(
+      locId: map['locId'],
+      taskAttachmentID: map['taskAttachmentID'],
+      attachmentID: map['attachmentID'],
+      taskCommentID: map['taskCommentID'],
+      lastUpdate: DateTime.parse(map['lastUpdate']),
+    );
+  }
+
+  static TaskAttachment fromJson(Map<String, dynamic> json) {
+    return TaskAttachment(
+      locId: json['locId'],
+      taskAttachmentID: json['taskAttachmentID'],
+      attachmentID: json['attachmentID'],
+      taskCommentID: json['taskCommentID'],
+      lastUpdate: DateTime.parse(json['lastUpdate']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'locId': locId,
+        'taskAttachmentID': taskAttachmentID,
+        'attachmentID': attachmentID,
+        'taskCommentID': taskCommentID,
+        'lastUpdate': lastUpdate?.toIso8601String(),
+      };
+
+  static Future<void> createTable(Database db) async {
+    await db.execute('''
+  CREATE TABLE taskAttachment (
+    locId INT AUTO_INCREMENT PRIMARY KEY,
+    taskAttachmentID INT UNIQUE,
+    attachmentID INT,
+    taskCommentID INT,
+    lastUpdate TEXT,
+    FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
+    FOREIGN KEY (taskCommentID) REFERENCES taskComment(commentID) ON DELETE CASCADE);
+''');
     AppLog.d("Table taskAssigment created");
   }
 }

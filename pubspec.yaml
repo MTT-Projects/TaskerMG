@@ -29,7 +29,7 @@ dependencies:
   intl:
   google_fonts:
   date_picker_timeline:
-  flutter_local_notifications: 9.9.1
+  flutter_local_notifications: ^9.9.1
   flutter_native_timezone:
   sqflite:
   flutter_staggered_animations:
@@ -49,6 +49,12 @@ dependencies:
   firebase_core: ^2.11.0
   firebase_storage: 
   firebase_auth: 
+  firebase_messaging:
+  firebase_analytics:
+  http: ^0.13.3
+  googleapis:
+  googleapis_auth:
+
 
 dev_dependencies:
   flutter_test:

@@ -141,6 +141,7 @@ class ProjectCard extends StatelessWidget {
                             project.description ?? 'Descripción...',
                             style: TextStyle(
                                 fontSize: 16, color: Colors.white70),
+                                maxLines: 2,
                           ),
                           SizedBox(height: 16),
                           Row(

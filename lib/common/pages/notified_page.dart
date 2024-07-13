@@ -31,7 +31,7 @@ class NotifiedPage extends StatelessWidget {
               color: Get.isDarkMode ? Colors.white : Colors.grey[400]),
           child: Center(
             child: Text(
-              this.label.toString().split("|")[1],
+              this.label.toString(),
               style: TextStyle(
                   color: Get.isDarkMode ? Colors.black : Colors.white,
                   fontSize: 20),

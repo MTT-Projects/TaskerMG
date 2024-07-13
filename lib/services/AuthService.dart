@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:crypt/crypt.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/api/firebase_api.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -10,37 +12,44 @@ import 'package:taskermg/utils/AppLog.dart';
 import 'package:mysql1/mysql1.dart' as mysql;
 
 class AuthService {
-  static final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  static final firebase_auth.FirebaseAuth _auth =
+      firebase_auth.FirebaseAuth.instance;
   static const storage = FlutterSecureStorage();
 
-  static Future<firebase_auth.User?> login(String username, String password) async {
+  static Future<firebase_auth.User?> login(
+      String username, String password) async {
     try {
       var result = await DBHelper.query(
-          "SELECT password, salt, email FROM user WHERE username = ?", [username]);
+          "SELECT password, salt, email, firebaseToken FROM user WHERE username = ?",
+          [username]);
 
       if (result.isNotEmpty) {
         var user = result.first;
         var storedHash = user['password'];
         var salt = user['salt'];
         var email = user['email'];
+        var firebaseToken = user['firebaseToken'];
 
         var hashedPassword = Crypt.sha256(password, salt: salt).toString();
 
         if (hashedPassword == storedHash) {
           // Iniciar sesión en Firebase
-          firebase_auth.UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          firebase_auth.UserCredential userCredential =
+              await _auth.signInWithEmailAndPassword(
             email: email,
             password: password,
           );
 
           firebase_auth.User? firebaseUser = userCredential.user;
-          String? token = await firebaseUser?.getIdToken();
 
           if (firebaseUser != null) {
+            String? token = await FirebaseApi.firebaseMessaging.getToken();
             await DBHelper.query(
               'UPDATE user SET firebaseToken = ? WHERE email = ?',
               [token, email],
             );
+            AppLog.d("token de usuario: ${token}");
+
             await setUserdataFromDB(username);
             return firebaseUser;
           }
@@ -69,7 +78,8 @@ class AuthService {
         'password': user['password'],
         'creationDate': user['creationDate'].toString(),
         'salt': user['salt'],
-        'lastUpdate': user['lastUpdate'].toString()
+        'lastUpdate': user['lastUpdate'].toString(),
+        'firebaseToken': user['firebaseToken'],
       };
 
       try {
@@ -77,7 +87,7 @@ class AuthService {
             'SELECT * FROM user WHERE userID = ${user['userID']}');
         if (userExists.isEmpty) {
           await LocalDB.rawQuery(
-              '''INSERT INTO user (userID, username, name, email, password, creationDate, salt, lastUpdate) 
+              '''INSERT INTO user (userID, username, name, email, password, creationDate, salt, lastUpdate, firebaseToken) 
           VALUES (
           ${user['userID']}, 
           '${user['username']}', 
@@ -86,7 +96,9 @@ class AuthService {
           '${user['password']}', 
           '${user['creationDate']}', 
           '${user['salt']}', 
-          '${user['lastUpdate']}')''');
+          '${user['lastUpdate']}',
+          '${user['firebaseToken']}'
+          )''');
         }
       } catch (e) {
         AppLog.e("Error al subir datos a LocalDB: $e");
@@ -109,13 +121,15 @@ class AuthService {
 
       if (response is mysql.Results) {
         // Registrar usuario en Firebase Auth
-        firebase_auth.UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        firebase_auth.UserCredential userCredential =
+            await _auth.createUserWithEmailAndPassword(
           email: user.email,
           password: user.password,
         );
 
         firebase_auth.User? firebaseUser = userCredential.user;
-        String? token = await firebaseUser?.getIdToken();
+
+        String? token = await FirebaseApi.firebaseMessaging.getToken();
 
         if (firebaseUser != null) {
           AppLog.d("token de usuario: ${token}");

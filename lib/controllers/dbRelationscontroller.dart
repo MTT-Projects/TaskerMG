@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
+import 'package:taskermg/models/attachment.dart';
 
 import '../db/db_local.dart';
 import '../models/activity_log.dart';
@@ -78,5 +79,31 @@ class DbRelationsCtr extends GetxController {
       WHERE locId = ?
     ''', [userProjectID, locId]);
   }
+
+  static deleteTaskAttachment(TaskAttachment taskAttachment) async {
+     // Registrar la actividad
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MainController.getVar('userID'),
+      projectID: null,
+      activityType: 'delete',
+      activityDetails: {
+        'table': 'taskAttachment',
+        'locId': taskAttachment.locId,
+        'taskAttachmentID': taskAttachment.taskAttachmentID,
+      },
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
+    ));
+    
+     // Eliminar el adjunto
+    var attachment = await LocalDB.db.query("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.taskAttachmentID ?? taskAttachment.locId]);
+    if (attachment.isNotEmpty) {
+      await LocalDB.db.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.first['attachmentID']]);
+    }
+    await LocalDB.db.delete("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.locId]);
+  }
+
+  
+  
 
 }

@@ -42,7 +42,7 @@ class _TasksPageState extends State<TasksPage> {
     notifyHelper.requestIOSPermissions();
   }
 
-  int _filterIndex = 0;
+  int _filterIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +160,7 @@ class _TasksPageState extends State<TasksPage> {
             _bottomSheetButton(
               label: "Eliminar Tarea",
               onTap: () {
-                _taskController.deleteTask(task);
+                TaskController.deleteTask(task);
                 Get.back();
               },
               clr: Colors.red[300]!,

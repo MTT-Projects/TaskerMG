@@ -294,7 +294,7 @@ class LocalDB {
       List<Map<String, dynamic>> retList = [];
       for (var activity in res) {
         var actDetails = jsonDecode(activity['activityDetails'] as String);
-        if (actDetails['table'] == table && actDetails['projectID'] != null) {
+        if (actDetails['table'] == table) {
           retList.add(activity);
         }
       }

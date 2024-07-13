@@ -34,7 +34,7 @@ class NotifyHelper {
         onSelectNotification: selectNotification);
   }
 
-  displayNotification({required String title, required String body}) async {
+  displayNotification({required String title, required String body, String? payload}) async {
     print("doing test");
     var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
         'your  id', 'your  name',
@@ -48,7 +48,7 @@ class NotifyHelper {
       title,
       body,
       platformChannelSpecifics,
-      payload: title,
+      payload: payload,
     );
   }
 

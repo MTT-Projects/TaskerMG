@@ -1,7 +1,11 @@
 // ignore_for_file: avoid_init_to_null
 
+import 'package:taskermg/controllers/dbRelationscontroller.dart';
+import 'package:taskermg/controllers/taskCommentController.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/db/db_helper.dart';
+import 'package:taskermg/models/dbRelations.dart';
+import 'package:taskermg/models/taskComment.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import 'package:get/get.dart';
 
@@ -63,10 +67,7 @@ class TaskController extends GetxController {
     updateTask(task);    
   }
 
-  void deleteTask(Task task) async {
-    await LocalDB.db.delete(
-        "tasks", where: 'locId = ?', whereArgs: [task.locId]);
-
+  static Future<void> deleteTask(Task task) async {
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('userID'),
@@ -75,13 +76,31 @@ class TaskController extends GetxController {
       activityDetails: {
         'table': 'tasks',
         'locId': task.locId,
+        'taskID': task.taskID,
       },
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
-    getTasks();
+
+     var comments = await LocalDB.db.query('taskComment', where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
+    for (var comment in comments) {
+      await TaskCommentController.deleteTaskComment(TaskComment.fromJson(comment));
+    }
+
+    // Eliminar asignaciones de tareas relacionadas
+    await LocalDB.db.delete('taskAssignment', where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
+
+    // Eliminar la tarea
+    await LocalDB.db.delete('tasks', where: 'taskID = ?', whereArgs: [task.locId]);
   }
 
+  //delete tasks by projectID
+  void deleteTasksByProjectID(int projectID) async {
+    await LocalDB.db.delete(
+        "tasks", where: 'projectID = ?', whereArgs: [projectID]);
+    getTasks();
+  }
+  
   Future<void> updateTask(Task task) async {
     await LocalDB.db.update(
         "tasks",
@@ -107,4 +126,6 @@ class TaskController extends GetxController {
   }
 
   static updateRemoteID(param0, param1) {}
+
+  static deleteTaskRecursively(int task) {}
 }

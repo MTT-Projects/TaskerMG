@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:taskermg/controllers/task_controller.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/models/activity_log.dart';
 import 'package:taskermg/models/project.dart';
+import 'package:taskermg/models/task.dart';
 import 'package:taskermg/utils/AppLog.dart';
 
 import 'dbRelationscontroller.dart';
@@ -117,18 +119,17 @@ class ProjectController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    // Eliminar relaciones de UserProject
-    await LocalDB.db.rawQuery(
-      'DELETE FROM userProject WHERE projectID = ?',
-      [project.projectID ?? project.locId],
-    );
+    // Eliminar relaciones de usuario-proyecto
+    var tasks = await LocalDB.db.query('tasks', where: 'projectID = ?', whereArgs: [project.projectID]);
+    for (var task in tasks) {
+      await TaskController.deleteTask(Task.fromJson(task));
+    }
 
-    // Eliminar el proyecto de la base de datos local
-    await LocalDB.db.rawQuery(
-      'DELETE FROM project WHERE locId = ?',
-      [project.projectID ?? project.locId],
-    );
-    
+    // Eliminar relaciones de usuario-proyecto
+    await LocalDB.db.delete('userProject', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
+
+    // Eliminar el proyecto
+    await LocalDB.db.delete('project', where: 'locId = ?', whereArgs: [project.locId]);    
     getProjects();
   }
 

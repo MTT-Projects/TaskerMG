@@ -33,7 +33,7 @@ class User {
         password: json['password'],
         creationDate: DateTime.parse(json['creationDate']),
         lastUpdate: DateTime.parse(json['lastUpdate']),
-        firebaseToken: json['firebaseToken'],
+        firebaseToken: json['firebaseToken'].toString() ,
       );
 
   Map<String, dynamic> toJson() => {
