@@ -29,6 +29,10 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
     return widget.project.name.toString();
   }
 
+  TasksPage tasksPage = TasksPage();
+
+  
+
   void changePage(int index) {
     selectedIndex.value = index;
     switch (selectedIndex.value) {
@@ -120,7 +124,7 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
                     return IndexedStack(
                       index: selectedIndex.value,
                       children: [
-                        TasksPage(),
+                        tasksPage,
                         CollaboratorsPage(project: project),
                         EditProjectScreen(project: project),
                       ],

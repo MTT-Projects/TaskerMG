@@ -49,7 +49,7 @@ class TaskController extends GetxController {
     final currentProjectID = project ?? MainController.getVar('currentProject');
 
     if (currentProjectID != null) {
-      List<Map<String, dynamic>> tasks = await LocalDB.db.query(
+      List<Map<String, dynamic>> tasks = await LocalDB.query(
         "tasks",
         where: 'projectID = ?',
         whereArgs: [currentProjectID],
@@ -68,7 +68,7 @@ class TaskController extends GetxController {
     final currentProjectID = project ?? MainController.getVar('currentProject');
 
     if (currentProjectID != null) {
-      List<Map<String, dynamic>> tasks = await LocalDB.db.rawQuery(
+      List<Map<String, dynamic>> tasks = await LocalDB.rawQuery(
         '''
           SELECT 
               t.taskID,
@@ -121,7 +121,7 @@ class TaskController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    var comments = await LocalDB.db.query('taskComment',
+    var comments = await LocalDB.query('taskComment',
         where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
     for (var comment in comments) {
       await TaskCommentController.deleteTaskComment(
@@ -129,23 +129,23 @@ class TaskController extends GetxController {
     }
 
     // Eliminar asignaciones de tareas relacionadas
-    await LocalDB.db.delete('taskAssignment',
+    await LocalDB.delete('taskAssignment',
         where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
 
     // Eliminar la tarea
-    await LocalDB.db
+    await LocalDB
         .delete('tasks', where: 'taskID = ?', whereArgs: [task.locId]);
   }
 
   //delete tasks by projectID
   void deleteTasksByProjectID(int projectID) async {
-    await LocalDB.db
+    await LocalDB
         .delete("tasks", where: 'projectID = ?', whereArgs: [projectID]);
     getTasks();
   }
 
   Future<void> updateTask(Task task) async {
-    await LocalDB.db.update(
+    await LocalDB.update(
       "tasks",
       task.toMap(),
       where: 'locId = ?',
@@ -173,7 +173,7 @@ class TaskController extends GetxController {
   static deleteTaskRecursively(int task) {}
 
   static updateProjectID(int locId, int projectId) {
-    LocalDB.db.update(
+    LocalDB.update(
       "tasks",
       {'projectID': projectId},
       where: 'locId = ?',

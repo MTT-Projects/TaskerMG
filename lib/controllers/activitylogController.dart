@@ -6,7 +6,7 @@ import '../db/db_local.dart';
 class ActivityLogController extends ChangeNotifier {
   
   static Future<void> updateAcLog(ActivityLog activityLog) async {
-    await LocalDB.db.update(
+    await LocalDB.update(
       'activityLog',
       activityLog.toJson(),
       where: 'locId = ?',

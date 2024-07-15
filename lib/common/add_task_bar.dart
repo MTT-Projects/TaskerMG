@@ -128,7 +128,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  MyButton(label: "Crear Tarea", onTab: () => _validateData())
+                  MyButton(label: "Crear Tarea", onTab: () async => await _validateData())
                 ],
               ),
             ],
@@ -138,9 +138,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
-  _validateData() {
+  _validateData() async {
     if (_titleController.text.isNotEmpty) {
-      _addTaskToDb();
+      await _addTaskToDb();
       Get.back();
     } else {
       Get.snackbar(

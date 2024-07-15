@@ -39,18 +39,21 @@ class SyncProjects {
       var remoteProjects = result.map((projectMap) => projectMap['projectID']).toList();
       // Fetch local projects
       var localProjects = await LocalDB.queryProjects();
+      if(localProjects.isEmpty) {
+        AppLog.d("No hay proyectos locales.");
+      } else {
       var localProjectIDs = localProjects.map((project) => project['projectID']).toList();
 
       // Detect deleted projects
       for (var localProjectID in localProjectIDs) {
         if (!remoteProjects.contains(localProjectID)) {
-          await LocalDB.db.rawDelete(
+          await LocalDB.rawDelete(
             "DELETE FROM project WHERE projectID = ?",
             [localProjectID],
           );
           AppLog.d("Proyecto con ID $localProjectID marcado como eliminado.");
         }
-      }
+      }}
 
       for (var projectMap in result) {
         var projectMapped = Project(

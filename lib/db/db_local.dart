@@ -42,12 +42,11 @@ class LocalDB {
     try {
       String _path = '${await getDatabasesPath()}/$_dbName';
       _db = await openDatabase(_path, version: _version,
-          onCreate: (db, version) async {
+          onCreate: (dba, version) async {
         AppLog.d("Creating a new one");
-        await createTables();
-        // Create other tables here
-        AppLog.d("Database initialized");
       });
+      await createTables(_db);
+       AppLog.d("LocalDatabase initialized");
     } catch (e) {
       AppLog.e(e.toString());
     }
@@ -55,7 +54,8 @@ class LocalDB {
     return _db;
   }
 
-  static Future<void> createTables() async {
+  static Future<void> createTables(db) async {
+    AppLog.d("Creating tables");
     await User.createTable(db);
     await Project.createTable(db);
     await ProjectGoal.createTable(db);
@@ -67,13 +67,14 @@ class LocalDB {
     await TaskAttachment.createTable(db);
     await TaskAssigment.createTable(db);
     await Attachment.createTable(db);
+    AppLog.d("Tables created");
   }
 
-  static Database get db {
+  static Future<Database> get db async {
     if (_db != null) {
       return _db!;
     } else {
-      initDb();
+      await initDb();
       return _db!;
     }
   }
@@ -86,76 +87,64 @@ class LocalDB {
       return instance;
     }
   }
-
-  static Future<void> checkTablesIntegrity() async {
-    AppLog.d("Checking tables integrity");
-    final db = LocalDB.db;
-
-    // Define expected table schemas
-    Map<String, Future<void> Function(Database)> expectedTables = {
-      _taskTable: Task.createTable,
-      _projectTable: Project.createTable,
-      _activityLogTable: ActivityLog.createTable,
-      _userTable: User.createTable,
-      _userProjectTable: UserProject.createTable,
-      // Add other table create functions here
-    };
-
-    
-
-    // Check and create or update tables
-    expectedTables.forEach((tableName, createFunction) async {
-      try {
-        // Check if table exists
-        List<Map<String, dynamic>> result =
-            await db.rawQuery('PRAGMA table_info($tableName)');
-        if (result.isEmpty) {
-          // Table does not exist, create it
-          await createFunction(db);
-          AppLog.d("Table $tableName created.");
-        } else {
-          // Table exists, compare schema
-          // TODO: Implement schema comparison and update logic here if necessary
-        }
-      } catch (e) {
-        AppLog.e("Error checking table $tableName: $e");
-      }
-    });
+  // Raw query, optional values
+  static Future<List<Map<String, dynamic>>> rawQuery(String query, [List<dynamic>? values]) async {
+    return await _db!.rawQuery(query, values);
   }
+
+  //raw delete query an values
+  static Future<int>rawDelete(String query, List<dynamic> values) async {
+    return await _db!.rawDelete(query, values);}
+  //raw insert query an values
+  static Future<int>rawInsert(String query, List<dynamic> values) async {
+    return await _db!.rawInsert(query, values);}
+
+  //raw update query an values
+  static Future<int>rawUpdate(String query, List<dynamic> values) async {
+    return await _db!.rawUpdate(query, values);}
+
+ 
+  //query table, where an wherevalues optional
+  static Future<List<Map<String, dynamic>>> query(String table, {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.query(table, where: where, whereArgs: whereArgs);}
+
+  //delete
+  static Future<int> delete(String table, {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.delete(table, where: where, whereArgs: whereArgs);}
+  
+  //insert
+  static Future<int> insert(String table, Map<String, dynamic> values) async {
+    return await _db!.insert(table, values);}
+  
+  //update
+  static Future<int> update(String table, Map<String, dynamic> values, {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.update(table, values, where: where, whereArgs: whereArgs);}
+
 
    // Delete functions for all tables
 
   static Future<void> dropDB() async {
     try {
       //drop all tables
-      await _db!.execute('DROP TABLE IF EXISTS $_taskTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_projectTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_activityLogTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_userTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_userProjectTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_profileDataTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_taskCommentTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_attachmentTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_taskAttachmentTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_taskAssignmentTable');
-      await _db!.execute('DROP TABLE IF EXISTS $_projectGoalTable');
+      _db?.execute('DROP TABLE IF EXISTS $_taskTable');
+      _db?.execute('DROP TABLE IF EXISTS $_projectTable');
+      _db?.execute('DROP TABLE IF EXISTS $_activityLogTable');
+      _db?.execute('DROP TABLE IF EXISTS $_userTable');
+      _db?.execute('DROP TABLE IF EXISTS $_userProjectTable');
+      _db?.execute('DROP TABLE IF EXISTS $_profileDataTable');
+      _db?.execute('DROP TABLE IF EXISTS $_taskCommentTable');
+      _db?.execute('DROP TABLE IF EXISTS $_attachmentTable');
+      _db?.execute('DROP TABLE IF EXISTS $_taskAttachmentTable');
+      _db?.execute('DROP TABLE IF EXISTS $_taskAssignmentTable');
+      _db!.execute('DROP TABLE IF EXISTS $_projectGoalTable');
       //create tables again
-      await createTables();
+      await createTables(_db);
     } catch (e) {
       print("Error deleting database file: $e");
     }
   }
 
-  // Raw query
-  static Future<List<Map<String, dynamic>>> rawQuery(String query) async {
-    AppLog.d("Raw query called");
-    try {
-      return await _db!.rawQuery(query);
-    } catch (e) {
-      AppLog.e("Error in raw query: $e");
-      return [];
-    }
-  }
+  
 
   // Query functions for all tables
   static Future<List<Map<String, dynamic>>> queryTasks() async {

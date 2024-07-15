@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:googleapis/admob/v1.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/task_controller.dart';
@@ -40,20 +41,25 @@ class SyncTasks {
       ''', [userID]);
       var remoteTasks =
           result.map((projectMap) => projectMap['taskID']).toList();
+          AppLog.d("Tareas remotas: $remoteTasks");
       // Fetch local tasks
       var localTasks = await LocalDB.queryTasks();
+      if(localTasks.isEmpty) {
+        AppLog.d("No hay tareas locales.");
+      } else {
       var localTaskIDs =
           localTasks.map((project) => project['taskID']).toList();
 
       // Detect deleted tasks
       for (var localTaskID in localTaskIDs) {
         if (!remoteTasks.contains(localTaskID)) {
-          await LocalDB.db.rawDelete(
+          await LocalDB.rawDelete(
             "DELETE FROM tasks WHERE taskID = ?",
             [localTaskID],
           );
           AppLog.d("Tarea con ID $localTaskID marcada como eliminada.");
         }
+      }
       }
 
       for (var taskMap in result) {
@@ -80,7 +86,7 @@ class SyncTasks {
   static Future<void> pushTasks() async {
     try {
       // Mostrar todas las actividades
-      var allActivityLog = await LocalDB.db!.query("activityLog");
+      var allActivityLog = await LocalDB.query("activityLog");
       AppLog.d("All activities: $allActivityLog");
 
       var unsyncedTasks = await LocalDB.queryUnsyncedTasks();
@@ -131,7 +137,7 @@ class SyncTasks {
   //get creation activity by taskID
   static Future<Map<String, dynamic>?> getCreationActivityByTaskID(
       int taskID) async {
-    var activities = await LocalDB.db.rawQuery(
+    var activities = await LocalDB.rawQuery(
       "SELECT * FROM activityLog WHERE activityType = 'create'",
     );
     for (Map<String, dynamic> activity in activities) {

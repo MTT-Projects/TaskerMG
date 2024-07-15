@@ -43,6 +43,13 @@ class _TasksPageState extends State<TasksPage> {
     notifyHelper.requestIOSPermissions();
   }
 
+  void updateTasks()
+  {
+    setState(() {
+      _taskController.getTasks();
+    });
+  }
+
   int _filterIndex = -1;
   int taskFilter = 0;
 
@@ -66,8 +73,9 @@ class _TasksPageState extends State<TasksPage> {
           size: 40,
         ),
       ),
-      onPressed: () {
-        Get.to(() => AddTaskPage());
+      onPressed: () async {
+        await Get.to(() => AddTaskPage());
+        updateTasks();
       },
     );
 

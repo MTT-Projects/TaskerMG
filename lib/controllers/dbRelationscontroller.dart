@@ -44,17 +44,17 @@ class DbRelationsCtr extends GetxController {
 
   //get all userProject
   static Future<String> getUserProjects() async {
-    List<Map<String, dynamic>> userProjects = await LocalDB.db.rawQuery('''
+    List<Map<String, dynamic>> userProjects = await LocalDB.rawQuery('''
       SELECT *
       FROM userProject up
-    ''');
+    ''',[]);
 
     return jsonEncode(userProjects);
   }
 
   //update user to project
   Future<void> updateUserProject(UserProject userProject) async {
-    await LocalDB.db.update(
+    await LocalDB.update(
       "userProject",
       userProject.toMap(),
       where: 'locId = ?',
@@ -64,7 +64,7 @@ class DbRelationsCtr extends GetxController {
 
   //delete user to project
   static Future<void> deleteUserProject(int locId) async {
-    await LocalDB.db.delete(
+    await LocalDB.delete(
       "userProject",
       where: 'locId = ?',
       whereArgs: [locId],
@@ -73,7 +73,7 @@ class DbRelationsCtr extends GetxController {
 
   //update userProjectID
   static Future<void> updateUserProjectID(int locId, int userProjectID) async {
-    await LocalDB.db.rawUpdate('''
+    await LocalDB.rawUpdate('''
       UPDATE userProject
       SET userProjectID = ?
       WHERE locId = ?
@@ -82,7 +82,7 @@ class DbRelationsCtr extends GetxController {
   
   //update projectID
   static Future<void> updateProjectID(String table, int locId, int projectID) async {
-    await LocalDB.db.rawUpdate('''
+    await LocalDB.rawUpdate('''
       UPDATE $table
       SET projectID = ?
       WHERE locId = ?
@@ -105,15 +105,15 @@ class DbRelationsCtr extends GetxController {
     ));
     
      // Eliminar el adjunto
-    var attachment = await LocalDB.db.query("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.taskAttachmentID ?? taskAttachment.locId]);
+    var attachment = await LocalDB.query("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.taskAttachmentID ?? taskAttachment.locId]);
     if (attachment.isNotEmpty) {
-      await LocalDB.db.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.first['attachmentID']]);
+      await LocalDB.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.first['attachmentID']]);
     }
-    await LocalDB.db.delete("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.locId]);
+    await LocalDB.delete("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.locId]);
   }
 
   static updateTaskID(String table, int locId, int taskId) {
-    LocalDB.db.rawUpdate('''
+    LocalDB.rawUpdate('''
       UPDATE ?
       SET taskID = ?
       WHERE locId = ?
@@ -121,7 +121,7 @@ class DbRelationsCtr extends GetxController {
   }
 
   static updateTaskCommentID(String table, int locId, int taskCommentId) {
-    LocalDB.db.rawUpdate('''
+    LocalDB.rawUpdate('''
       UPDATE ?
       SET taskCommentID = ?
       WHERE locId = ?
@@ -129,7 +129,7 @@ class DbRelationsCtr extends GetxController {
   }
 
   static updateAttachmentId(String table,int locId, int attachmentId) {
-    LocalDB.db.rawUpdate('''
+    LocalDB.rawUpdate('''
       UPDATE ?
       SET attachmentID = ?
       WHERE locId = ?

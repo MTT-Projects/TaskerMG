@@ -97,8 +97,7 @@ class _SettingsScrState extends State<SettingsScr> {
                   icon: Icon(Icons.cloud_upload),
                   onPressed: () async {
                     AppLog.d('Sync to Cloud task started');
-                    SyncController syncController = Get.put(SyncController());
-                    syncController.pushData();
+                    SyncController.pushData();
                     Get.snackbar(
                         'Sync to Cloud', 'Data has been synced to cloud');
                   },

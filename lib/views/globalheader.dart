@@ -15,6 +15,7 @@ AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded})  {
   ThemeServices _themeServices = ThemeServices();
   var profileData = MainController.getVar('profileData');
   return AppBar(
+    automaticallyImplyLeading: false,
     elevation: 0,
     backgroundColor: bg,
     title: Text(

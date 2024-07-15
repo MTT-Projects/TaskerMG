@@ -25,17 +25,17 @@ class TaskCommentController{
     ));
 
     // Eliminar adjuntos de comentarios de tareas relacionadas
-    var attachments = await LocalDB.db.query("taskAttachment", where: 'taskCommentID = ?', whereArgs: [taskComment.taskCommentID ?? taskComment.locId]);
+    var attachments = await LocalDB.query("taskAttachment", where: 'taskCommentID = ?', whereArgs: [taskComment.taskCommentID ?? taskComment.locId]);
     for (var attachment in attachments) {
       await DbRelationsCtr.deleteTaskAttachment(TaskAttachment.fromJson(attachment));
     }
 
     // Eliminar el comentario
-    await LocalDB.db.delete("taskComment", where: 'commentID = ?', whereArgs: [taskComment.locId]);
+    await LocalDB.delete("taskComment", where: 'commentID = ?', whereArgs: [taskComment.locId]);
   }
 
   static updateTaskID(int locId, int taskId) {
-    LocalDB.db.update("taskComment", {'taskID': taskId}, where: 'commentID = ?', whereArgs: [locId]);
+    LocalDB.update("taskComment", {'taskID': taskId}, where: 'commentID = ?', whereArgs: [locId]);
   }
 
   

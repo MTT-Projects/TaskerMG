@@ -9,7 +9,6 @@ import 'package:taskermg/utils/AppLog.dart';
 import 'package:intl/intl.dart';
 
 class SyncUserProjects {
-
   static String formatDateTime(DateTime dateTime) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     return formatter.format(dateTime);
@@ -24,19 +23,28 @@ class SyncUserProjects {
         WHERE 
           userID = ?''', [userID]);
 
-      var remoteUserProjects = result.map((userProjectMap) => userProjectMap['userProjectID']).toList();
+      var remoteUserProjects = result
+          .map((userProjectMap) => userProjectMap['userProjectID'])
+          .toList();
       //fetch local user projects
       var localUserProjects = await LocalDB.queryUserProjects();
-      var localUserProjectIDs = localUserProjects.map((userProject) => userProject['userProjectID']).toList();
+      if (localUserProjects.isEmpty) {
+        AppLog.d("No hay proyectosusuario locales.");
+      } else {
+        var localUserProjectIDs = localUserProjects
+            .map((userProject) => userProject['userProjectID'])
+            .toList();
 
-      // Detect deleted user projects
-      for (var localUserProjectID in localUserProjectIDs) {
-        if (!remoteUserProjects.contains(localUserProjectID)) {
-          await LocalDB.db.rawDelete(
-            "DELETE FROM userProject WHERE userProjectID = ?",
-            [localUserProjectID],
-          );
-          AppLog.d("Proyectousuario con ID $localUserProjectID marcado como eliminado.");
+        // Detect deleted user projects
+        for (var localUserProjectID in localUserProjectIDs) {
+          if (!remoteUserProjects.contains(localUserProjectID)) {
+            await LocalDB.rawDelete(
+              "DELETE FROM userProject WHERE userProjectID = ?",
+              [localUserProjectID],
+            );
+            AppLog.d(
+                "Proyectousuario con ID $localUserProjectID marcado como eliminado.");
+          }
         }
       }
 
@@ -60,22 +68,27 @@ class SyncUserProjects {
     //applog all user projects
     var alluserproject = await LocalDB.queryUserProjects();
     AppLog.d("Proyectosusuario: ${jsonEncode(alluserproject)}");
-    
+
     try {
       var unsyncedUserProjects = await LocalDB.queryUnsyncedUserProjects();
-      AppLog.d("Proyectosusuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
+      AppLog.d(
+          "Proyectosusuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
       for (var userProjectMap in unsyncedUserProjects) {
         await handleRemoteUserProjectInsert(userProjectMap);
       }
 
-      var unsyncedUserProjectUpdates = await LocalDB.queryUnsyncedUpdates('userProject');
-      AppLog.d("Proyectosusuario sin actualizar: ${jsonEncode(unsyncedUserProjectUpdates)}");
+      var unsyncedUserProjectUpdates =
+          await LocalDB.queryUnsyncedUpdates('userProject');
+      AppLog.d(
+          "Proyectosusuario sin actualizar: ${jsonEncode(unsyncedUserProjectUpdates)}");
       for (var actMap in unsyncedUserProjectUpdates) {
         await handleRemoteUserProjectUpdate(actMap);
       }
 
-      var unsyncedDeletions = await LocalDB.queryUnsyncedDeletions('userProject');
-      AppLog.d("Proyectosusuario sin eliminar: ${jsonEncode(unsyncedDeletions)}");
+      var unsyncedDeletions =
+          await LocalDB.queryUnsyncedDeletions('userProject');
+      AppLog.d(
+          "Proyectosusuario sin eliminar: ${jsonEncode(unsyncedDeletions)}");
       for (var deletion in unsyncedDeletions) {
         await handleRemoteUserProjectDeletion(deletion);
       }
@@ -86,21 +99,26 @@ class SyncUserProjects {
     }
   }
 
-  static Future<void> handleUserProjectSync(Map<String, dynamic> userProjectMap) async {
-    var localUserProject = await LocalDB.queryUserProjectByRemoteID(userProjectMap['userProjectID']);
+  static Future<void> handleUserProjectSync(
+      Map<String, dynamic> userProjectMap) async {
+    var localUserProject = await LocalDB.queryUserProjectByRemoteID(
+        userProjectMap['userProjectID']);
     if (localUserProject == null) {
       await LocalDB.insertUserProject(UserProject.fromJson(userProjectMap));
     } else {
-      if (DateTime.parse(userProjectMap['lastUpdate']).isAfter(DateTime.parse(localUserProject['lastUpdate']))) {
+      if (DateTime.parse(userProjectMap['lastUpdate'])
+          .isAfter(DateTime.parse(localUserProject['lastUpdate']))) {
         await LocalDB.updateUserProject(UserProject.fromJson(userProjectMap));
       }
     }
   }
 
-  static Future<void> handleRemoteUserProjectInsert(Map<String, dynamic> userProjectMap) async {
+  static Future<void> handleRemoteUserProjectInsert(
+      Map<String, dynamic> userProjectMap) async {
     String userID = userProjectMap['userID'].toString();
     String projectID = userProjectMap['projectID'].toString();
-    String lastUpdate = formatDateTime(DateTime.parse(userProjectMap['lastUpdate']));
+    String lastUpdate =
+        formatDateTime(DateTime.parse(userProjectMap['lastUpdate']));
 
     var response = await DBHelper.query(
       "INSERT INTO userProject (userID, projectID, lastUpdate) VALUES (?, ?, ?)",
@@ -110,25 +128,30 @@ class SyncUserProjects {
     if (response is Results) {
       var insertId = response.insertId;
       if (insertId != null) {
-        await LocalDB.updateUserProjectSyncStatus(userProjectMap['locId'], insertId);
+        await LocalDB.updateUserProjectSyncStatus(
+            userProjectMap['locId'], insertId);
       }
     } else {
       AppLog.e("Error inserting user project in remote database: $response");
     }
   }
 
-  static Future<void> handleRemoteUserProjectUpdate(Map<String, dynamic> actMap) async {
+  static Future<void> handleRemoteUserProjectUpdate(
+      Map<String, dynamic> actMap) async {
     var actDetails = jsonDecode(actMap['activityDetails']);
     var userProjectMap = Map<String, dynamic>();
     if (actDetails['userProjectID'] != null) {
-      userProjectMap = (await LocalDB.queryUserProjectByRemoteID(actDetails['userProjectID']))!;
+      userProjectMap = (await LocalDB.queryUserProjectByRemoteID(
+          actDetails['userProjectID']))!;
     } else {
-      userProjectMap = (await LocalDB.queryUserProjectByLocalID(actDetails['locId']))!;
+      userProjectMap =
+          (await LocalDB.queryUserProjectByLocalID(actDetails['locId']))!;
     }
 
     String userID = userProjectMap['userID'].toString();
     String projectID = userProjectMap['projectID'].toString();
-    String lastUpdate = formatDateTime(DateTime.parse(userProjectMap['lastUpdate']));
+    String lastUpdate =
+        formatDateTime(DateTime.parse(userProjectMap['lastUpdate']));
 
     var response = await DBHelper.query(
       "UPDATE userProject SET userID = ?, projectID = ?, lastUpdate = ? WHERE userProjectID = ?",
@@ -142,7 +165,8 @@ class SyncUserProjects {
     }
   }
 
-  static Future<void> handleRemoteUserProjectDeletion(Map<String, dynamic> deletion) async {
+  static Future<void> handleRemoteUserProjectDeletion(
+      Map<String, dynamic> deletion) async {
     var activityDetails = jsonDecode(deletion['activityDetails']);
     var remoteID = activityDetails['userProjectID'] ?? activityDetails['locId'];
     await DBHelper.query(

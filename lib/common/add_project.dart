@@ -169,7 +169,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
     );
   }
 
-  _saveProject() {
+  _saveProject() async {
     final name = _nameController.text;
     final description = _descriptionController.text;
 
@@ -186,8 +186,8 @@ class _AddProjectPageState extends State<AddProjectPage> {
         lastUpdate: DateTime.now().toUtc(),
       );
 
-      _projectController.addProject(project);
-      ProjectPage.projectController.getProjects();
+      await _projectController.addProject(project);
+      await ProjectPage.projectController.getProjects();
       Get.back();
     }
   }

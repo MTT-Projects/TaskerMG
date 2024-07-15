@@ -59,7 +59,7 @@ class _DashboardState extends State<Dashboard> {
     FloatingActionButton projectFloatingBT = FloatingActionButton(
       onPressed: () async {
         await Get.to(() => AddProjectPage());
-        ProjectPage.projectController.getProjects();
+        ProjectPage.updateProjects();
       },
       backgroundColor: AppColors.secondaryColor,
       child: Icon(Icons.add, color: AppColors.textColor, size: 36),
@@ -74,6 +74,7 @@ class _DashboardState extends State<Dashboard> {
         color: AppColors.secBackgroundColor,
         child: SafeArea(
           child: Scaffold(
+
             backgroundColor: AppColors.backgroundColor,
             appBar: header(),
             body: Container(

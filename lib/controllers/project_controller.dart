@@ -45,13 +45,13 @@ class ProjectController extends GetxController {
     AppLog.d("Project added with locId: $locId with data: ${project.toJson()}");
   }
 
-  void getProjects() async {
+  Future<void> getProjects() async {
     AppLog.d("Getting projects for User: ${MainController.getVar('userID')}");
     final userID = MainController.getVar('userID');
     final localDBinit = MainController.getVar('initLDB');
 
     if (userID != null && localDBinit == true) {
-      List<Map<String, dynamic>> projects = await LocalDB.db.rawQuery('''
+      List<Map<String, dynamic>> projects = await LocalDB.rawQuery('''
         SELECT 
           p.locId,
           p.projectID, 
@@ -79,7 +79,7 @@ class ProjectController extends GetxController {
       projectList.assignAll(projects.map((data) => Project.fromJson(data)).toList());
       AppLog.d("Projects: ${jsonEncode(projectList)}");
       //allprojects
-      var res2 = await LocalDB.db.rawQuery('''
+      var res2 = await LocalDB.rawQuery('''
         SELECT 
           * 
         FROM 
@@ -87,7 +87,7 @@ class ProjectController extends GetxController {
       ''', []);
       AppLog.d("All Projects: ${jsonEncode(res2)}");
       //applog relations
-      var res = await LocalDB.db.rawQuery('''
+      var res = await LocalDB.rawQuery('''
         SELECT 
           * 
         FROM 
@@ -120,16 +120,16 @@ class ProjectController extends GetxController {
     ));
 
     // Eliminar relaciones de task
-    var tasks = await LocalDB.db.query('tasks', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
+    var tasks = await LocalDB.query('tasks', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
     for (var task in tasks) {
       await TaskController.deleteTask(Task.fromJson(task));
     }
 
     // Eliminar relaciones de usuario-proyecto
-    await LocalDB.db.delete('userProject', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
+    await LocalDB.delete('userProject', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
 
     // Eliminar el proyecto
-    await LocalDB.db.delete('project', where: 'locId = ?', whereArgs: [project.locId]);    
+    await LocalDB.delete('project', where: 'locId = ?', whereArgs: [project.locId]);    
     getProjects();
   }
 
@@ -137,7 +137,7 @@ class ProjectController extends GetxController {
     AppLog.d("Updating project with locId: ${project.locId} and data ${project.toJson()}");
     project.lastUpdate = DateTime.now().toUtc();
 
-    var res = await LocalDB.db.update(
+    var res = await LocalDB.update(
       "project",
       project.toMap(),
       where: 'locId = ?',
@@ -170,7 +170,7 @@ class ProjectGoalController{
   }
 
   static updateProjectID(int locId, int projectId) {
-    LocalDB.db.update(
+    LocalDB.update(
       "projectGoal",
       {'projectID': projectId},
       where: 'locId = ?',

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/controllers/collaboratorsController.dart';
+import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/models/project.dart';
+import 'package:taskermg/utils/AppLog.dart';
 import '../models/user.dart';
 
 class CollaboratorsPage extends StatelessWidget {
@@ -22,7 +24,7 @@ class CollaboratorsPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Search',
                 border: OutlineInputBorder(),
               ),
@@ -32,7 +34,7 @@ class CollaboratorsPage extends StatelessWidget {
           Expanded(
             child: Obx(() {
               if (controller.filteredCollaborators.isEmpty) {
-                return Center(child: Text('No collaborators found.'));
+                return const Center(child: Text('No collaborators found.'));
               }
               return ListView.builder(
                 itemCount: controller.filteredCollaborators.length,
@@ -45,7 +47,7 @@ class CollaboratorsPage extends StatelessWidget {
                     title: Text(collaborator.name ?? ''),
                     subtitle: Text(collaborator.email),
                     trailing: IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
                         controller.removeCollaborator(collaborator.userID!);
                       },
@@ -62,7 +64,7 @@ class CollaboratorsPage extends StatelessWidget {
                 onPressed: () {
                   showAddCollaboratorDialog(context, controller);
                 },
-                child: Text('Add Collaborator'),
+                child: const Text('Add Collaborator'),
               ),
             ),
         ],
@@ -76,32 +78,34 @@ class CollaboratorsPage extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Add Collaborator'),
+          title: const Text('Add Collaborator'),
           content: TextField(
             controller: emailController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Email',
             ),
           ),
           actions: [
             TextButton(
               onPressed: () async {
+                AppLog.d('Add collaborator button pressed');
                 String email = emailController.text.trim();
-                User? user = await getUserByEmail(email);
+                User? user = await CollaboratorsController.getUserWithEmail(email);
                 if (user != null) {
                   controller.addCollaborator(user);
                   Navigator.of(context).pop();
                 } else {
-                  // Mostrar un mensaje de error si el usuario no se encuentra
+                  AppLog.d('User not found');
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not found')));
                 }
               },
-              child: Text('Add'),
+              child: const Text('Añadir'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -109,11 +113,5 @@ class CollaboratorsPage extends StatelessWidget {
     );
   }
 
-  Future<User?> getUserByEmail(String email) async {
-    var result = await LocalDB.db.query('user', where: 'email = ?', whereArgs: [email]);
-    if (result.isNotEmpty) {
-      return User.fromJson(result.first);
-    }
-    return null;
-  }
+  
 }
