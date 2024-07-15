@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:taskermg/utils/AppLog.dart';
 
 class Task {
   int? locId;
@@ -95,7 +96,7 @@ class Task {
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE tasks (
-        locId INTEGER PRIMARY KEY AUTOINCREMENT,
+        locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         taskID INTEGER UNIQUE,
         projectID INTEGER,
         title TEXT NOT NULL,
@@ -110,5 +111,6 @@ class Task {
         FOREIGN KEY (createdUserID) REFERENCES user(locId) ON DELETE CASCADE
       );
     ''');
+    AppLog.d('Table tasks created');
   }
 }

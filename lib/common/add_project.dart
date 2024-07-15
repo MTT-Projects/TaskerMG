@@ -62,7 +62,8 @@ class _AddProjectPageState extends State<AddProjectPage> {
                 IconButton(
                   icon: Icon(Icons.calendar_today),
                   onPressed: () async {
-                    DateTime? pickedDate = await _selectDate(context, _selectedDeadline);
+                    DateTime? pickedDate =
+                        await _selectDate(context, _selectedDeadline);
                     if (pickedDate != null) {
                       setState(() {
                         _selectedDeadline = pickedDate;
@@ -84,7 +85,8 @@ class _AddProjectPageState extends State<AddProjectPage> {
     );
   }
 
-  Future<DateTime?> _selectDate(BuildContext context, DateTime selectedDate) async {
+  Future<DateTime?> _selectDate(
+      BuildContext context, DateTime selectedDate) async {
     DateTime? pickedDate;
     return showDialog<DateTime>(
       context: context,
@@ -167,31 +169,28 @@ class _AddProjectPageState extends State<AddProjectPage> {
     );
   }
 
-  
-
   _saveProject() {
     final name = _nameController.text;
     final description = _descriptionController.text;
 
-    if (name.isEmpty || description.isEmpty) {
-      Get.snackbar('Error', 'Todos los campos son obligatorios');
+    if (name.isEmpty) {
+      Get.snackbar('Error', 'El nombre del proyecto no puede estar vacío');
       return;
+    } else {
+      final project = Project(
+        name: name,
+        description: description,
+        deadline: _selectedDeadline,
+        proprietaryID: MainController.getVar('currentUser'),
+        creationDate: DateTime.now().toUtc(),
+        lastUpdate: DateTime.now().toUtc(),
+      );
+
+      _projectController.addProject(project);
+      ProjectPage.projectController.getProjects();
+      Get.back();
     }
-
-    final project = Project(
-      name: name,
-      description: description,
-      deadline: _selectedDeadline,
-      proprietaryID: MainController.getVar('currentUser'), 
-      creationDate: DateTime.now().toUtc(),
-      lastUpdate: DateTime.now().toUtc(),
-    );
-
-    _projectController.addProject(project);
-    ProjectPage.projectController.getProjects();
-    Get.back();
   }
 }
 
-mixin MasterController {
-}
+mixin MasterController {}

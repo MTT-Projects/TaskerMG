@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:taskermg/utils/AppLog.dart';
 
 class Attachment
 {
@@ -10,8 +11,8 @@ class Attachment
   int? size;
   String? fileUrl;
   String? localPath;
-  String? uploadDate;
-  String? lastUpdate;
+  DateTime? uploadDate;
+  DateTime? lastUpdate;
 
   Attachment({this.locId, this.attachmentID, this.userID, this.name, this.type, this.size, this.fileUrl, this.localPath, this.uploadDate, this.lastUpdate});
 
@@ -79,18 +80,19 @@ class Attachment
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE attachment (
-    locId INTEGER PRIMARY KEY AUTOINCREMENT,
-    attachmentID INT UNIQUE,
-    userID INT,
-    name VARCHAR(255) NOT NULL,
-    type varchar(100) NOT NULL,
-    size INT NOT NULL,
-    fileUrl VARCHAR(255) NOT NULL,
-    localPath VARCHAR(255),
-    uploadDate TEXT,
-    lastUpdate TEXT,
-    FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
-);
+        locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        attachmentID INTEGER UNIQUE,
+        userID INTEGER,
+        name VARCHAR(255) NOT NULL,
+        type varchar(100) NOT NULL,
+        size INTEGER NOT NULL,
+        fileUrl VARCHAR(255) NOT NULL,
+        localPath VARCHAR(255) NOT NULL,
+        uploadDate TEXT,
+        lastUpdate TEXT,
+        FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
+      );
     ''');
+    AppLog.d('Table Attachment created');
   }
 }

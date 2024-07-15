@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
+import 'package:taskermg/utils/AppLog.dart';
 
 class ActivityLog {
   int? locId;
@@ -62,7 +63,7 @@ class ActivityLog {
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE activityLog (
-        locId INTEGER PRIMARY KEY AUTOINCREMENT,
+        locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         activityID INTEGER UNIQUE,
         userID INTEGER,
         projectID INTEGER,
@@ -73,5 +74,6 @@ class ActivityLog {
         isSynced INTEGER DEFAULT 0
       )
     ''');
+    AppLog.d('Table ActivityLog created');
   }
 }

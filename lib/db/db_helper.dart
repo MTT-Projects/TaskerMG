@@ -27,7 +27,13 @@ class DBHelper {
         throw Exception(
             'DBHelper is not initialized. Call initialize() first.');
       }
-      _connection = await MySqlConnection.connect(_settings!);
+      try {
+        _connection = await MySqlConnection.connect(_settings!);
+      } catch (e) {
+        AppLog.d("Error en _connect: $e");
+        await Future.delayed(Duration(seconds: 5));
+        _connection = await MySqlConnection.connect(_settings!);
+      }
     }
   }
 
@@ -46,6 +52,7 @@ class DBHelper {
   }
 
   static Future<dynamic> query(String sql, List<dynamic> values) async {
+    AppLog.d("Query: $sql - $values");
     final conn = await connection;
     try {
       var result = await conn.query(sql, values);

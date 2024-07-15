@@ -58,10 +58,10 @@ class UserProject {
   static Future<void> createTable(Database db) async {
     await db.execute('''
       Create table userProject(
-        locId INTEGER PRIMARY KEY AUTOINCREMENT,
-        userProjectID INT UNIQUE,
-        userID INT,
-        projectID INT,
+        locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        userProjectID INTEGER UNIQUE,
+        userID INTEGER,
+        projectID INTEGER,
         lastUpdate TEXT,
         FOREIGN KEY (userID) REFERENCES user(locId) ON DELETE CASCADE,
         FOREIGN KEY (projectID) REFERENCES project(locId) ON DELETE CASCADE
@@ -73,7 +73,7 @@ class UserProject {
 
 class TaskAssigment {
   int? locId;
-  int? taskAssigmentID;
+  int? assignmentID;
   int? taskID;
   int? userID;
   DateTime? creationDate;
@@ -81,7 +81,7 @@ class TaskAssigment {
 
   TaskAssigment(
       {this.locId,
-      this.taskAssigmentID,
+      this.assignmentID,
       this.taskID,
       this.userID,
       this.creationDate,
@@ -90,7 +90,7 @@ class TaskAssigment {
   Map<String, dynamic> toMap() {
     return {
       'locId': locId,
-      'taskAssigmentID': taskAssigmentID,
+      'assignmentID': assignmentID,
       'taskID': taskID,
       'userID': userID,
       'creationDate': creationDate?.toIso8601String(),
@@ -101,7 +101,7 @@ class TaskAssigment {
   static TaskAssigment fromJson(Map<String, dynamic> json) {
     return TaskAssigment(
       locId: json['locId'],
-      taskAssigmentID: json['taskAssigmentID'],
+      assignmentID: json['assignmentID'],
       taskID: json['taskID'],
       userID: json['userID'],
       creationDate: DateTime.parse(json['creationDate']),
@@ -111,7 +111,7 @@ class TaskAssigment {
 
   Map<String, dynamic> toJson() => {
         'locId': locId,
-        'taskAssigmentID': taskAssigmentID,
+        'assignmentID': assignmentID,
         'taskID': taskID,
         'userID': userID,
         'creationDate': creationDate?.toIso8601String(),
@@ -120,11 +120,11 @@ class TaskAssigment {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-Create Table taskAssigment(
+Create Table taskAssignment(
       locId INTEGER PRIMARY KEY AUTOINCREMENT,
-      taskAssigmentID INT UNIQUE,
-      taskID INT,
-      userID INT,
+      assignmentID INTEGER UNIQUE,
+      taskID INTEGER,
+      userID INTEGER,
       creationDate TEXT,
       lastUpdate TEXT,
       FOREIGN KEY (taskID) REFERENCES task(locId) ON DELETE CASCADE,
@@ -132,6 +132,8 @@ Create Table taskAssigment(
     ''');
     AppLog.d("Table taskAssigment created");
   }
+
+  static updateTaskID(int locId, int taskId) {}
 }
 
 class TaskAttachment {
@@ -190,14 +192,14 @@ class TaskAttachment {
   static Future<void> createTable(Database db) async {
     await db.execute('''
   CREATE TABLE taskAttachment (
-    locId INT AUTO_INCREMENT PRIMARY KEY,
-    taskAttachmentID INT UNIQUE,
-    attachmentID INT,
-    taskCommentID INT,
+    locId INTEGER PRIMARY KEY AUTOINCREMENT,
+    taskAttachmentID INTEGER UNIQUE,
+    attachmentID INTEGER,
+    taskCommentID INTEGER,
     lastUpdate TEXT,
     FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
     FOREIGN KEY (taskCommentID) REFERENCES taskComment(commentID) ON DELETE CASCADE);
 ''');
-    AppLog.d("Table taskAssigment created");
+    AppLog.d("Table taskAttachment created");
   }
 }

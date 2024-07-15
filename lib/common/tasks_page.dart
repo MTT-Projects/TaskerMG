@@ -32,6 +32,7 @@ class _TasksPageState extends State<TasksPage> {
   var screenTitle = "Pendientes";
   DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
+
   var notifyHelper;
 
   @override
@@ -43,12 +44,81 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   int _filterIndex = -1;
+  int taskFilter = 0;
 
   @override
   Widget build(BuildContext context) {
+    var addButton = FloatingActionButton(
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.values[1],
+          gradient: LinearGradient(
+            colors: [AppColors.secondaryColor, AppColors.primaryColor],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          border: Border.all(color: AppColors.backgroundColor, width: 3),
+        ),
+        child: Icon(
+          Icons.add,
+          size: 40,
+        ),
+      ),
+      onPressed: () {
+        Get.to(() => AddTaskPage());
+      },
+    );
+
     return Scaffold(
-      appBar: globalheader(context.theme.backgroundColor, screenTitle),
       backgroundColor: AppColors.backgroundColor,
+      //add float buton
+      floatingActionButton: taskFilter == 0 ? addButton : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+      //bottom appbar
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        color: AppColors.secBackgroundColor,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            //Button "Todas las tareas"
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  taskFilter = 0;
+                  screenTitle = "Todas las tareas";
+                  _taskController.getTasks();
+                });
+              },
+              icon: Icon(Icons.all_inbox,
+                  color: taskFilter == 0
+                      ? AppColors.secondaryColor
+                      : AppColors.backgroundColor),
+            ),
+            //Espacio en blancl
+            SizedBox(
+              width: 50,
+            ),
+            //Button "Tareas Asignadas"
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  taskFilter = 1;
+                  screenTitle = "Tareas Asignadas";
+                  _taskController.getAssignedTasks();
+                });
+              },
+              icon: Icon(Icons.timelapse,
+                  color: taskFilter == 1
+                      ? AppColors.secondaryColor
+                      : AppColors.backgroundColor),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           _addTaskbar(),
@@ -80,8 +150,10 @@ class _TasksPageState extends State<TasksPage> {
         if (filteredTasks.isEmpty) {
           return Center(
             child: Lottie.asset('Assets/lotties/done3.json',
-                width: 200, height: 200,
-                fit: BoxFit.cover, filterQuality: FilterQuality.high),
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high),
           );
         }
 
@@ -222,43 +294,59 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   _addTaskbar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20),
-      height: 40, // Height for the horizontal ListView
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          IconButton(
-            padding: const EdgeInsets.all(0),
-            onPressed: () {
-              setState(() {
-                _filterIndex = -1;
-                screenTitle = "Todas las tareas";
-              });
-            },
-            icon: Icon(
-              Icons.filter_list_off,
-              color: Get.isDarkMode ? Colors.white : Colors.black,
+    var allColor = Get.isDarkMode ? Colors.white : Colors.black;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text("Title"),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            height: 35, // Height for the horizontal ListView
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              children: [
+                IconButton(
+                  //background color
+                  color: AppColors.secBackgroundColor,
+                  padding: const EdgeInsets.all(0),
+                  onPressed: () {
+                    setState(() {
+                      _filterIndex = -1;
+                      screenTitle = "Todas las tareas";
+                    });
+                  },
+                  icon: Icon(
+                    Icons.filter_list_off,
+                    color: _filterIndex == -1
+                        ? AppColors.secondaryColor
+                        : allColor,
+                  ),
+                ),
+                _filterButton(
+                  index: 0,
+                  icon: Icons.timelapse,
+                  label: 'Pendiente',
+                ),
+                SizedBox(
+                  width: 5,
+                ),
+                _filterButton(
+                  index: 1,
+                  icon: Icons.work,
+                  label: 'En Proceso',
+                ),
+                SizedBox(
+                  width: 5,
+                ),
+                _filterButton(
+                  index: 2,
+                  icon: Icons.check_circle,
+                  label: 'Completada',
+                ),
+              ],
             ),
-          ),
-          _filterButton(
-            index: 0,
-            icon: Icons.timelapse,
-            label: 'Pendiente',
-          ),
-          _filterButton(
-            index: 1,
-            icon: Icons.work,
-            label: 'En Proceso',
-          ),
-          _filterButton(
-            index: 2,
-            icon: Icons.check_circle,
-            label: 'Completada',
-          ),
-        ],
-      ),
-    );
+          )
+        ]);
   }
 
   _filterButton(

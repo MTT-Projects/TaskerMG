@@ -15,7 +15,6 @@ import '../services/notification_services.dart';
 import 'maincontroller.dart';
 
 class TaskController extends GetxController {
-
   var notifyHelper = NotifyHelper();
 
   @override
@@ -45,26 +44,66 @@ class TaskController extends GetxController {
   }
 
   Future<RxList<Task>> getTasks([project]) async {
-    AppLog.d("Getting tasks from Project: ${MainController.getVar('currentProject')}");
+    AppLog.d(
+        "Getting tasks from Project: ${MainController.getVar('currentProject')}");
     final currentProjectID = project ?? MainController.getVar('currentProject');
 
     if (currentProjectID != null) {
       List<Map<String, dynamic>> tasks = await LocalDB.db.query(
-          "tasks",
-          where: 'projectID = ?',
-          whereArgs: [currentProjectID],
+        "tasks",
+        where: 'projectID = ?',
+        whereArgs: [currentProjectID],
       );
       taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
     } else {
-      taskList.clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
+      taskList
+          .clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
     }
     return taskList;
   }
 
-  void markTaskCompleted(Task task){
+  //get assigned taskss
+  Future<RxList<Task>> getAssignedTasks([project]) async {
+    final currentUserID = MainController.getVar('userID');
+    final currentProjectID = project ?? MainController.getVar('currentProject');
+
+    if (currentProjectID != null) {
+      List<Map<String, dynamic>> tasks = await LocalDB.db.rawQuery(
+        '''
+          SELECT 
+              t.taskID,
+              t.title,
+              t.description,
+              t.deadline,
+              t.priority,
+              t.status,
+              t.creationDate,
+              t.lastUpdate
+          FROM 
+              tasks t
+          INNER JOIN 
+              taskAssignment ta ON t.taskID = ta.taskID
+          INNER JOIN 
+              project p ON t.projectID = p.projectID
+          INNER JOIN 
+              user u ON ta.userID = u.userID
+          WHERE 
+              u.userID = ? 
+              AND p.projectID = ?''',
+        [currentUserID, currentProjectID],
+      );
+      taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
+    } else {
+      taskList
+          .clear(); // Limpiar la lista si no hay un proyecto actual seleccionado
+    }
+    return taskList;
+  }
+
+  void markTaskCompleted(Task task) {
     task.status = 'Completada';
     task.lastUpdate = DateTime.now().toUtc();
-    updateTask(task);    
+    updateTask(task);
   }
 
   static Future<void> deleteTask(Task task) async {
@@ -82,31 +121,35 @@ class TaskController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-     var comments = await LocalDB.db.query('taskComment', where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
+    var comments = await LocalDB.db.query('taskComment',
+        where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
     for (var comment in comments) {
-      await TaskCommentController.deleteTaskComment(TaskComment.fromJson(comment));
+      await TaskCommentController.deleteTaskComment(
+          TaskComment.fromJson(comment));
     }
 
     // Eliminar asignaciones de tareas relacionadas
-    await LocalDB.db.delete('taskAssignment', where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
+    await LocalDB.db.delete('taskAssignment',
+        where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
 
     // Eliminar la tarea
-    await LocalDB.db.delete('tasks', where: 'taskID = ?', whereArgs: [task.locId]);
+    await LocalDB.db
+        .delete('tasks', where: 'taskID = ?', whereArgs: [task.locId]);
   }
 
   //delete tasks by projectID
   void deleteTasksByProjectID(int projectID) async {
-    await LocalDB.db.delete(
-        "tasks", where: 'projectID = ?', whereArgs: [projectID]);
+    await LocalDB.db
+        .delete("tasks", where: 'projectID = ?', whereArgs: [projectID]);
     getTasks();
   }
-  
+
   Future<void> updateTask(Task task) async {
     await LocalDB.db.update(
-        "tasks",
-        task.toMap(),
-        where: 'locId = ?',
-        whereArgs: [task.locId],
+      "tasks",
+      task.toMap(),
+      where: 'locId = ?',
+      whereArgs: [task.locId],
     );
 
     // Registrar la actividad
@@ -128,4 +171,13 @@ class TaskController extends GetxController {
   static updateRemoteID(param0, param1) {}
 
   static deleteTaskRecursively(int task) {}
+
+  static updateProjectID(int locId, int projectId) {
+    LocalDB.db.update(
+      "tasks",
+      {'projectID': projectId},
+      where: 'locId = ?',
+      whereArgs: [locId],
+    );
+  }
 }

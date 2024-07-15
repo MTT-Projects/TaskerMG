@@ -119,8 +119,8 @@ class ProjectController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    // Eliminar relaciones de usuario-proyecto
-    var tasks = await LocalDB.db.query('tasks', where: 'projectID = ?', whereArgs: [project.projectID]);
+    // Eliminar relaciones de task
+    var tasks = await LocalDB.db.query('tasks', where: 'projectID = ?', whereArgs: [project.projectID ?? project.locId]);
     for (var task in tasks) {
       await TaskController.deleteTask(Task.fromJson(task));
     }
@@ -159,5 +159,22 @@ class ProjectController extends GetxController {
 
     getProjects();
     return res == 1;
+  }
+}
+
+class ProjectGoalController{
+  //add
+  void addProjectGoal(ProjectGoal projectGoal) async {
+    int locId = await LocalDB.insertProjectGoal(projectGoal);
+    AppLog.d("ProjectGoal added with locId: $locId with data: ${projectGoal.toJson()}");
+  }
+
+  static updateProjectID(int locId, int projectId) {
+    LocalDB.db.update(
+      "projectGoal",
+      {'projectID': projectId},
+      where: 'locId = ?',
+      whereArgs: [locId],
+    );
   }
 }

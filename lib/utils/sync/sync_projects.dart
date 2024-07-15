@@ -10,7 +10,6 @@ import 'package:taskermg/utils/AppLog.dart';
 import 'package:intl/intl.dart';
 
 class SyncProjects {
-  static ProjectController prController = ProjectController();
 
   static String formatDateTime(DateTime dateTime) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
@@ -36,6 +35,23 @@ class SyncProjects {
           user u ON up.userID = u.userID
         WHERE 
           u.userID = ?''', [userID]);
+
+      var remoteProjects = result.map((projectMap) => projectMap['projectID']).toList();
+      // Fetch local projects
+      var localProjects = await LocalDB.queryProjects();
+      var localProjectIDs = localProjects.map((project) => project['projectID']).toList();
+
+      // Detect deleted projects
+      for (var localProjectID in localProjectIDs) {
+        if (!remoteProjects.contains(localProjectID)) {
+          await LocalDB.db.rawDelete(
+            "DELETE FROM project WHERE projectID = ?",
+            [localProjectID],
+          );
+          AppLog.d("Proyecto con ID $localProjectID marcado como eliminado.");
+        }
+      }
+
       for (var projectMap in result) {
         var projectMapped = Project(
           projectID: projectMap['projectID'],
@@ -48,6 +64,7 @@ class SyncProjects {
         ).toJson();
         await handleProjectSync(projectMapped);
       }
+
       AppLog.d("Proyectos obtenidos exitosamente.");
     } catch (e) {
       AppLog.e("Error al obtener proyectos: $e");
@@ -84,17 +101,17 @@ class SyncProjects {
   static Future<void> handleProjectSync(Map<String, dynamic> projectMap) async {
     var localProject = await LocalDB.queryProjectByRemoteID(projectMap['projectID']);
     if (localProject == null) {
+      AppLog.d("Local proyect not found, creating a new one");
       await LocalDB.insertProject(Project.fromJson(projectMap));
     } else {
+      projectMap['locId'] = localProject['locId'];
       if (DateTime.parse(projectMap['lastUpdate']).isAfter(DateTime.parse(localProject['lastUpdate']))) {
-        await prController.updateProject(Project.fromJson(projectMap));
+        await LocalDB.updateProject(Project.fromJson(projectMap));
       }
     }
   }
 
-  //handleremoteProjectInsert
   static Future<void> handleRemoteProjectInsert(Map<String, dynamic> projectMap) async {
-
     String name = projectMap['name'];
     String description = projectMap['description'];
     String deadline = formatDateTime(DateTime.parse(projectMap['deadline']));
@@ -111,12 +128,6 @@ class SyncProjects {
       var insertId = response.insertId;
       if (insertId != null) {
         await LocalDB.updateProjectSyncStatus(projectMap['locId'], insertId);
-        //insertar la relacion usuarioproyecto remota
-        // var userID = MainController.getVar('currentUser');
-        // await DBHelper.query(
-        //   "INSERT INTO userProject (userID, projectID, lastUpdate) VALUES (?, ?, ?)",
-        //   [userID, insertId, lastUpdate],
-        // );
       }
     } else {
       AppLog.e("Error inserting project in remote database: $response");
@@ -145,13 +156,11 @@ class SyncProjects {
       "UPDATE project SET name = ?, description = ?, deadline = ?, proprietaryID = ?, lastUpdate = ? WHERE projectID = ?",
       [name, description, deadline, proprietaryID, lastUpdate, projectMap['projectID']],
     );
-  
+
     if (response is Results) {
       var insertId = response.insertId;
       if (insertId != null) {
-        //await LocalDB.updateProjectSyncStatus(projectMap['locId'], insertId);
-        await LocalDB.markActivityLogAsSynced(actMap['locId']);
-        
+        await LocalDB.markActivityLogAsSynced(projectMap['locId']);
       }
     } else {
       AppLog.e("Error inserting/updating project in remote database: $response");

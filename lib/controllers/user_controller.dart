@@ -33,6 +33,41 @@ class UserController extends GetxController {
     _user = user;
   }
 
+  //get firebasetoken by email or username
+  static Future<String?> getFirebaseToken(String email) async {
+    final result = await DBHelper.query(
+      'SELECT firebaseToken FROM user WHERE email = ?',
+      [email],
+    );
+    if (result.isNotEmpty) {
+      var token = result.first['firebaseToken'];
+      var retstring = token.toString();
+      return retstring;
+    }
+    return null;
+  }
+
+  //get profileData
+  static Future<Map<String, dynamic>?> getProfileData(int userID) async {
+    final result = await DBHelper.query(
+      '''SELECT * FROM
+        profileData 
+      WHERE
+        userID = ?
+      ''',
+      [userID],
+    );
+    if (result.isNotEmpty) {
+      var profileData = result.first;
+      Map<String,dynamic> profileDataMap = {
+        'profileDataID': profileData['profileDataID'],
+        'profilePicUrl': profileData['profilePicUrl'],
+        'lastUpdate': profileData['lastUpdate']
+      };
+      return profileDataMap;
+    }
+    return null;
+  }
 
 
   

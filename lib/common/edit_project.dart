@@ -78,16 +78,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Editar Proyecto", style: headingStyleInv),
-        backgroundColor: AppColors.primaryColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topRight: Radius.circular(50),
-            bottomRight: Radius.circular(50),
-          ),
-        ),
-      ),
+      backgroundColor: AppColors.backgroundColor,
       body: Container(
         padding: EdgeInsets.all(16),
         child: SingleChildScrollView(

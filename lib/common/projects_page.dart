@@ -54,14 +54,7 @@ class _ProjectPageState extends State<ProjectPage> with WidgetsBindingObserver {
           },
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Get.to(() => AddProjectPage());
-          ProjectPage.projectController.getProjects();
-        },
-        backgroundColor: Colors.purple,
-        child: Icon(Icons.add, size: 36),
-      ),
+      
     );
   }
 }

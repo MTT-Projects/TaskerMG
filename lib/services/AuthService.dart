@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/api/firebase_api.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/models/user.dart';
@@ -107,6 +108,7 @@ class AuthService {
       var userObj = User.fromJson(userData);
       MainController.setVar('currentUser', userObj.userID ?? userObj.locId);
       MainController.setVar('userID', userObj.userID ?? userObj.locId);
+      MainController.setVar('profileData', await UserController.getProfileData(userObj.userID ?? userObj.locId!));
     }
   }
 

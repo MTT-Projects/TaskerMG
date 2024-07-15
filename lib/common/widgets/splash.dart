@@ -41,7 +41,7 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
     bool isLoggedIn =
         await storage.read(key: 'isLoggedIn') == 'true' ? true : false;
     bool firstSync =
-        await storage.read(key: 'firstSync') == 'true' ? true : false;
+        await storage.read(key: 'firstSync') == 'false' ? true : false;
     String? savedUsername = await storage.read(key: 'username');
     
     String? savedPassword = await storage.read(key: 'password');

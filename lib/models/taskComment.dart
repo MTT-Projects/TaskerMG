@@ -56,15 +56,14 @@ class TaskComment {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-CREATE TABLE attachment (
-    attachmentID INTEGER PRIMARY KEY AUTOINCREMENT,
-    userID INT,
-    name VARCHAR(255) NOT NULL,
-    type varchar(100) NOT NULL,
-    size INT NOT NULL,
-    fileUrl VARCHAR(255) NOT NULL,
-    uploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CREATE TABLE taskComment (
+    taskCommentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    taskID INTEGER,
+    userID INTEGER,
+    comment TEXT,
+    timestamp TEXT,
+    lastUpdate TEXT,
+    FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
 );
     ''');

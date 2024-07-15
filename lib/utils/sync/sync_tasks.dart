@@ -9,8 +9,6 @@ import 'package:taskermg/utils/AppLog.dart';
 import 'package:intl/intl.dart';
 
 class SyncTasks {
-  static TaskController tkController = TaskController();
-
   static String formatDateTime(DateTime dateTime) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     return formatter.format(dateTime);
@@ -19,7 +17,8 @@ class SyncTasks {
   static Future<void> pullTasks() async {
     var userID = MainController.getVar('currentUser');
     try {
-      var result = await DBHelper.query('''SELECT 
+      var result = await DBHelper.query('''
+        SELECT 
           t.taskID, 
           t.projectID, 
           t.title, 
@@ -36,10 +35,27 @@ class SyncTasks {
           project p ON t.projectID = p.projectID
         JOIN 
           userProject up ON p.projectID = up.projectID
-        JOIN 
-          user u ON up.userID = u.userID
         WHERE 
-          u.userID = ?''', [userID]);
+          up.userID = ?
+      ''', [userID]);
+      var remoteTasks =
+          result.map((projectMap) => projectMap['taskID']).toList();
+      // Fetch local tasks
+      var localTasks = await LocalDB.queryTasks();
+      var localTaskIDs =
+          localTasks.map((project) => project['taskID']).toList();
+
+      // Detect deleted tasks
+      for (var localTaskID in localTaskIDs) {
+        if (!remoteTasks.contains(localTaskID)) {
+          await LocalDB.db.rawDelete(
+            "DELETE FROM tasks WHERE taskID = ?",
+            [localTaskID],
+          );
+          AppLog.d("Tarea con ID $localTaskID marcada como eliminada.");
+        }
+      }
+
       for (var taskMap in result) {
         var taskMapped = Task(
           taskID: taskMap['taskID'],
@@ -63,20 +79,45 @@ class SyncTasks {
 
   static Future<void> pushTasks() async {
     try {
+      // Mostrar todas las actividades
+      var allActivityLog = await LocalDB.db!.query("activityLog");
+      AppLog.d("All activities: $allActivityLog");
+
       var unsyncedTasks = await LocalDB.queryUnsyncedTasks();
       AppLog.d("Tareas sin sincronizar: ${jsonEncode(unsyncedTasks)}");
+
       for (var taskMap in unsyncedTasks) {
-        await handleRemoteTaskInsert(taskMap);
+        var hasDeletion =
+            await hasDeletionLog(taskMap['taskID'] ?? taskMap['locId']);
+        if (!hasDeletion) {
+          var creationActivity = await getCreationActivityByTaskID(taskMap['taskID'] ?? taskMap['locId']);
+          if (creationActivity != null) {
+            if (creationActivity['isSynced'] == 0) {
+              await handleRemoteTaskInsert(taskMap);
+            }
+          }
+        } else {
+          await markActivityLogAsSyncedByTaskId(
+              taskMap['taskID'] ?? taskMap['locId']);
+        }
       }
 
       var unsyncedTaskUpdates = await LocalDB.queryUnsyncedUpdates('tasks');
       AppLog.d("Tareas sin actualizar: ${jsonEncode(unsyncedTaskUpdates)}");
+
       for (var actMap in unsyncedTaskUpdates) {
-        await handleRemoteTaskUpdate(actMap);
+        var details = jsonDecode(actMap['activityDetails']);
+        var hasDeletion = await hasDeletionLog(details['taskID']);
+        if (!hasDeletion) {
+          await handleRemoteTaskUpdate(actMap);
+        } else {
+          await markActivityLogAsSyncedByTaskId(details['taskID']);
+        }
       }
 
       var unsyncedDeletions = await LocalDB.queryUnsyncedDeletions('tasks');
       AppLog.d("Tareas sin eliminar: ${jsonEncode(unsyncedDeletions)}");
+
       for (var deletion in unsyncedDeletions) {
         await handleRemoteTaskDeletion(deletion);
       }
@@ -87,31 +128,113 @@ class SyncTasks {
     }
   }
 
+  //get creation activity by taskID
+  static Future<Map<String, dynamic>?> getCreationActivityByTaskID(
+      int taskID) async {
+    var activities = await LocalDB.db.rawQuery(
+      "SELECT * FROM activityLog WHERE activityType = 'create'",
+    );
+    for (Map<String, dynamic> activity in activities) {
+      var details = jsonDecode(activity['activityDetails']);
+
+      var actTaskId = details['locId'];
+      if (details['table'] == 'tasks' && actTaskId == taskID) {
+        return activity;
+      }
+    }
+    return null;
+  }
+
   static Future<void> handleTaskSync(Map<String, dynamic> taskMap) async {
     var localTask = await LocalDB.queryTaskByRemoteID(taskMap['taskID']);
     if (localTask == null) {
       await LocalDB.insertTask(Task.fromJson(taskMap));
     } else {
-      if (DateTime.parse(taskMap['lastUpdate']).isAfter(DateTime.parse(localTask['lastUpdate']))) {
-        await tkController.updateTask(Task.fromJson(taskMap));
+      if (DateTime.parse(taskMap['lastUpdate'])
+          .isAfter(DateTime.parse(localTask['lastUpdate']))) {
+        await LocalDB.updateTask(Task.fromJson(taskMap));
       }
     }
   }
 
-  static Future<void> handleRemoteTaskInsert(Map<String, dynamic> taskMap) async {
+  static Future<bool> hasDeletionLog(int taskId) async {
+    var deletions = await LocalDB.queryUnsyncedDeletions('tasks');
+    for (var deletion in deletions) {
+      var details = jsonDecode(deletion['activityDetails']);
+      if (details['taskID'] == taskId || details['locId'] == taskId) {
+        //establecer a la actividad de creacion como isSynced
+
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<void> markActivityLogAsSyncedByTaskId(int taskId) async {
+    // Marcar actividades de creación como sincronizadas
+    var activities = await LocalDB.queryUnsyncedActivityLogs();
+    // Filtrar actividades de creación y actualizacion
+
+    var filAct = [];
+    for (var act in activities) {
+      if (act['activityType'] == 'create' || act['activityType'] == 'update') {
+        filAct.add(act);
+      }
+    }
+
+    for (var activity in filAct) {
+      var data = jsonDecode(activity['activityDetails']);
+      if (data['taskID'] == taskId || data['locId'] == taskId) {
+        var updated = await LocalDB.markActivityLogAsSynced(activity['locId']);
+        AppLog.d("Actividad de creación marcada como sincronizada: $updated");
+      }
+    }
+
+    // Marcar actividades de actualización como sincronizadas
+    var updates = await LocalDB.queryUnsyncedUpdates('tasks');
+    for (var update in updates) {
+      var details = jsonDecode(update['activityDetails']);
+      if (details['taskID'] == taskId || details['locId'] == taskId) {
+        await LocalDB.markActivityLogAsSynced(update['locId']);
+      }
+    }
+
+    // Marcar actividades de eliminación como sincronizadas
+    var deletions = await LocalDB.queryUnsyncedDeletions('tasks');
+    for (var deletion in deletions) {
+      var details = jsonDecode(deletion['activityDetails']);
+      if (details['taskID'] == taskId || details['locId'] == taskId) {
+        await LocalDB.markActivityLogAsSynced(deletion['locId']);
+      }
+    }
+  }
+
+  static Future<void> handleRemoteTaskInsert(
+      Map<String, dynamic> taskMap) async {
     String projectID = taskMap['projectID'].toString();
     String title = taskMap['title'];
     String description = taskMap['description'];
     String deadline = formatDateTime(DateTime.parse(taskMap['deadline']));
     String priority = taskMap['priority'];
     String status = taskMap['status'];
-    String creationDate = formatDateTime(DateTime.parse(taskMap['creationDate']));
+    String creationDate =
+        formatDateTime(DateTime.parse(taskMap['creationDate']));
     String lastUpdate = formatDateTime(DateTime.parse(taskMap['lastUpdate']));
     String createdUserID = taskMap['createdUserID'].toString();
 
     var response = await DBHelper.query(
       "INSERT INTO tasks (projectID, title, description, deadline, priority, status, creationDate, lastUpdate, createdUserID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [projectID, title, description, deadline, priority, status, creationDate, lastUpdate, createdUserID],
+      [
+        projectID,
+        title,
+        description,
+        deadline,
+        priority,
+        status,
+        creationDate,
+        lastUpdate,
+        createdUserID
+      ],
     );
 
     if (response is Results) {
@@ -124,9 +247,10 @@ class SyncTasks {
     }
   }
 
-  static Future<void> handleRemoteTaskUpdate(Map<String, dynamic> actMap) async {
+  static Future<void> handleRemoteTaskUpdate(
+      Map<String, dynamic> actMap) async {
     var actDetails = jsonDecode(actMap['activityDetails']);
-    var taskMap = Map<String, dynamic>();
+    var taskMap = <String, dynamic>{};
     if (actDetails['taskID'] != null) {
       taskMap = (await LocalDB.queryTaskByRemoteID(actDetails['taskID']))!;
     } else {
@@ -139,13 +263,23 @@ class SyncTasks {
     String deadline = formatDateTime(DateTime.parse(taskMap['deadline']));
     String priority = taskMap['priority'];
     String status = taskMap['status'];
-    String creationDate = formatDateTime(DateTime.parse(taskMap['creationDate']));
+    String creationDate =
+        formatDateTime(DateTime.parse(taskMap['creationDate']));
     String lastUpdate = formatDateTime(DateTime.parse(taskMap['lastUpdate']));
     String createdUserID = taskMap['createdUserID'].toString();
 
     var response = await DBHelper.query(
       "UPDATE tasks SET projectID = ?, title = ?, description = ?, deadline = ?, priority = ?, status = ?, lastUpdate = ? WHERE taskID = ?",
-      [projectID, title, description, deadline, priority, status, lastUpdate, taskMap['taskID']],
+      [
+        projectID,
+        title,
+        description,
+        deadline,
+        priority,
+        status,
+        lastUpdate,
+        taskMap['taskID']
+      ],
     );
 
     if (response is Results) {
@@ -155,13 +289,22 @@ class SyncTasks {
     }
   }
 
-  static Future<void> handleRemoteTaskDeletion(Map<String, dynamic> deletion) async {
+  static Future<void> handleRemoteTaskDeletion(
+      Map<String, dynamic> deletion) async {
     var activityDetails = jsonDecode(deletion['activityDetails']);
     var remoteID = activityDetails['taskID'] ?? activityDetails['locId'];
-    await DBHelper.query(
-      "DELETE FROM tasks WHERE taskID = ?",
+    // Verificar si la tarea existe en la base de datos remota
+    var existTask = await DBHelper.query(
+      "SELECT * FROM tasks WHERE taskID = ?",
       [remoteID],
     );
+    var taskMap = existTask.isNotEmpty ? existTask.first : null;
+    if (taskMap != null) {
+      await DBHelper.query(
+        "DELETE FROM tasks WHERE taskID = ?",
+        [remoteID],
+      );
+    }
     var delLocId = deletion['locId'];
     await LocalDB.markActivityLogAsSynced(delLocId);
   }

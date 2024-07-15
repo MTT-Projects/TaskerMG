@@ -2,165 +2,174 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/common/add_project.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/settings_page.dart';
 import 'package:taskermg/common/theme.dart';
-import 'package:taskermg/controllers/project_controller.dart';
+import 'package:taskermg/controllers/task_controller.dart';
+import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
+import 'package:taskermg/common/add_task_bar.dart';
+import 'package:taskermg/common/pages/logs.dart';
+import 'package:taskermg/common/pages/progress.dart';
 import 'package:taskermg/utils/Dashboardcontroller.dart';
+import 'package:taskermg/views/globalheader.dart';
 
-class Dashboard extends StatelessWidget {
-  final DashboardController _dashboardController = Get.put(DashboardController());
+class Dashboard extends StatefulWidget {
+  const Dashboard({super.key});
+
+  @override
+  _DashboardState createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  final DashboardController _dashboardController =
+      Get.put(DashboardController());
   final ProjectPage projectPage = ProjectPage();
 
-  
+  RxInt currentIndex = 0.obs;
+  RxString screenTitle = "Mis Proyectos".obs;
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex.value = 0;
+  }
+
+  void changePage(int? index) {
+    currentIndex.value = index!;
+    switch (currentIndex.value) {
+      case 0:
+        screenTitle.value = "Mis Proyectos";
+        break;
+      case 1:
+        screenTitle.value = "Contactos";
+        break;
+      case 2:
+        screenTitle.value = "Solicitudes";
+        break;
+    }
+  }
+
+  AppBar header()  {
+    return globalheader(AppColors.secBackgroundColor, screenTitle.value);
+  }
 
   @override
   Widget build(BuildContext context) {
+    FloatingActionButton projectFloatingBT = FloatingActionButton(
+      onPressed: () async {
+        await Get.to(() => AddProjectPage());
+        ProjectPage.projectController.getProjects();
+      },
+      backgroundColor: AppColors.secondaryColor,
+      child: Icon(Icons.add, color: AppColors.textColor, size: 36),
+    );
+
     return WillPopScope(
       onWillPop: () async {
         ProjectPage.projectController.getProjects();
         return true;
       },
       child: Container(
-        color: context.theme.secondaryHeaderColor,
+        color: AppColors.secBackgroundColor,
         child: SafeArea(
           child: Scaffold(
             backgroundColor: AppColors.backgroundColor,
-            appBar: AppBar(
-              title: Text('DASHBOARD', style: headingStyleInv),
-              backgroundColor: AppColors.secBackgroundColor,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(50),
-                    bottomRight: Radius.circular(50)),
-              ),
-              elevation: 0,
-              actions: [
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                      icon: Icon(Icons.menu, color: AppColors.backgroundColor),
-                      onPressed: () {
-                        Scaffold.of(context).openEndDrawer();
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
+            appBar: header(),
             body: Container(
                 decoration: BoxDecoration(color: AppColors.secBackgroundColor),
                 child: ClipRRect(
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(50),
+                      topLeft: Radius.circular(30),
                     ),
                     child: Container(
                         decoration: BoxDecoration(
                             borderRadius:
-                                BorderRadius.only(topLeft: Radius.circular(40)),
+                                BorderRadius.only(topLeft: Radius.circular(20)),
                             color: AppColors.backgroundColor),
                         child: Obx(() {
                           return IndexedStack(
-                            index: _dashboardController.selectedIndex.value,
+                            index: currentIndex.value,
                             children: [
                               projectPage,
                               Center(
-                                  child: Text('Pantalla de Contactos',
-                                      style: headingStyle)),
-                              SettingsScr(),
+                                child: Text("Contactos"),
+                              ),
+                              Center(
+                                child: Text("Solicitudes"),
+                              ),
                             ],
                           );
-                        })))),
-            endDrawer: CustomDrawer(),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomDrawer extends StatelessWidget {
-  final DashboardController _dashboardController = Get.find();
-final ProjectController projectController = Get.put(ProjectController());
-  @override
-  Widget build(BuildContext context) {
-    projectController.getProjects();
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(50), bottomLeft: Radius.circular(50)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.purpleAccent
-                .withOpacity(0.5), // Color de la sombra (neón)
-            spreadRadius: 1, // Extensión del efecto neón
-            blurRadius: 3, // Radio de desenfoque del efecto neón
-          ),
-        ],
-      ),
-      child: Drawer(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(50), bottomLeft: Radius.circular(50)),
-        ),
-        backgroundColor: AppColors.backgroundColor2,
-        child: Column(
-          children: [
-            UserAccountsDrawerHeader(
-              accountName: Text("Usuario"),
-              accountEmail: Text("usuario@example.com"),
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(50)),
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Color.fromRGBO(158, 0, 109, 1),
-                    Color.fromRGBO(90, 87, 255, 1),
-                  ],
+                        })))), 
+            floatingActionButton: currentIndex.value == 0 ? projectFloatingBT : null,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endDocked,
+            bottomNavigationBar: Obx(() {
+              return BubbleBottomBar(
+                backgroundColor: AppColors.secBackgroundColor,
+                hasNotch: true,
+                fabLocation: BubbleBottomBarFabLocation.end,
+                opacity: 0.75,
+                currentIndex: currentIndex.value,
+                onTap: changePage,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(25),
+                  bottom: Radius.circular(14),
                 ),
-              ),
-              currentAccountPicture: const CircleAvatar(
-                backgroundImage: AssetImage("Assets/images/profile.png"),
-              ),
-              otherAccountsPictures: [
-                IconButton(
-                  icon: Icon(Icons.settings, color: Colors.white),
-                  onPressed: () {
-                    _dashboardController.changePage(2);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-            ListTile(
-              leading: Icon(Icons.folder),
-              title: Text("Proyectos"),
-              textColor: AppColors.textColor,
-              onTap: () {
-                _dashboardController.changePage(0);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.contacts),
-              title: Text("Contactos"),
-              textColor: AppColors.textColor,
-              onTap: () {
-                _dashboardController.changePage(1);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Ajustes"),
-              textColor: AppColors.textColor,
-              onTap: () {
-                _dashboardController.changePage(2);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+                elevation: 10,
+                tilesPadding: const EdgeInsets.symmetric(vertical: 8.0),
+                items: <BubbleBottomBarItem>[
+                  BubbleBottomBarItem(
+                    backgroundColor: AppColors.secondaryColor,
+                    icon: Icon(
+                      Icons.add_task,
+                      color: AppColors.backgroundColor,
+                    ),
+                    activeIcon: Icon(
+                      Icons.add_task,
+                      color: AppColors.secBackgroundColor,
+                    ),
+                    title: Text(
+                      "Mis",
+                      style: TextStyle(
+                        color: AppColors.textColor,
+                      ),
+                    ),
+                  ),
+                  BubbleBottomBarItem(
+                    backgroundColor: AppColors.secondaryColor,
+                    icon: Icon(
+                      Icons.task,
+                      color: AppColors.backgroundColor,
+                    ),
+                    activeIcon: Icon(
+                      Icons.task,
+                      color: AppColors.secBackgroundColor,
+                    ),
+                    title: Text(
+                      "Todos",
+                      style: TextStyle(color: AppColors.textColor),
+                    ),
+                  ),
+                  BubbleBottomBarItem(
+                    backgroundColor: AppColors.secondaryColor,
+                    icon: Icon(
+                      Icons.task,
+                      color: AppColors.backgroundColor,
+                    ),
+                    activeIcon: Icon(
+                      Icons.task,
+                      color: AppColors.secBackgroundColor,
+                    ),
+                    title: Text(
+                      "Solicitudes.",
+                      style: TextStyle(color: AppColors.textColor),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
         ),
       ),
     );

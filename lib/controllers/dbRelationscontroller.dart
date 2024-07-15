@@ -79,6 +79,15 @@ class DbRelationsCtr extends GetxController {
       WHERE locId = ?
     ''', [userProjectID, locId]);
   }
+  
+  //update projectID
+  static Future<void> updateProjectID(String table, int locId, int projectID) async {
+    await LocalDB.db.rawUpdate('''
+      UPDATE $table
+      SET projectID = ?
+      WHERE locId = ?
+    ''', [projectID, locId]);
+  }
 
   static deleteTaskAttachment(TaskAttachment taskAttachment) async {
      // Registrar la actividad
@@ -101,6 +110,30 @@ class DbRelationsCtr extends GetxController {
       await LocalDB.db.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.first['attachmentID']]);
     }
     await LocalDB.db.delete("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.locId]);
+  }
+
+  static updateTaskID(String table, int locId, int taskId) {
+    LocalDB.db.rawUpdate('''
+      UPDATE ?
+      SET taskID = ?
+      WHERE locId = ?
+    ''', [table, taskId, locId]);
+  }
+
+  static updateTaskCommentID(String table, int locId, int taskCommentId) {
+    LocalDB.db.rawUpdate('''
+      UPDATE ?
+      SET taskCommentID = ?
+      WHERE locId = ?
+    ''', [table, taskCommentId, locId]);
+  }
+
+  static updateAttachmentId(String table,int locId, int attachmentId) {
+    LocalDB.db.rawUpdate('''
+      UPDATE ?
+      SET attachmentID = ?
+      WHERE locId = ?
+    ''', [table, attachmentId, locId]);
   }
 
   

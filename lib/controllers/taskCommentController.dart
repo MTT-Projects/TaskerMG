@@ -34,5 +34,9 @@ class TaskCommentController{
     await LocalDB.db.delete("taskComment", where: 'commentID = ?', whereArgs: [taskComment.locId]);
   }
 
+  static updateTaskID(int locId, int taskId) {
+    LocalDB.db.update("taskComment", {'taskID': taskId}, where: 'commentID = ?', whereArgs: [locId]);
+  }
+
   
 }

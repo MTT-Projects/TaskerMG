@@ -9,7 +9,6 @@ import 'package:taskermg/utils/AppLog.dart';
 import 'package:intl/intl.dart';
 
 class SyncUserProjects {
-  static DbRelationsCtr upController = DbRelationsCtr();
 
   static String formatDateTime(DateTime dateTime) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
@@ -24,6 +23,23 @@ class SyncUserProjects {
           userProject 
         WHERE 
           userID = ?''', [userID]);
+
+      var remoteUserProjects = result.map((userProjectMap) => userProjectMap['userProjectID']).toList();
+      //fetch local user projects
+      var localUserProjects = await LocalDB.queryUserProjects();
+      var localUserProjectIDs = localUserProjects.map((userProject) => userProject['userProjectID']).toList();
+
+      // Detect deleted user projects
+      for (var localUserProjectID in localUserProjectIDs) {
+        if (!remoteUserProjects.contains(localUserProjectID)) {
+          await LocalDB.db.rawDelete(
+            "DELETE FROM userProject WHERE userProjectID = ?",
+            [localUserProjectID],
+          );
+          AppLog.d("Proyectousuario con ID $localUserProjectID marcado como eliminado.");
+        }
+      }
+
       for (var userProjectMap in result) {
         var userProjectMapped = UserProject(
           locId: userProjectMap['locId'],
@@ -34,35 +50,39 @@ class SyncUserProjects {
         ).toJson();
         await handleUserProjectSync(userProjectMapped);
       }
-      AppLog.d("Proyectos de usuario obtenidos exitosamente.");
+      AppLog.d("Proyectosusuario obtenidos exitosamente.");
     } catch (e) {
-      AppLog.e("Error al obtener proyectos de usuario: $e");
+      AppLog.e("Error al obtener proyectosusuario: $e");
     }
   }
 
   static Future<void> pushUserProjects() async {
+    //applog all user projects
+    var alluserproject = await LocalDB.queryUserProjects();
+    AppLog.d("Proyectosusuario: ${jsonEncode(alluserproject)}");
+    
     try {
       var unsyncedUserProjects = await LocalDB.queryUnsyncedUserProjects();
-      AppLog.d("Proyectos de usuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
+      AppLog.d("Proyectosusuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
       for (var userProjectMap in unsyncedUserProjects) {
         await handleRemoteUserProjectInsert(userProjectMap);
       }
 
       var unsyncedUserProjectUpdates = await LocalDB.queryUnsyncedUpdates('userProject');
-      AppLog.d("Proyectos de usuario sin actualizar: ${jsonEncode(unsyncedUserProjectUpdates)}");
+      AppLog.d("Proyectosusuario sin actualizar: ${jsonEncode(unsyncedUserProjectUpdates)}");
       for (var actMap in unsyncedUserProjectUpdates) {
         await handleRemoteUserProjectUpdate(actMap);
       }
 
       var unsyncedDeletions = await LocalDB.queryUnsyncedDeletions('userProject');
-      AppLog.d("Proyectos de usuario sin eliminar: ${jsonEncode(unsyncedDeletions)}");
+      AppLog.d("Proyectosusuario sin eliminar: ${jsonEncode(unsyncedDeletions)}");
       for (var deletion in unsyncedDeletions) {
         await handleRemoteUserProjectDeletion(deletion);
       }
 
-      AppLog.d("Proyectos de usuario enviados exitosamente.");
+      AppLog.d("Proyectosusuario enviados exitosamente.");
     } catch (e) {
-      AppLog.e("Error al enviar proyectos de usuario: $e");
+      AppLog.e("Error al enviar proyectosusuario: $e");
     }
   }
 
@@ -72,7 +92,7 @@ class SyncUserProjects {
       await LocalDB.insertUserProject(UserProject.fromJson(userProjectMap));
     } else {
       if (DateTime.parse(userProjectMap['lastUpdate']).isAfter(DateTime.parse(localUserProject['lastUpdate']))) {
-        await upController.updateUserProject(UserProject.fromJson(userProjectMap));
+        await LocalDB.updateUserProject(UserProject.fromJson(userProjectMap));
       }
     }
   }

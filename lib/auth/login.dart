@@ -1,4 +1,5 @@
 import 'package:taskermg/common/dashboard.dart';
+import 'package:taskermg/common/sync_screen.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Si el inicio de sesión es correcto, redirige a la página principal
       if (!mounted) return;
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Dashboard()));
+          context, MaterialPageRoute(builder: (context) => SyncScreen()));
     } else {
       // Si no, muestra un mensaje de error
       setState(() {
