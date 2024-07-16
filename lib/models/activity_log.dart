@@ -62,7 +62,8 @@ class ActivityLog {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE activityLog (
+
+      CREATE TABLE IF NOT EXISTS activityLog (
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         activityID INTEGER UNIQUE,
         userID INTEGER,

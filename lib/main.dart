@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:taskermg/common/widgets/splash.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/services/theme_services.dart';
@@ -16,6 +17,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await DBHelper.initialize();
+  // Inicializa el SyncController
+  final SyncController syncController = Get.put(SyncController());
   AppLog.d("DB initialized");
   var localdb = await LocalDB.initDb();
   var str = localdb.toString();

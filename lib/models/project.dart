@@ -76,7 +76,7 @@ class Project {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE project (
+      CREATE TABLE IF NOT EXISTS project (
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         projectID INTEGER UNIQUE,
         name TEXT NOT NULL,
@@ -156,7 +156,7 @@ class ProjectGoal {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE projectGoal (
+      CREATE TABLE IF NOT EXISTS projectGoal (
           locId INT AUTO_INCREMENT PRIMARY KEY,
           goalID INT UNIQUE,
           projectID INT,

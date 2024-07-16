@@ -79,7 +79,7 @@ class Attachment
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE attachment (
+      CREATE TABLE IF NOT EXISTS attachment (
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         attachmentID INTEGER UNIQUE,
         userID INTEGER,

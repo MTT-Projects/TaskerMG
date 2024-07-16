@@ -56,7 +56,7 @@ class TaskComment {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-CREATE TABLE taskComment (
+CREATE TABLE IF NOT EXISTS taskComment (
     taskCommentID INTEGER PRIMARY KEY AUTOINCREMENT,
     taskID INTEGER,
     userID INTEGER,

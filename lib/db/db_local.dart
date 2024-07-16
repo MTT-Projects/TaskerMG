@@ -5,6 +5,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:taskermg/controllers/dbRelationscontroller.dart';
 import 'package:taskermg/controllers/project_controller.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/controllers/taskCommentController.dart';
 import 'package:taskermg/controllers/task_controller.dart';
 import 'package:taskermg/models/attachment.dart';
@@ -532,7 +533,7 @@ class LocalDB {
 //insert functions for all tables
   static Future<int> insertActivityLog(ActivityLog activityLog) async {
     AppLog.d("Insert activity log called");
-    return await _db!.rawInsert(
+    var inserted = await _db!.rawInsert(
           'INSERT INTO activityLog (userID, projectID, activityType, activityDetails, timestamp, lastUpdate) VALUES (?, ?, ?, ?, ?, ?)',
           [
             activityLog.userID,
@@ -543,6 +544,9 @@ class LocalDB {
             activityLog.lastUpdate?.toIso8601String(),
           ],
         );
+    //sync tables
+    await SyncController.pushData();
+    return inserted;
   }
 
   static Future<int> insertProject(Project project) async {

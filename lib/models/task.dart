@@ -95,7 +95,7 @@ class Task {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE tasks (
+      CREATE TABLE IF NOT EXISTS tasks (
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         taskID INTEGER UNIQUE,
         projectID INTEGER,

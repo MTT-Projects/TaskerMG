@@ -134,7 +134,7 @@ class TaskController extends GetxController {
 
     // Eliminar la tarea
     await LocalDB
-        .delete('tasks', where: 'taskID = ?', whereArgs: [task.locId]);
+        .delete('tasks', where: 'locId = ?', whereArgs: [task.locId]);
   }
 
   //delete tasks by projectID

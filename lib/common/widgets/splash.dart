@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:flutter/services.dart';
 import 'package:taskermg/auth/login.dart';
 import 'package:taskermg/common/intro_page.dart';
 import 'package:flutter/material.dart';
@@ -38,26 +39,34 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
   }
 
   Future<void> checkIsLogin() async {
-    bool isLoggedIn =
-        await storage.read(key: 'isLoggedIn') == 'true' ? true : false;
-    bool firstSync =
-        await storage.read(key: 'firstSync') == 'false' ? true : false;
-    String? savedUsername = await storage.read(key: 'username');
-    
-    String? savedPassword = await storage.read(key: 'password');
-    
+    bool isLoggedIn = false;
+    bool firstSync = true;
+    String? savedUsername;
+    String? savedPassword;
+
+    try {
+      isLoggedIn =
+          await storage.read(key: 'isLoggedIn') == 'true' ? true : false;
+      firstSync =
+          await storage.read(key: 'firstSync') == 'false' ? true : false;
+      savedUsername = await storage.read(key: 'username');
+
+      savedPassword = await storage.read(key: 'password');
+    } catch (e) {
+      await storage.deleteAll();
+    }
+
     if (isLoggedIn && savedUsername != null && savedPassword != null) {
       // Intenta iniciar sesión automáticamente
       var response = await AuthService.login(savedUsername, savedPassword);
       if (response != null) {
-        if(firstSync){        
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => Dashboard()));}
-            else
-            {
-              Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => SyncScreen()));
-            }
+        if (firstSync) {
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => Dashboard()));
+        } else {
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => SyncScreen()));
+        }
 
         return;
       }

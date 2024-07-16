@@ -84,7 +84,7 @@ class User {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE user (
+      CREATE TABLE IF NOT EXISTS user (
         locId INTEGER PRIMARY KEY AUTOINCREMENT,
         userID INTEGER UNIQUE,
         username VARCHAR(100) NOT NULL UNIQUE,
@@ -155,7 +155,7 @@ class ProfileData {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      CREATE TABLE profileData (
+      CREATE TABLE IF NOT EXISTS profileData (
         locId INTEGER PRIMARY KEY AUTOINCREMENT,
         profileDataID INTEGER UNIQUE,
         userID INTEGER,

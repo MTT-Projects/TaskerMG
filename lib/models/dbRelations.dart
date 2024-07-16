@@ -57,7 +57,7 @@ class UserProject {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-      Create table userProject(
+      Create table IF NOT EXISTS userProject(
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         userProjectID INTEGER UNIQUE,
         userID INTEGER,
@@ -120,7 +120,7 @@ class TaskAssigment {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-Create Table taskAssignment(
+Create Table IF NOT EXISTS taskAssignment(
       locId INTEGER PRIMARY KEY AUTOINCREMENT,
       assignmentID INTEGER UNIQUE,
       taskID INTEGER,
@@ -191,7 +191,7 @@ class TaskAttachment {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
-  CREATE TABLE taskAttachment (
+  CREATE TABLE IF NOT EXISTS taskAttachment (
     locId INTEGER PRIMARY KEY AUTOINCREMENT,
     taskAttachmentID INTEGER UNIQUE,
     attachmentID INTEGER,

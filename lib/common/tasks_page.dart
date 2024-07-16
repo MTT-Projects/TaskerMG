@@ -239,8 +239,11 @@ class _TasksPageState extends State<TasksPage> {
                   ),
             _bottomSheetButton(
               label: "Eliminar Tarea",
-              onTap: () {
-                TaskController.deleteTask(task);
+              onTap: () async {
+                await TaskController.deleteTask(task);
+                
+                //update tasks
+                updateTasks();
                 Get.back();
               },
               clr: Colors.red[300]!,
