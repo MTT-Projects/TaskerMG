@@ -113,10 +113,13 @@ class SyncTasks {
 
       for (var actMap in unsyncedTaskUpdates) {
         var details = jsonDecode(actMap['activityDetails']);
-        var hasDeletion = await hasDeletionLog(details['taskID']);
+       var hasDeletion = await hasDeletionLog(actMap['taskID'] ?? actMap['locId']);
         if (!hasDeletion) {
+          var creationActivity = await getCreationActivityByTaskID(actMap['taskID'] ?? actMap['locId']);
+          if (creationActivity != null) {
+            if (creationActivity['isSynced'] == 0) {
           await handleRemoteTaskUpdate(actMap);
-        } else {
+        }}}else {
           await markActivityLogAsSyncedByTaskId(details['taskID']);
         }
       }
@@ -139,6 +142,23 @@ class SyncTasks {
       int taskID) async {
     var activities = await LocalDB.rawQuery(
       "SELECT * FROM activityLog WHERE activityType = 'create'",
+    );
+    for (Map<String, dynamic> activity in activities) {
+      var details = jsonDecode(activity['activityDetails']);
+
+      var actTaskId = details['locId'];
+      if (details['table'] == 'tasks' && actTaskId == taskID) {
+        return activity;
+      }
+    }
+    return null;
+  }
+
+  //get update activity by taskID
+  static Future<Map<String, dynamic>?> getUpdateActivityByTaskID(
+      int taskID) async {
+    var activities = await LocalDB.db.rawQuery(
+      "SELECT * FROM activityLog WHERE activityType = 'update'",
     );
     for (Map<String, dynamic> activity in activities) {
       var details = jsonDecode(activity['activityDetails']);
