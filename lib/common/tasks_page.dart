@@ -3,9 +3,12 @@
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/add_task_bar.dart';
+import 'package:taskermg/common/assignTaskPage.dart';
+import 'package:taskermg/common/editTaskPage.dart';
 import 'package:taskermg/common/pages/profile.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/common/widgets/button.dart';
+import 'package:taskermg/common/widgets/popUpDialog.dart';
 import 'package:taskermg/common/widgets/task_tile.dart';
 import 'package:taskermg/services/notification_services.dart';
 import 'package:taskermg/services/theme_services.dart';
@@ -43,8 +46,7 @@ class _TasksPageState extends State<TasksPage> {
     notifyHelper.requestIOSPermissions();
   }
 
-  void updateTasks()
-  {
+  void updateTasks() {
     setState(() {
       _taskController.getTasks();
     });
@@ -212,8 +214,8 @@ class _TasksPageState extends State<TasksPage> {
       Container(
         padding: const EdgeInsets.only(top: 4),
         height: task.status == 'Completada'
-            ? MediaQuery.of(context).size.height * 0.24
-            : MediaQuery.of(context).size.height * 0.32,
+            ? MediaQuery.of(context).size.height * 0.4
+            : MediaQuery.of(context).size.height * 0.5,
         color: Get.isDarkMode ? darkGreyClr : Colors.white,
         child: Column(
           children: [
@@ -225,33 +227,82 @@ class _TasksPageState extends State<TasksPage> {
                 color: Get.isDarkMode ? Colors.grey[600] : Colors.grey[300],
               ),
             ),
-            const Spacer(),
-            task.status == 'Completada'
-                ? Container()
-                : _bottomSheetButton(
-                    label: "Marcar como Completada",
-                    onTap: () {
-                      _taskController.markTaskCompleted(task);
-                      Get.back();
-                    },
-                    clr: AppColors.primaryColor,
-                    context: context,
-                  ),
+            const SizedBox(height: 20),
+            Container(
+                height: 50,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    //Boton redondeado con un icono y el texto para poner estado en "Pendiente"
+                    _buttonSheetButtonIcon(
+                      context: context,
+                      icon: Icons.timelapse,
+                      label: "Pendiente",
+                      onTap: () {
+                        task.status = 'Pendiente';
+                        _taskController.updateTask(task);
+                        Get.back();
+                      },
+                      clr: task.status == 'Pendiente'
+                          ? AppColors.primaryColor
+                          : Colors.grey,
+                    ),
+                    SizedBox(width: 5),
+                    //IconButton to set status "En proceso"
+                    _buttonSheetButtonIcon(
+                      context: context,
+                      icon: Icons.timelapse,
+                      label: "En Proceso",
+                      onTap: () {
+                        task.status = 'En Proceso';
+                        _taskController.updateTask(task);
+                        Get.back();
+                      },
+                      clr: task.status == 'En Proceso'
+                          ? Colors.orange
+                          : Colors.grey,
+                    ),
+                    SizedBox(width: 5),
+                    //IconButton to set status "Completada"
+                    _buttonSheetButtonIcon(
+                      context: context,
+                      icon: Icons.check_circle,
+                      label: "Completada",
+                      onTap: () {
+                        task.status = 'Completada';
+                        _taskController.updateTask(task);
+                        Get.back();
+                      },
+                      clr: task.status == 'Completada'
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                  ],
+                )),
             _bottomSheetButton(
               label: "Eliminar Tarea",
-              onTap: () async {
-                await TaskController.deleteTask(task);
-                
-                //update tasks
-                updateTasks();
-                Get.back();
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return PopUpDialog(
+                      title: "Eliminar Tarea",
+                      text: "¿Estás seguro de que deseas eliminar esta tarea?",
+                      icon: Icons.warning,
+                      buttons: PopUpButtons.deleteCancel(context, () async {
+                        TaskController.deleteTask(task);
+                        updateTasks();
+                        Navigator.of(context).pop(); // Cerrar el diálogo
+                        Get.back(); // Cerrar el BottomSheet
+                      }),
+                    );
+                  },
+                );
               },
               clr: Colors.red[300]!,
               context: context,
             ),
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
             _bottomSheetButton(
               label: "Cerrar",
               onTap: () {
@@ -260,7 +311,56 @@ class _TasksPageState extends State<TasksPage> {
               clr: Colors.white,
               isClosed: true,
               context: context,
-            )
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buttonSheetButtonIcon({
+    required IconData icon,
+    required String label,
+    required Function()? onTap,
+    required Color clr,
+    bool isClosed = false,
+    required BuildContext context,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        height: 50,
+        decoration: BoxDecoration(
+          border: Border.all(
+            width: 2,
+            color: isClosed == true
+                ? Get.isDarkMode
+                    ? Colors.grey[600]!
+                    : Colors.grey[300]!
+                : clr,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: isClosed == true ? Colors.transparent : clr,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isClosed
+                  ? Get.isDarkMode
+                      ? Colors.grey[600]
+                      : Colors.grey[300]
+                  : Colors.white,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: isClosed
+                  ? titleStyle
+                  : titleStyle.copyWith(color: Colors.white),
+            ),
           ],
         ),
       ),
@@ -308,56 +408,54 @@ class _TasksPageState extends State<TasksPage> {
     var allColor = Get.isDarkMode ? Colors.white : Colors.black;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text("Title"),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 5),
-            height: 35, // Height for the horizontal ListView
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              children: [
-                IconButton(
-                  //background color
-                  color: AppColors.secBackgroundColor,
-                  padding: const EdgeInsets.all(0),
-                  onPressed: () {
-                    setState(() {
-                      _filterIndex = -1;
-                      screenTitle = "Todas las tareas";
-                    });
-                  },
-                  icon: Icon(
-                    Icons.filter_list_off,
-                    color: _filterIndex == -1
-                        ? AppColors.secondaryColor
-                        : allColor,
-                  ),
-                ),
-                _filterButton(
-                  index: 0,
-                  icon: Icons.timelapse,
-                  label: 'Pendiente',
-                ),
-                SizedBox(
-                  width: 5,
-                ),
-                _filterButton(
-                  index: 1,
-                  icon: Icons.work,
-                  label: 'En Proceso',
-                ),
-                SizedBox(
-                  width: 5,
-                ),
-                _filterButton(
-                  index: 2,
-                  icon: Icons.check_circle,
-                  label: 'Completada',
-                ),
-              ],
+      Text("Title"),
+      Container(
+        margin: const EdgeInsets.symmetric(vertical: 5),
+        height: 35, // Height for the horizontal ListView
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          children: [
+            IconButton(
+              //background color
+              color: AppColors.secBackgroundColor,
+              padding: const EdgeInsets.all(0),
+              onPressed: () {
+                setState(() {
+                  _filterIndex = -1;
+                  screenTitle = "Todas las tareas";
+                });
+              },
+              icon: Icon(
+                Icons.filter_list_off,
+                color: _filterIndex == -1 ? AppColors.secondaryColor : allColor,
+              ),
             ),
-          )
-        ]);
+            _filterButton(
+              index: 0,
+              icon: Icons.timelapse,
+              label: 'Pendiente',
+            ),
+            SizedBox(
+              width: 5,
+            ),
+            _filterButton(
+              index: 1,
+              icon: Icons.work,
+              label: 'En Proceso',
+            ),
+            SizedBox(
+              width: 5,
+            ),
+            _filterButton(
+              index: 2,
+              icon: Icons.check_circle,
+              label: 'Completada',
+            ),
+          ],
+        ),
+      )
+    ]);
   }
 
   _filterButton(

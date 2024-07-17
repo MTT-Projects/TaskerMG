@@ -40,6 +40,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
   Future<void> syncData() async {
     var userID = MainController.getVar('currentUser');
+    MainController.setVar('onlyMine', true);
     AppLog.d('Iniciando sincronización de datos de usuario: $userID');
 
     for (int i = 0; i < _syncSteps.length; i++) {

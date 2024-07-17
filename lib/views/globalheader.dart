@@ -6,12 +6,14 @@ import 'package:taskermg/common/pages/profile.dart';
 import 'package:taskermg/common/settings_page.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/services/theme_services.dart';
 
 
 
-AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded})  {
+AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded}) {
+  final SyncController syncController = Get.put(SyncController());
   ThemeServices _themeServices = ThemeServices();
   var profileData = MainController.getVar('profileData');
   return AppBar(
@@ -28,6 +30,12 @@ AppBar globalheader(bg, title, {icon = Icons.question_answer_rounded})  {
       ),
     ),
     actions: [
+      IconButton(
+            icon: Icon(Icons.sync),
+            onPressed: () {
+              syncController.fetchAndSyncData();
+            },
+          ),
       GestureDetector(
         onTap: () {
           Get.to(() => const SettingsScr());

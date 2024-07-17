@@ -6,6 +6,7 @@ import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/models/dbRelations.dart';
 import 'package:taskermg/models/taskComment.dart';
+import 'package:taskermg/models/user.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import 'package:get/get.dart';
 
@@ -100,6 +101,35 @@ class TaskController extends GetxController {
     return taskList;
   }
 
+  var assignedUsers = <User>[].obs;
+  void getAssignedUsers(int taskId) async {
+    var result = await DBHelper.query('''
+      SELECT u.*, pd.profilePicUrl 
+      FROM user u
+      JOIN taskAssignment ta ON u.userID = ta.userID
+      LEFT JOIN profileData pd ON u.userID = pd.userID
+      WHERE ta.taskID = ?
+    ''', [taskId]);
+
+    assignedUsers.value = result.map((data) => User.fromJsonWithProfile(data)).toList();
+  }
+
+  void assignUser(int taskId, int userId) async {
+    await DBHelper.query('''
+      INSERT INTO taskAssignment (taskID, userID)
+      VALUES (?, ?)
+    ''', [taskId, userId]);
+    getAssignedUsers(taskId);
+  }
+
+  void unassignUser(int taskId, int userId) async {
+    await DBHelper.query('''
+      DELETE FROM taskAssignment
+      WHERE taskID = ? AND userID = ?
+    ''', [taskId, userId]);
+    getAssignedUsers(taskId);
+  }
+
   void markTaskCompleted(Task task) {
     task.status = 'Completada';
     task.lastUpdate = DateTime.now().toUtc();
@@ -165,6 +195,7 @@ class TaskController extends GetxController {
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
+      
     getTasks();
   }
 

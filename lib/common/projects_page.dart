@@ -12,6 +12,9 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'add_project.dart';
 
 class ProjectPage extends StatefulWidget {
+  //isMine parameter
+
+  const ProjectPage({Key? key}) : super(key: key);
   static final ProjectController projectController = Get.put(ProjectController());
 
   @override
@@ -179,7 +182,7 @@ class ProjectCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      progressColor: Color.fromRGBO(249, 2, 181, 1),
+                      progressColor: getProgressColor(percentage),
                       backgroundColor: Color.fromRGBO(87, 1, 61, 1),
                     ),
                   ],
@@ -190,6 +193,19 @@ class ProjectCard extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+//progress color by progress
+Color getProgressColor(double progress) {
+  if (progress < 0.3) {
+    return Colors.red;
+  } else if (progress < 0.6) {
+    return Colors.orange;
+  } else if (progress < 0.9) {
+    return Colors.yellow;
+  } else {
+    return Colors.green;
   }
 }
 

@@ -49,8 +49,18 @@ class ProjectController extends GetxController {
     AppLog.d("Getting projects for User: ${MainController.getVar('userID')}");
     final userID = MainController.getVar('userID');
     final localDBinit = MainController.getVar('initLDB');
+    var whereAdd = '';
+    bool onlyMine = MainController.getVar('onlyMine') ?? false;
+
 
     if (userID != null && localDBinit == true) {
+      var args = [userID];
+          if(onlyMine){
+      AppLog.d("Getting only mine projects");
+      whereAdd = 'AND p.proprietaryID = ?';
+      args.add(userID);
+    }
+    
       List<Map<String, dynamic>> projects = await LocalDB.rawQuery('''
         SELECT 
           p.locId,
@@ -75,7 +85,8 @@ class ProjectController extends GetxController {
           ON u.userID = up.userID 
         WHERE 
           u.userID = ? 
-      ''', [userID]);
+          $whereAdd
+      ''', args);
       projectList.assignAll(projects.map((data) => Project.fromJson(data)).toList());
       AppLog.d("Projects: ${jsonEncode(projectList)}");
       //allprojects

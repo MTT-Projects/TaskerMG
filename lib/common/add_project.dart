@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 
 import '../controllers/maincontroller.dart';
 import '../controllers/project_controller.dart';
@@ -21,10 +22,12 @@ class _AddProjectPageState extends State<AddProjectPage> {
   final ProjectController _projectController = Get.put(ProjectController());
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final SyncController syncController = Get.put(SyncController());
   DateTime _selectedDeadline = DateTime.now().toUtc();
 
   @override
   Widget build(BuildContext context) {
+    syncController.switchCanSync() ;
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -148,6 +151,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
                         TextButton(
                           child: Text('CANCELAR'),
                           onPressed: () {
+                            
                             Navigator.pop(context);
                           },
                         ),
@@ -188,6 +192,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
 
       await _projectController.addProject(project);
       await ProjectPage.projectController.getProjects();
+      syncController.switchCanSync() ;
       Get.back();
     }
   }

@@ -1,22 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/controllers/collaboratorsController.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/models/project.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import '../models/user.dart';
+import 'package:taskermg/common/widgets/noInternet.dart';
 
-class CollaboratorsPage extends StatelessWidget {
+class CollaboratorsPage extends StatefulWidget {
   final Project project;
 
   CollaboratorsPage({required this.project});
 
   @override
+  _CollaboratorsPageState createState() => _CollaboratorsPageState();
+}
+
+class _CollaboratorsPageState extends State<CollaboratorsPage> {
+  bool _isConnected = true;  // Default to true, will be updated in initState
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnection();
+  }
+
+  Future<void> _checkConnection() async {
+    bool isConnected = await ConnectionChecker.checkConnection();
+    setState(() {
+      _isConnected = isConnected;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final CollaboratorsController controller = Get.put(CollaboratorsController(projectId: project.projectID));
+    final CollaboratorsController controller = Get.put(CollaboratorsController(projectId: widget.project.projectID));
     final currentUserID = MainController.getVar('currentUser');
+
+    if (!_isConnected) {
+      return NoInternetScr();
+    }
 
     return Scaffold(
       body: Column(
@@ -25,7 +51,7 @@ class CollaboratorsPage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               decoration: const InputDecoration(
-                labelText: 'Search',
+                labelText: 'Buscar',
                 border: OutlineInputBorder(),
               ),
               onChanged: controller.filterCollaborators,
@@ -34,7 +60,7 @@ class CollaboratorsPage extends StatelessWidget {
           Expanded(
             child: Obx(() {
               if (controller.filteredCollaborators.isEmpty) {
-                return const Center(child: Text('No collaborators found.'));
+                return const Center(child: Text('No se encontraron colaboradores.'));
               }
               return ListView.builder(
                 itemCount: controller.filteredCollaborators.length,
@@ -57,14 +83,14 @@ class CollaboratorsPage extends StatelessWidget {
               );
             }),
           ),
-          if (project.proprietaryID == currentUserID)
+          if (widget.project.proprietaryID == currentUserID)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed: () {
                   showAddCollaboratorDialog(context, controller);
                 },
-                child: const Text('Add Collaborator'),
+                child: const Text('Agregar Colaborador'),
               ),
             ),
         ],
@@ -78,7 +104,7 @@ class CollaboratorsPage extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add Collaborator'),
+          title: const Text('Agregar Colaborador'),
           content: TextField(
             controller: emailController,
             decoration: const InputDecoration(
@@ -88,15 +114,15 @@ class CollaboratorsPage extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
-                AppLog.d('Add collaborator button pressed');
+                AppLog.d('Botón de agregar colaborador presionado');
                 String email = emailController.text.trim();
                 User? user = await CollaboratorsController.getUserWithEmail(email);
                 if (user != null) {
                   controller.addCollaborator(user);
                   Navigator.of(context).pop();
                 } else {
-                  AppLog.d('User not found');
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not found')));
+                  AppLog.d('Usuario no encontrado');
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario no encontrado')));
                 }
               },
               child: const Text('Añadir'),
@@ -105,13 +131,11 @@ class CollaboratorsPage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancelar'),
             ),
           ],
         );
       },
     );
   }
-
-  
 }

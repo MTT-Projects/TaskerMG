@@ -79,6 +79,8 @@ class _SettingsScrState extends State<SettingsScr> {
                     onPressed: () async {
                       AppLog.d('Logout task started');
                       await AuthService.logout();
+                      //delete db
+                      await LocalDB.dropDB();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
                           builder: (context) => const LoginScreen()));
                     },

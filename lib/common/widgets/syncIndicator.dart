@@ -6,7 +6,6 @@ import 'package:taskermg/common/theme.dart';
 
 class SyncIndicator extends StatelessWidget {
   final SyncController syncController = Get.find();
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -19,7 +18,7 @@ class SyncIndicator extends StatelessWidget {
           padding: EdgeInsets.all(2),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: AppColors.secBackgroundColor,
+            color: Colors.white,
             border: Border.all(
               color: AppColors.primaryColor,
               width: 2,

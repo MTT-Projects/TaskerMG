@@ -6,6 +6,7 @@ import 'package:taskermg/common/add_project.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/utils/Dashboardcontroller.dart';
 import 'package:taskermg/views/globalheader.dart';
 import 'package:taskermg/common/widgets/syncIndicator.dart';
@@ -24,6 +25,7 @@ class _DashboardState extends State<Dashboard> {
 
   RxInt currentIndex = 0.obs;
   RxString screenTitle = "Mis Proyectos".obs;
+  
 
   @override
   void initState() {
@@ -32,19 +34,27 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void changePage(int? index) {
-    currentIndex.value = index!;
+    setState(() {
+      currentIndex.value = index!;
+    });
     switch (currentIndex.value) {
       case 0:
-        screenTitle.value = "Mis Proyectos";
+        screenTitle.value = "Mis Proyectos";        
+        MainController.setVar('onlyMine', true);
+        ProjectPage.updateProjects();
         break;
       case 1:
-        screenTitle.value = "Contactos";
+        screenTitle.value = "Proyectos";
+        MainController.setVar('onlyMine', false);
+        ProjectPage.updateProjects();
         break;
       case 2:
         screenTitle.value = "Solicitudes";
         break;
     }
   }
+  
+  SyncIndicator syncIndicator = SyncIndicator();
 
   AppBar header() {
     return globalheader(AppColors.secBackgroundColor, screenTitle.value);
@@ -52,6 +62,8 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
+
+
     FloatingActionButton projectFloatingBT = FloatingActionButton(
       onPressed: () async {
         await Get.to(() => AddProjectPage());
@@ -91,9 +103,7 @@ class _DashboardState extends State<Dashboard> {
                               index: currentIndex.value,
                               children: [
                                 projectPage,
-                                Center(
-                                  child: Text("Contactos"),
-                                ),
+                                projectPage,
                                 Center(
                                   child: Text("Solicitudes"),
                                 ),
@@ -122,11 +132,11 @@ class _DashboardState extends State<Dashboard> {
                     BubbleBottomBarItem(
                       backgroundColor: AppColors.secondaryColor,
                       icon: Icon(
-                        Icons.add_task,
+                        Icons.grade,
                         color: AppColors.backgroundColor,
                       ),
                       activeIcon: Icon(
-                        Icons.add_task,
+                        Icons.grade,
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
@@ -139,11 +149,11 @@ class _DashboardState extends State<Dashboard> {
                     BubbleBottomBarItem(
                       backgroundColor: AppColors.secondaryColor,
                       icon: Icon(
-                        Icons.task,
+                        Icons.inventory,
                         color: AppColors.backgroundColor,
                       ),
                       activeIcon: Icon(
-                        Icons.task,
+                        Icons.inventory,
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
@@ -154,11 +164,11 @@ class _DashboardState extends State<Dashboard> {
                     BubbleBottomBarItem(
                       backgroundColor: AppColors.secondaryColor,
                       icon: Icon(
-                        Icons.task,
+                        Icons.person_add_alt_1,
                         color: AppColors.backgroundColor,
                       ),
                       activeIcon: Icon(
-                        Icons.task,
+                        Icons.person_add_alt_1,
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
@@ -173,7 +183,7 @@ class _DashboardState extends State<Dashboard> {
           ),
         ),
       ),
-      SyncIndicator(),
+      syncIndicator,
     ]);
   }
 }
