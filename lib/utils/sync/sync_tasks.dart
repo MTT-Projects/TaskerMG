@@ -89,23 +89,24 @@ class SyncTasks {
       var allActivityLog = await LocalDB.query("activityLog");
       AppLog.d("All activities: $allActivityLog");
 
-      var unsyncedTasks = await LocalDB.queryUnsyncedTasks();
+      var unsyncedTasks = await LocalDB.queryUnsyncedCreations('tasks');
       AppLog.d("Tareas sin sincronizar: ${jsonEncode(unsyncedTasks)}");
 
-      for (var taskMap in unsyncedTasks) {
+      for (var actMap in unsyncedTasks) {
+         var details = jsonDecode(actMap['activityDetails']);
         var hasDeletion =
-            await hasDeletionLog(taskMap['taskID'] ?? taskMap['locId']);
+            await hasDeletionLog(details['taskID'] ?? details['locId']);
         if (!hasDeletion) {
           var creationActivity = await getCreationActivityByTaskID(
-              taskMap['taskID'] ?? taskMap['locId']);
+              details['taskID'] ?? details['locId']);
           if (creationActivity != null) {
             if (creationActivity['isSynced'] == 0) {
-              await handleRemoteTaskInsert(taskMap);
+              await handleRemoteTaskInsert(actMap);
             }
           }
         } else {
           await markActivityLogAsSyncedByTaskId(
-              taskMap['taskID'] ?? taskMap['locId']);
+              details['taskID'] ?? details['locId']);
         }
       }
 
@@ -249,7 +250,15 @@ class SyncTasks {
   }
 
   static Future<void> handleRemoteTaskInsert(
-      Map<String, dynamic> taskMap) async {
+      Map<String, dynamic> actMap) async {
+    var actDetails = jsonDecode(actMap['activityDetails']);
+    var taskMap = <String, dynamic>{};
+    if (actDetails['taskID'] != null) {
+      taskMap = (await LocalDB.queryTaskByRemoteID(actDetails['taskID']))!;
+    } else {
+      taskMap = (await LocalDB.queryTaskByLocalID(actDetails['locId']))!;
+    }
+
     String projectID = taskMap['projectID'].toString();
     String title = taskMap['title'];
     String description = taskMap['description'];
@@ -277,6 +286,7 @@ class SyncTasks {
     );
 
     if (response is Results) {
+      await LocalDB.markActivityLogAsSynced(actMap['locId']);
       var insertId = response.insertId;
       if (insertId != null) {
         await LocalDB.updateTaskSyncStatus(taskMap['locId'], insertId);

@@ -66,7 +66,7 @@ class LocalDB {
     await ProfileData.createTable(db);
     await TaskComment.createTable(db);
     await TaskAttachment.createTable(db);
-    await TaskAssigment.createTable(db);
+    await TaskAssignment.createTable(db);
     await Attachment.createTable(db);
     AppLog.d("Tables created");
   }
@@ -648,7 +648,7 @@ class LocalDB {
     );
   }
 
-  static Future<int> insertTaskAssignment(TaskAssigment taskAssignment) async {
+  static Future<int> insertTaskAssignment(TaskAssignment taskAssignment) async {
     return await _db!.rawInsert(
       'INSERT INTO taskAssignment (assignmentID, taskID, userID, lastUpdate) VALUES (?, ?, ?, ?)',
       [
@@ -726,7 +726,7 @@ class LocalDB {
         whereArgs: [taskAttachment.taskAttachmentID]);
   }
 
-  static Future<int> updateTaskAssignment(TaskAssigment taskAssignment) async {
+  static Future<int> updateTaskAssignment(TaskAssignment taskAssignment) async {
     return await _db!.update('taskAssignment', taskAssignment.toMap(),
         where: 'assignmentID = ?', whereArgs: [taskAssignment.assignmentID]);
   }

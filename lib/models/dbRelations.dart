@@ -71,7 +71,7 @@ class UserProject {
   }
 }
 
-class TaskAssigment {
+class TaskAssignment {
   int? locId;
   int? assignmentID;
   int? taskID;
@@ -79,7 +79,7 @@ class TaskAssigment {
   DateTime? creationDate;
   DateTime? lastUpdate;
 
-  TaskAssigment(
+  TaskAssignment(
       {this.locId,
       this.assignmentID,
       this.taskID,
@@ -98,8 +98,8 @@ class TaskAssigment {
     };
   }
 
-  static TaskAssigment fromJson(Map<String, dynamic> json) {
-    return TaskAssigment(
+  static TaskAssignment fromJson(Map<String, dynamic> json) {
+    return TaskAssignment(
       locId: json['locId'],
       assignmentID: json['assignmentID'],
       taskID: json['taskID'],

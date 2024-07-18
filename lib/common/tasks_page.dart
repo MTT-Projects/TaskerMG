@@ -32,7 +32,7 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  var screenTitle = "Pendientes";
+  var screenTitle = "Todas las tareas";
   DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
 
@@ -422,8 +422,14 @@ _showBottomSheet(BuildContext context, Task task) {
   _addTaskbar() {
     var allColor = Get.isDarkMode ? Colors.white : Colors.black;
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text("Title"),
+    return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      Text(screenTitle,
+          style: GoogleFonts.roboto(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textColor,
+          ),
+          textAlign: TextAlign.center),
       Container(
         margin: const EdgeInsets.symmetric(vertical: 5),
         height: 35, // Height for the horizontal ListView
@@ -489,7 +495,6 @@ _showBottomSheet(BuildContext context, Task task) {
       onPressed: () {
         setState(() {
           _filterIndex = index;
-          screenTitle = label;
         });
       },
       icon: Icon(

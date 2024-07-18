@@ -70,11 +70,13 @@ class SyncUserProjects {
     AppLog.d("Proyectosusuario: ${jsonEncode(alluserproject)}");
 
     try {
-      var unsyncedUserProjects = await LocalDB.queryUnsyncedUserProjects();
+      var unsyncedUserProjects = await LocalDB.queryUnsyncedCreations('userProject');
       AppLog.d(
           "Proyectosusuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
-      for (var userProjectMap in unsyncedUserProjects) {
-        await handleRemoteUserProjectInsert(userProjectMap);
+      for (var actMap in unsyncedUserProjects) {
+        var details = jsonDecode(actMap['activityDetails']);
+
+        await handleRemoteUserProjectInsert(actMap);
       }
 
       var unsyncedUserProjectUpdates =
@@ -114,7 +116,17 @@ class SyncUserProjects {
   }
 
   static Future<void> handleRemoteUserProjectInsert(
-      Map<String, dynamic> userProjectMap) async {
+      Map<String, dynamic> actMap) async {
+    var actDetails = jsonDecode(actMap['activityDetails']);
+    var userProjectMap = Map<String, dynamic>();
+    if (actDetails['userProjectID'] != null) {
+      userProjectMap = (await LocalDB.queryUserProjectByRemoteID(
+          actDetails['userProjectID']))!;
+    } else {
+      userProjectMap =
+          (await LocalDB.queryUserProjectByLocalID(actDetails['locId']))!;
+    }
+
     String userID = userProjectMap['userID'].toString();
     String projectID = userProjectMap['projectID'].toString();
     String lastUpdate =
@@ -126,6 +138,7 @@ class SyncUserProjects {
     );
 
     if (response is Results) {
+      await LocalDB.markActivityLogAsSynced(actMap['locId']);
       var insertId = response.insertId;
       if (insertId != null) {
         await LocalDB.updateUserProjectSyncStatus(
