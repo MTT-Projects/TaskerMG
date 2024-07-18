@@ -209,114 +209,129 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
-  _showBottomSheet(BuildContext context, Task task) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.only(top: 4),
-        height: task.status == 'Completada'
-            ? MediaQuery.of(context).size.height * 0.4
-            : MediaQuery.of(context).size.height * 0.5,
-        color: Get.isDarkMode ? darkGreyClr : Colors.white,
-        child: Column(
-          children: [
-            Container(
-              height: 6,
-              width: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Get.isDarkMode ? Colors.grey[600] : Colors.grey[300],
-              ),
+_showBottomSheet(BuildContext context, Task task) {
+  Get.bottomSheet(
+    Container(
+      padding: const EdgeInsets.only(top: 4),
+      height: MediaQuery.of(context).size.height * 0.7,
+      color: Get.isDarkMode ? darkGreyClr : Colors.white,
+      child: Column(
+        children: [
+          Container(
+            height: 6,
+            width: 120,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Get.isDarkMode ? Colors.grey[600] : Colors.grey[300],
             ),
-            const SizedBox(height: 20),
-            Container(
-                height: 50,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    //Boton redondeado con un icono y el texto para poner estado en "Pendiente"
-                    _buttonSheetButtonIcon(
-                      context: context,
-                      icon: Icons.timelapse,
-                      label: "Pendiente",
-                      onTap: () {
-                        task.status = 'Pendiente';
-                        _taskController.updateTask(task);
-                        Get.back();
-                      },
-                      clr: task.status == 'Pendiente'
-                          ? AppColors.primaryColor
-                          : Colors.grey,
-                    ),
-                    SizedBox(width: 5),
-                    //IconButton to set status "En proceso"
-                    _buttonSheetButtonIcon(
-                      context: context,
-                      icon: Icons.timelapse,
-                      label: "En Proceso",
-                      onTap: () {
-                        task.status = 'En Proceso';
-                        _taskController.updateTask(task);
-                        Get.back();
-                      },
-                      clr: task.status == 'En Proceso'
-                          ? Colors.orange
-                          : Colors.grey,
-                    ),
-                    SizedBox(width: 5),
-                    //IconButton to set status "Completada"
-                    _buttonSheetButtonIcon(
-                      context: context,
-                      icon: Icons.check_circle,
-                      label: "Completada",
-                      onTap: () {
-                        task.status = 'Completada';
-                        _taskController.updateTask(task);
-                        Get.back();
-                      },
-                      clr: task.status == 'Completada'
-                          ? Colors.green
-                          : Colors.grey,
-                    ),
-                  ],
-                )),
-            _bottomSheetButton(
-              label: "Eliminar Tarea",
-              onTap: () {
-                showDialog(
+          ),
+          const SizedBox(height: 20),
+          Container(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: ListView(
+              children: [
+                Container(
+                  height: 50,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buttonSheetButtonIcon(
+                        context: context,
+                        icon: Icons.timelapse,
+                        label: "Pendiente",
+                        onTap: () {
+                          task.status = 'Pendiente';
+                          _taskController.updateTask(task);
+                          Get.back();
+                        },
+                        clr: task.status == 'Pendiente'
+                            ? AppColors.primaryColor
+                            : Colors.grey,
+                      ),
+                      SizedBox(width: 5),
+                      _buttonSheetButtonIcon(
+                        context: context,
+                        icon: Icons.timelapse,
+                        label: "En Proceso",
+                        onTap: () {
+                          task.status = 'En Proceso';
+                          _taskController.updateTask(task);
+                          Get.back();
+                        },
+                        clr: task.status == 'En Proceso'
+                            ? Colors.orange
+                            : Colors.grey,
+                      ),
+                      SizedBox(width: 5),
+                      _buttonSheetButtonIcon(
+                        context: context,
+                        icon: Icons.check_circle,
+                        label: "Completada",
+                        onTap: () {
+                          task.status = 'Completada';
+                          _taskController.updateTask(task);
+                          Get.back();
+                        },
+                        clr: task.status == 'Completada'
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 5),
+                _bottomSheetButton(
+                  label: "Editar Tarea",
+                  onTap: () async {
+                    await Get.to(() => EditTaskPage(task: task));
+                    updateTasks();
+                  },
+                  clr: Colors.blue[300]!,
                   context: context,
-                  builder: (BuildContext context) {
-                    return PopUpDialog(
-                      title: "Eliminar Tarea",
-                      text: "¿Estás seguro de que deseas eliminar esta tarea?",
-                      icon: Icons.warning,
-                      buttons: PopUpButtons.deleteCancel(context, () async {
-                        TaskController.deleteTask(task);
-                        updateTasks();
-                        Navigator.of(context).pop(); // Cerrar el diálogo
-                        Get.back(); // Cerrar el BottomSheet
-                      }),
+                ),
+                const SizedBox(height: 5),
+                _bottomSheetButton(
+                  label: "Asignar Tarea",
+                  onTap: () async {
+                    await Get.to(() => AssignTaskPage(task: task));
+                    updateTasks();
+                  },
+                  clr: Colors.blue[300]!,
+                  context: context,
+                ),
+                const SizedBox(height: 25),
+                _bottomSheetButton(
+                  label: "Eliminar Tarea",
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return PopUpDialog(
+                          title: "Eliminar Tarea",
+                          text: "¿Estás seguro de que deseas eliminar esta tarea?",
+                          icon: Icons.warning,
+                          buttons: PopUpButtons.deleteCancel(context, () async {
+                            TaskController.deleteTask(task);
+                            updateTasks();
+                            Navigator.of(context).pop(); // Cerrar el diálogo
+                            Get.back(); // Cerrar el BottomSheet
+                          }),
+                        );
+                      },
                     );
                   },
-                );
-              },
-              clr: Colors.red[300]!,
-              context: context,
+                  clr: Colors.red[300]!,
+                  context: context,
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            _bottomSheetButton(
-              label: "Cerrar",
-              onTap: () {
-                Get.back();
-              },
-              clr: Colors.white,
-              isClosed: true,
-              context: context,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   _buttonSheetButtonIcon({
     required IconData icon,

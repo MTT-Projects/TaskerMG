@@ -140,7 +140,7 @@ class _DashboardState extends State<Dashboard> {
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
-                        "Mis",
+                        "Mios",
                         style: TextStyle(
                           color: AppColors.textColor,
                         ),
@@ -157,7 +157,7 @@ class _DashboardState extends State<Dashboard> {
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
-                        "Todos",
+                        "Otros",
                         style: TextStyle(color: AppColors.textColor),
                       ),
                     ),

@@ -75,20 +75,17 @@ class SyncProjects {
 
   static Future<void> pushProjects() async {
     try {
-      var unsyncedProjects = await LocalDB.queryUnsyncedProjects();
+      var unsyncedProjects = await LocalDB.queryUnsyncedCreations('project');
       AppLog.d("Proyectos sin sincronizar: ${jsonEncode(unsyncedProjects)}");
-      for (var projectMap in unsyncedProjects) {
-        var hasDeletion = await hasDeletionLog(projectMap['projectID'] ?? projectMap['locId']);
+      for (var actMap in unsyncedProjects) {
+        var details = jsonDecode(actMap['activityDetails']);
+        var hasDeletion = await hasDeletionLog(details['projectID'] ?? details['locId']);
         if (!hasDeletion) {
-          var creationActivity = await getCreationActivityByProjectID(projectMap['projectID'] ?? projectMap['locId']);
-          if (creationActivity != null) {
-            if (creationActivity['isSynced'] == 0) {
-              await handleRemoteProjectInsert(projectMap);
-            }
-          }
+          await handleRemoteProjectInsert(actMap);
         } else {
-          await markActivityLogAsSyncedByProjectId(projectMap['projectID'] ?? projectMap['locId']);
+          await markActivityLogAsSyncedByProjectId(details['projectID']);
         }
+
       }
 
       var unsyncedProjectUpdates = await LocalDB.queryUnsyncedUpdates('project');
@@ -152,7 +149,16 @@ class SyncProjects {
     }
   }
 
-  static Future<void> handleRemoteProjectInsert(Map<String, dynamic> projectMap) async {
+  static Future<void> handleRemoteProjectInsert(Map<String, dynamic> actMap) async {
+    var actDetails = jsonDecode(actMap['activityDetails']);
+    var projectMap = <String, dynamic>{};
+    //get projectMap from activityDetails and localdb 
+    if(actDetails['projectID'] != null){
+      projectMap = (await LocalDB.queryProjectByRemoteID(actDetails['projectID']))!;
+    } else {
+      projectMap = (await LocalDB.queryProjectByLocalID(actDetails['locId']))!;
+    }
+
     String name = projectMap['name'];
     String description = projectMap['description'];
     String deadline = formatDateTime(DateTime.parse(projectMap['deadline']));
@@ -166,9 +172,11 @@ class SyncProjects {
     );
 
     if (response is Results) {
+      await LocalDB.markActivityLogAsSynced(actMap['locId']);
       var insertId = response.insertId;
       if (insertId != null) {
         await LocalDB.updateProjectSyncStatus(projectMap['locId'], insertId);
+
       }
     } else {
       AppLog.e("Error inserting project in remote database: $response");

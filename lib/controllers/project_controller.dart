@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/controllers/task_controller.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/models/activity_log.dart';
@@ -43,9 +44,12 @@ class ProjectController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
     AppLog.d("Project added with locId: $locId with data: ${project.toJson()}");
+            //sync tables
+    await SyncController.pushData();
   }
 
   Future<void> getProjects() async {
+   
     AppLog.d("Getting projects for User: ${MainController.getVar('userID')}");
     final userID = MainController.getVar('userID');
     final localDBinit = MainController.getVar('initLDB');
@@ -53,14 +57,30 @@ class ProjectController extends GetxController {
     bool onlyMine = MainController.getVar('onlyMine') ?? false;
 
     if (userID != null && localDBinit == true) {
+      List<Map<String, dynamic>> projects = [];
       if (onlyMine) {
-        AppLog.d("Getting only mine projects");
-        whereAdd = 'p.proprietaryID = ?';
-      } else {
-        whereAdd = 'u.userID = ? ';
-      }
+        AppLog.d("Getting only mine projects with propetaryID: $userID");
+        projects = await LocalDB.rawQuery('''
+          SELECT 
+            p.locId,
+            p.projectID, 
+            p.name, 
+            p.description, 
+            p.deadline, 
+            p.proprietaryID,
+            p.creationDate, 
+            p.lastUpdate 
+          FROM 
+              project p
+          INNER JOIN 
+              userProject up ON p.projectID = up.projectID
+          WHERE 
+              p.proprietaryID = ?
+              AND up.userID = ?'''
+            , [userID, userID]);
 
-      List<Map<String, dynamic>> projects = await LocalDB.rawQuery('''
+      } else {
+        projects = await LocalDB.rawQuery('''
         SELECT 
           p.locId,
           p.projectID, 
@@ -83,8 +103,18 @@ class ProjectController extends GetxController {
           user u 
           ON u.userID = up.userID 
         WHERE 
-          $whereAdd
-      ''', userID);
+          u.userID = ? AND
+          p.proprietaryID <> ?
+      ''', [userID, userID]);
+      }
+
+      if(projects.isEmpty) {
+        AppLog.d("No projects found for user $userID");
+         projectList.clear();
+      }
+      else
+      {
+      
       projectList
           .assignAll(projects.map((data) => Project.fromJson(data)).toList());
       AppLog.d("Projects: ${jsonEncode(projectList)}");
@@ -106,6 +136,7 @@ class ProjectController extends GetxController {
           userID = ? 
       ''', [userID]);
       AppLog.d("UserProject: ${jsonEncode(res)}");
+      }
     } else {
       AppLog.d("No user selected or LocalDB not initialized");
       projectList.clear();
@@ -147,6 +178,9 @@ class ProjectController extends GetxController {
     await LocalDB.delete('project',
         where: 'locId = ?', whereArgs: [project.locId]);
     getProjects();
+
+            //sync tables
+    await SyncController.pushData();
   }
 
   Future<bool> updateProject(Project project) async {
@@ -175,6 +209,8 @@ class ProjectController extends GetxController {
     ));
 
     getProjects();
+            //sync tables
+    await SyncController.pushData();
     return res == 1;
   }
 }

@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_init_to_null
 
 import 'package:taskermg/controllers/dbRelationscontroller.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/controllers/taskCommentController.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/db/db_helper.dart';
@@ -41,6 +42,10 @@ class TaskController extends GetxController {
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
+
+            //sync tables
+    await SyncController.pushData();
+    
     return locId;
   }
 
@@ -111,7 +116,30 @@ class TaskController extends GetxController {
       WHERE ta.taskID = ?
     ''', [taskId]);
 
-    assignedUsers.value = result.map((data) => User.fromJsonWithProfile(data)).toList();
+    
+
+    List<User> collaborators = result.map<User>((data) {
+      var profileData = {
+        'profileDataID': data['profileDataID'],
+        'profilePicUrl': data['profilePicUrl'],
+        'lastUpdate': data['profileLastUpdate']
+      };
+      var userData = {
+        'userID': data['userID'],
+        'username': data['username'],
+        'name': data['name'],
+        'email': data['email'],
+        'password': data['password'],
+        'creationDate': data['creationDate'],
+        'salt': data['salt'],
+        'lastUpdate': data['lastUpdate'],
+        'firebaseToken': data['firebaseToken'],
+        'profileData': profileData
+      };
+      return User.fromJsonWithProfile(userData);
+    }).toList();
+
+    assignedUsers.value = collaborators;
   }
 
   void assignUser(int taskId, int userId) async {
@@ -156,7 +184,10 @@ class TaskController extends GetxController {
     for (var comment in comments) {
       await TaskCommentController.deleteTaskComment(
           TaskComment.fromJson(comment));
+
+    
     }
+
 
     // Eliminar asignaciones de tareas relacionadas
     await LocalDB.delete('taskAssignment',
@@ -165,6 +196,9 @@ class TaskController extends GetxController {
     // Eliminar la tarea
     await LocalDB
         .delete('tasks', where: 'locId = ?', whereArgs: [task.locId]);
+
+    //sync tables
+    await SyncController.pushData();
   }
 
   //delete tasks by projectID
@@ -197,6 +231,8 @@ class TaskController extends GetxController {
     ));
       
     getTasks();
+            //sync tables
+    await SyncController.pushData();
   }
 
   static updateRemoteID(param0, param1) {}

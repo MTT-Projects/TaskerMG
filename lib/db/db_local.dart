@@ -544,8 +544,6 @@ class LocalDB {
             activityLog.lastUpdate?.toIso8601String(),
           ],
         );
-    //sync tables
-    await SyncController.pushData();
     return inserted;
   }
 
@@ -741,6 +739,27 @@ class LocalDB {
   static Future<int> updateProfileData(ProfileData profileData) async {
     return await _db!.update('profileData', profileData.toMap(),
         where: 'profileDataID = ?', whereArgs: [profileData.profileDataID]);
+  }
+
+  //Query unsynced creations
+  static Future<List<Map<String, dynamic>>> queryUnsyncedCreations(
+      String table) async {
+    var res = await _db!.rawQuery(
+      'SELECT * FROM $_activityLogTable WHERE activityType = "create" AND activityID IS NULL AND isSynced = 0',
+    );
+    if (res.isNotEmpty) {
+      List<Map<String, dynamic>> retList = [];
+      for (var activity in res) {
+        var actDetails = jsonDecode(activity['activityDetails'] as String);
+        if (actDetails['table'] == table) {
+          retList.add(activity);
+        }
+      }
+      return retList;
+    } else {
+      return [];
+    }
+
   }
 
   // Query unsynced updates
