@@ -6,6 +6,7 @@ import 'package:taskermg/common/add_task_bar.dart';
 import 'package:taskermg/common/assignTaskPage.dart';
 import 'package:taskermg/common/editTaskPage.dart';
 import 'package:taskermg/common/pages/profile.dart';
+import 'package:taskermg/common/taskCommentPage.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/common/widgets/button.dart';
 import 'package:taskermg/common/widgets/popUpDialog.dart';
@@ -294,6 +295,16 @@ _showBottomSheet(BuildContext context, Task task) {
                   label: "Asignar Tarea",
                   onTap: () async {
                     await Get.to(() => AssignTaskPage(task: task));
+                    updateTasks();
+                  },
+                  clr: Colors.blue[300]!,
+                  context: context,
+                ),
+                const SizedBox(height: 5),
+                _bottomSheetButton(
+                  label: "Archivos Adjuntos",
+                  onTap: () async {
+                    await Get.to(() => TaskCommentsPage(task: task));
                     updateTasks();
                   },
                   clr: Colors.blue[300]!,

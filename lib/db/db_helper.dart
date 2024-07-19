@@ -8,7 +8,11 @@ class DBHelper {
 
   DBHelper._();
 
+
   static final DBHelper instance = DBHelper._();
+
+  //verificar si hay internet
+  
 
   static Future<void> initialize() async {
     _settings = ConnectionSettings(

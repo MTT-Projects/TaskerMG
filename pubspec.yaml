@@ -55,6 +55,10 @@ dependencies:
   googleapis:
   googleapis_auth:
   connectivity_plus: ^2.3.1
+  uuid:
+  image_picker:  
+  timeago:
+  file_picker:
 
 dev_dependencies:
   flutter_test:

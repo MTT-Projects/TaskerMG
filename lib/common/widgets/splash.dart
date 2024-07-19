@@ -9,6 +9,9 @@ import 'package:taskermg/common/intro_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taskermg/common/profileEditPage.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/profileDataController.dart';
 import 'package:taskermg/services/AuthService.dart';
 
 import '../../controllers/user_controller.dart';
@@ -59,13 +62,22 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
     if (isLoggedIn && savedUsername != null && savedPassword != null) {
       // Intenta iniciar sesión automáticamente
       var response = await AuthService.login(savedUsername, savedPassword);
+
       if (response != null) {
-        if (firstSync) {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => Dashboard()));
+        var profileData = await ProfileDataController.getProfileDataByUserID(
+            MainController.getVar('currentUser'));
+        if (profileData != null) {
+          if (firstSync) {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => Dashboard()));
+          } else {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => SyncScreen()));
+            await storage.write(key: 'firstSync', value: 'false');
+          }
         } else {
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => SyncScreen()));
+              MaterialPageRoute(builder: (context) => const ProfileEditPage()));
         }
 
         return;

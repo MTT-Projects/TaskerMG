@@ -65,7 +65,6 @@ class LocalDB {
     await UserProject.createTable(db);
     await ProfileData.createTable(db);
     await TaskComment.createTable(db);
-    await TaskAttachment.createTable(db);
     await TaskAssignment.createTable(db);
     await Attachment.createTable(db);
     AppLog.d("Tables created");
@@ -636,18 +635,6 @@ class LocalDB {
     );
   }
 
-  static Future<int> insertTaskAttachment(TaskAttachment taskAttachment) async {
-    return await _db!.rawInsert(
-      'INSERT INTO taskAttachment (taskAttachmentID, taskCommentID, attachmentID, lastUpdate) VALUES (?, ?, ?, ?)',
-      [
-        taskAttachment.taskAttachmentID,
-        taskAttachment.taskCommentID,
-        taskAttachment.attachmentID,
-        taskAttachment.lastUpdate?.toIso8601String(),
-      ],
-    );
-  }
-
   static Future<int> insertTaskAssignment(TaskAssignment taskAssignment) async {
     return await _db!.rawInsert(
       'INSERT INTO taskAssignment (assignmentID, taskID, userID, lastUpdate) VALUES (?, ?, ?, ?)',
@@ -706,8 +693,18 @@ class LocalDB {
   }
 
   static Future<int> updateUser(User user) async {
-    return await _db!.update('user', user.toMap(),
-        where: 'userID = ?', whereArgs: [user.userID]);
+
+
+    return await _db!.rawUpdate(
+      'UPDATE user SET name = ?, email = ?, password = ?, lastUpdate = ? WHERE userID = ?',
+      [
+        user.name,
+        user.email,
+        user.password,
+        user.lastUpdate?.toIso8601String(),
+        user.userID,
+      ],
+    );
   }
 
   static Future<int> updateTaskComment(TaskComment taskComment) async {
@@ -718,12 +715,6 @@ class LocalDB {
   static Future<int> updateAttachment(Attachment attachment) async {
     return await _db!.update('attachment', attachment.toMap(),
         where: 'attachmentID = ?', whereArgs: [attachment.attachmentID]);
-  }
-
-  static Future<int> updateTaskAttachment(TaskAttachment taskAttachment) async {
-    return await _db!.update('taskAttachment', taskAttachment.toMap(),
-        where: 'taskAttachmentID = ?',
-        whereArgs: [taskAttachment.taskAttachmentID]);
   }
 
   static Future<int> updateTaskAssignment(TaskAssignment taskAssignment) async {
@@ -762,6 +753,10 @@ class LocalDB {
 
   }
 
+
+  static Future<List<Map<String, dynamic>>> queryAttachmentsForTask(int taskId) async {
+    return _db!.query('attachment', where: 'taskID = ?', whereArgs: [taskId]);
+  }
   // Query unsynced updates
   static Future<List<Map<String, dynamic>>> queryUnsyncedUpdates(
       String table) async {
@@ -819,4 +814,8 @@ class LocalDB {
       whereArgs: [activityID],
     );
   }
+
+  static queryCommentsForTask(int taskId) {}
+
+  static queryAttachmentsForComment(comment) {}
 }

@@ -89,29 +89,7 @@ class DbRelationsCtr extends GetxController {
     ''', [projectID, locId]);
   }
 
-  static deleteTaskAttachment(TaskAttachment taskAttachment) async {
-     // Registrar la actividad
-    await LocalDB.insertActivityLog(ActivityLog(
-      userID: MainController.getVar('userID'),
-      projectID: null,
-      activityType: 'delete',
-      activityDetails: {
-        'table': 'taskAttachment',
-        'locId': taskAttachment.locId,
-        'taskAttachmentID': taskAttachment.taskAttachmentID,
-      },
-      timestamp: DateTime.now().toUtc(),
-      lastUpdate: DateTime.now().toUtc(),
-    ));
-    
-     // Eliminar el adjunto
-    var attachment = await LocalDB.query("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.taskAttachmentID ?? taskAttachment.locId]);
-    if (attachment.isNotEmpty) {
-      await LocalDB.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.first['attachmentID']]);
-    }
-    await LocalDB.delete("taskAttachment", where: 'taskAttachmentID = ?', whereArgs: [taskAttachment.locId]);
-  }
-
+ 
   static updateTaskID(String table, int locId, int taskId) {
     LocalDB.rawUpdate('''
       UPDATE ?

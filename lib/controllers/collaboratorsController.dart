@@ -61,6 +61,24 @@ class CollaboratorsController extends GetxController {
     fetchCollaborators();
   }
 
+  //get profileData by ID else return null
+  static Future<Map<String, dynamic>?> getProfileDataById(int profileDataID) async {
+    var result = await DBHelper.query(
+      'SELECT * FROM profileData WHERE profileDataID = ?',
+      [profileDataID],
+    );
+    if (result.isNotEmpty) {
+      var retprofile = {
+        'profileDataID': result.first['profileDataID'],
+        'profilePicUrl': result.first['profilePicUrl'],
+        'lastUpdate': result.first['lastUpdate']
+      };
+      return retprofile;
+    } else {
+      return null;
+    }
+  }
+
   static Future<User?> getUserWithEmail(String email) async {
     var result = await DBHelper.query(
       ''' SELECT u.*, 
@@ -97,6 +115,7 @@ class CollaboratorsController extends GetxController {
       return null;
     }
   }
+
 
   void removeCollaborator(int userId) async {
     await DBHelper.query(

@@ -1,6 +1,10 @@
 import 'package:taskermg/common/dashboard.dart';
+import 'package:taskermg/common/profileEditPage.dart';
 import 'package:taskermg/common/sync_screen.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/profileDataController.dart';
 import 'package:taskermg/controllers/user_controller.dart';
+import 'package:taskermg/controllers/collaboratorscontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -32,16 +36,26 @@ class _LoginScreenState extends State<LoginScreen> {
       await storage.write(key: 'username', value: username);
       await storage.write(key: 'password', value: password);
 
-      // Si el inicio de sesión es correcto, redirige a la página principal
-      if (!mounted) return;
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => SyncScreen()));
+      //check if has profileData
+      var profileData = await ProfileDataController.getProfileDataByUserID(
+          MainController.getVar('currentUser'));
+      if (profileData != null) {
+        await storage.write(key: 'profileData', value: profileData.toString());
+        if (!mounted) return;
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => SyncScreen()));
+      } else {
+        // Si no, muestra un mensaje de error
+        setState(() {
+          isLoginTrue = true;
+        });
+      }
     } else {
-      // Si no, muestra un mensaje de error
-      setState(() {
-        isLoginTrue = true;
-      });
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
     }
+
+    // Si el inicio de sesión es correcto, redirige a la página principal
   }
 
   // Tenemos que crear una clave global para nuestro formulario

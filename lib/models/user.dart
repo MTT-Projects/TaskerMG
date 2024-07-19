@@ -82,6 +82,22 @@ class User {
     };
   }
 
+    Map<String, dynamic> toMapNoProf() {
+    return {
+      'locId': locId,
+      'userID': userID,
+      'username': username,
+      'name': name,
+      'email': email,
+      'password': password,
+      'creationDate': creationDate?.toIso8601String(),
+      'lastUpdate': lastUpdate?.toIso8601String(),
+      'firebaseToken': firebaseToken,
+    };
+  }
+
+
+
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user (

@@ -5,6 +5,7 @@ class Attachment
 {
   int? locId;
   int? attachmentID;
+  int? taskCommentID;
   int? userID;
   String? name;
   String? type;
@@ -14,12 +15,13 @@ class Attachment
   DateTime? uploadDate;
   DateTime? lastUpdate;
 
-  Attachment({this.locId, this.attachmentID, this.userID, this.name, this.type, this.size, this.fileUrl, this.localPath, this.uploadDate, this.lastUpdate});
+  Attachment({this.locId, this.attachmentID, this.taskCommentID, this.userID, this.name, this.type, this.size, this.fileUrl, this.localPath, this.uploadDate, this.lastUpdate});
 
   Map<String, dynamic> toMap() {
     return {
       'locId': locId,
       'attachmentID': attachmentID,
+      'taskCommentID': taskCommentID,
       'userID': userID,
       'name': name,
       'type': type,
@@ -36,6 +38,7 @@ class Attachment
     return {
       'locId': attachment.locId,
       'attachmentID': attachment.attachmentID,
+      'taskCommentID': attachment.taskCommentID,
       'userID': attachment.userID,
       'name': attachment.name,
       'type': attachment.type,
@@ -52,6 +55,7 @@ class Attachment
     return Attachment(
       locId: json['locId'],
       attachmentID: json['attachmentID'],
+      taskCommentID: json['taskCommentID'],
       userID: json['userID'],
       name: json['name'],
       type: json['type'],
@@ -66,6 +70,7 @@ class Attachment
   Map<String, dynamic> toJson() => {
         'locId': locId,
         'attachmentID': attachmentID,
+        'taskCommentID': taskCommentID,
         'userID': userID,
         'name': name,
         'type': type,
@@ -82,6 +87,7 @@ class Attachment
       CREATE TABLE IF NOT EXISTS attachment (
         locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         attachmentID INTEGER UNIQUE,
+        taskCommentID INT,
         userID INTEGER,
         name VARCHAR(255) NOT NULL,
         type varchar(100) NOT NULL,
@@ -90,7 +96,8 @@ class Attachment
         localPath VARCHAR(255) NOT NULL,
         uploadDate TEXT,
         lastUpdate TEXT,
-        FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
+        FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
+        FOREIGN KEY (taskCommentID) REFERENCES taskComment(taskCommentID) ON DELETE CASCADE
       );
     ''');
     AppLog.d('Table Attachment created');

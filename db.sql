@@ -79,6 +79,7 @@ CREATE TABLE taskComment (
 
 CREATE TABLE attachment (
     attachmentID INT AUTO_INCREMENT PRIMARY KEY,
+    taskCommentID INT,
     userID INT,
     name VARCHAR(255) NOT NULL,
     type varchar(100) NOT NULL,
@@ -86,18 +87,9 @@ CREATE TABLE attachment (
     fileUrl VARCHAR(255) NOT NULL,
     uploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE
+    FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
+    FOREIGN KEY (taskCommentID) REFERENCES taskComment(taskCommentID) ON DELETE CASCADE
 );
-
-CREATE TABLE taskAttachment (
-    taskAttachmentID INT AUTO_INCREMENT PRIMARY KEY,
-    attachmentID INT,
-    taskCommentID INT,
-    lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (attachmentID) REFERENCES attachment(attachmentID) ON DELETE CASCADE,
-    FOREIGN KEY (taskCommentID) REFERENCES taskComment(commentID) ON DELETE CASCADE
-);
-
 
 CREATE TABLE activityLog (
     activityID INT AUTO_INCREMENT PRIMARY KEY,

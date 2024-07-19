@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:taskermg/common/profileEditPage.dart';
 import 'package:taskermg/services/AuthService.dart';
 import '../controllers/user_controller.dart';
 import '../models/user.dart';
@@ -67,36 +68,13 @@ class _SignUpState extends State<SignUp> {
                       borderRadius: BorderRadius.circular(25),
                       color: Colors.transparent,
                       border: Border.all(
-                          color: const Color.fromRGBO(103, 58, 183, 1), width: 5),
+                          color: const Color.fromRGBO(103, 58, 183, 1),
+                          width: 5),
                     ),
                     child: Lottie.asset('Assets/lotties/register.json'),
                   ),
 
                   //As we assigned our controller to the textformfields
-                  //Real Names Field
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.deepPurple.withOpacity(.2)),
-                    child: TextFormField(
-                      controller: name,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Name is required";
-                        }
-                        return null;
-                      },
-                      decoration: const InputDecoration(
-                        icon: Icon(Icons.person),
-                        border: InputBorder.none,
-                        hintText: "Nombres",
-                      ),
-                    ),
-                  ),
-
                   //Username Field
                   Container(
                     margin: const EdgeInsets.all(8),
@@ -226,29 +204,7 @@ class _SignUpState extends State<SignUp> {
                         color: Colors.deepPurple),
                     child: TextButton(
                         onPressed: () async {
-                          if (formKey.currentState!.validate()) {
-                            //Login method will be here
-                            User newUser = User(
-                              username: username.text,
-                              name: name.text,
-                              password: password.text,
-                              email: email.text,
-                            );
-
-                            var response =
-                                await AuthService.register(newUser);
-                            if (response == true) {
-                              // ignore: use_build_context_synchronously
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LoginScreen()));
-                            } else {
-                              AppLog.d(response.toString());
-                              showpopuperror(response.toString());
-                            }
-                          }
+                          signup(username.text, email.text, password.text);
                         },
                         child: const Text(
                           "SIGN UP",
@@ -279,5 +235,27 @@ class _SignUpState extends State<SignUp> {
         ),
       ),
     );
+  }
+
+  void signup(
+      String username, String email, String password) async {
+    if (formKey.currentState!.validate()) {
+      //Login method will be here
+      User newUser = User(
+        username: username,
+        password: password,
+        email: email,
+      );
+
+      var response = await AuthService.register(newUser);
+      if (response == true) {
+        // ignore: use_build_context_synchronously
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const ProfileEditPage()));
+      } else {
+        AppLog.d(response.toString());
+        showpopuperror(response.toString());
+      }
+    }
   }
 }

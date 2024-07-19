@@ -101,6 +101,16 @@ class PopUpButtons {
       ),
     ];
   }
+
+  //ok button
+  static List<Widget> okButton(BuildContext context) {
+    return [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text('OK'),
+      ),
+    ];
+  }
 }
 
 
