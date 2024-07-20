@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:open_file/open_file.dart';
 
 class FileManager {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -38,13 +39,21 @@ class FileManager {
   }
 
 
-  Future<File> downloadFile(String url, String fileName) async {
+Future<File> downloadFile(String url, String fileName, String subfolder) async {
     try {
       Directory appDocDir = await getApplicationDocumentsDirectory();
-      File file = File('${appDocDir.path}/$fileName');
+      Directory subDir = Directory('${appDocDir.path}/$subfolder');
+
+      // Check if the subdirectory exists, if not, create it
+      if (!await subDir.exists()) {
+        await subDir.create(recursive: true);
+      }
+
+      File file = File('${subDir.path}/$fileName');
       if (!await file.exists()) {
         await file.create();
       }
+      
       await _storage.refFromURL(url).writeToFile(file);
       return file;
     } catch (e) {
@@ -99,5 +108,12 @@ class FileManager {
       throw Exception('Error copying file to local path: $e');
     }
 
+  }
+
+   static Future<void> openFile(String filePath) async {
+    final result = await OpenFile.open(filePath);
+    if (result.type != ResultType.done) {
+      throw Exception('Error opening file: ${result.message}');
+    }
   }
 }

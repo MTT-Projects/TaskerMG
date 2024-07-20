@@ -25,7 +25,6 @@ class SyncAttachment {
           a.type, 
           a.size, 
           a.fileUrl, 
-          a.localPath, 
           a.uploadDate, 
           a.lastUpdate
         FROM 
@@ -67,9 +66,8 @@ class SyncAttachment {
           type: attachmentMap['type'],
           size: attachmentMap['size'],
           fileUrl: attachmentMap['fileUrl'],
-          localPath: attachmentMap['localPath'],
-          uploadDate: DateTime.parse(attachmentMap['uploadDate']),
-          lastUpdate: DateTime.parse(attachmentMap['lastUpdate']),
+          uploadDate: attachmentMap['uploadDate'],
+          lastUpdate: attachmentMap['lastUpdate'],
         ).toJson();
         await handleAttachmentSync(attachmentMapped);
       }
@@ -237,13 +235,12 @@ class SyncAttachment {
     String type = attachmentMap['type'];
     int size = attachmentMap['size'];
     String fileUrl = attachmentMap['fileUrl'];
-    String localPath = attachmentMap['localPath'];
     String uploadDate = formatDateTime(DateTime.parse(attachmentMap['uploadDate']));
     String lastUpdate = formatDateTime(DateTime.parse(attachmentMap['lastUpdate']));
 
     var response = await DBHelper.query(
-      "INSERT INTO attachment (taskCommentID, userID, name, type, size, fileUrl, localPath, uploadDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [taskCommentID, userID, name, type, size, fileUrl, localPath, uploadDate, lastUpdate],
+      "INSERT INTO attachment (taskCommentID, userID, name, type, size, fileUrl, uploadDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [taskCommentID, userID, name, type, size, fileUrl, uploadDate, lastUpdate],
     );
 
     if (response is Results) {
@@ -275,7 +272,6 @@ class SyncAttachment {
     String type = attachmentMap['type'];
     int size = attachmentMap['size'];
     String fileUrl = attachmentMap['fileUrl'];
-    String localPath = attachmentMap['localPath'];
     String lastUpdate = formatDateTime(DateTime.parse(attachmentMap['lastUpdate']));
 
     var remoteAttachment = await DBHelper.query(
@@ -293,8 +289,8 @@ class SyncAttachment {
     }
 
     var response = await DBHelper.query(
-      "UPDATE attachment SET name = ?, type = ?, size = ?, fileUrl = ?, localPath = ?, lastUpdate = ? WHERE attachmentID = ?",
-      [name, type, size, fileUrl, localPath, lastUpdate, attachmentMap['attachmentID']],
+      "UPDATE attachment SET name = ?, type = ?, size = ?, fileUrl = ?, lastUpdate = ? WHERE attachmentID = ?",
+      [name, type, size, fileUrl, lastUpdate, attachmentMap['attachmentID']],
     );
 
     if (response is Results) {

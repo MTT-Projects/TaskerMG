@@ -59,6 +59,7 @@ dependencies:
   image_picker:  
   timeago:
   file_picker:
+  open_file:
 
 dev_dependencies:
   flutter_test:

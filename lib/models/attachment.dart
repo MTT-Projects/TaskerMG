@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/utils/AppLog.dart';
 
-class Attachment
-{
+class Attachment {
   int? locId;
   int? attachmentID;
   int? taskCommentID;
@@ -15,7 +15,18 @@ class Attachment
   DateTime? uploadDate;
   DateTime? lastUpdate;
 
-  Attachment({this.locId, this.attachmentID, this.taskCommentID, this.userID, this.name, this.type, this.size, this.fileUrl, this.localPath, this.uploadDate, this.lastUpdate});
+  Attachment(
+      {this.locId,
+      this.attachmentID,
+      this.taskCommentID,
+      this.userID,
+      this.name,
+      this.type,
+      this.size,
+      this.fileUrl,
+      this.localPath,
+      this.uploadDate,
+      this.lastUpdate});
 
   Map<String, dynamic> toMap() {
     return {
@@ -50,7 +61,6 @@ class Attachment
     };
   }
 
-
   static Attachment fromJson(Map<String, dynamic> json) {
     return Attachment(
       locId: json['locId'],
@@ -62,8 +72,8 @@ class Attachment
       size: json['size'],
       fileUrl: json['fileUrl'],
       localPath: json['localPath'],
-      uploadDate: json['uploadDate'],
-      lastUpdate: json['lastUpdate'],
+      uploadDate: DateTime.parse(json['uploadDate']),
+      lastUpdate: DateTime.parse(json['lastUpdate']),
     );
   }
 
@@ -77,10 +87,9 @@ class Attachment
         'size': size,
         'fileUrl': fileUrl,
         'localPath': localPath,
-        'uploadDate': uploadDate,
-        'lastUpdate': lastUpdate,
+        'uploadDate': uploadDate?.toIso8601String(),
+        'lastUpdate': lastUpdate?.toIso8601String(),
       };
-
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
@@ -93,7 +102,7 @@ class Attachment
         type varchar(100) NOT NULL,
         size INTEGER NOT NULL,
         fileUrl VARCHAR(255) NOT NULL,
-        localPath VARCHAR(255) NOT NULL,
+        localPath VARCHAR(255),
         uploadDate TEXT,
         lastUpdate TEXT,
         FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE,
@@ -101,5 +110,18 @@ class Attachment
       );
     ''');
     AppLog.d('Table Attachment created');
+  }
+
+  static Future<bool> updateAttachmentLocalPath(int attatchmentlocId, String path) async {
+    //update local path of attachment
+    var result  = await LocalDB.rawUpdate('''
+        UPDATE attachment SET localPath = ? WHERE locId = ?
+      ''', [path, attatchmentlocId]);
+
+    if (result == 0) {
+      return false;
+    }
+    return true;
+
   }
 }

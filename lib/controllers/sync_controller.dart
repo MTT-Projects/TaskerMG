@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
+import 'package:taskermg/utils/sync/sync_attatchments.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
 import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
@@ -70,6 +71,7 @@ class SyncController extends GetxController {
     await SyncUserProjects.pullUserProjects();
     await SyncTaskAssignment.pullTaskAssignments();
     await SyncTaskComment.pullTaskComments();
+    await SyncAttachment.pullAttachments();
   }
 
   static Future<void> pushData() async {
@@ -78,5 +80,6 @@ class SyncController extends GetxController {
     await SyncUserProjects.pushUserProjects();
     await SyncTaskAssignment.pushTaskAssignments();
     await SyncTaskComment.pushTaskComments();
+    await SyncAttachment.pushAttachments();
   }
 }

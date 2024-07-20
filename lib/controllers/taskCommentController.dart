@@ -16,7 +16,7 @@ class TaskCommentController extends GetxController {
   var attachmentsList = <Attachment>[].obs;
   FileManager fileManager = FileManager();
 
-  void fetchComments(int taskID) async {
+  Future<void> fetchComments(int taskID) async {
     List<Map<String, dynamic>> commentsData = await LocalDB.rawQuery(
       "SELECT * FROM taskComment WHERE taskID = ? ORDER BY creationDate ASC",
       [taskID],
@@ -152,8 +152,6 @@ class TaskCommentController extends GetxController {
       timestamp: now,
       lastUpdate: now,
     ));
-
-    SyncController.pushData();
   }
 
   static updateTaskID(int locId, int taskId) {

@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/controllers/taskCommentController.dart';
 import 'package:taskermg/models/task.dart';
 import 'package:taskermg/models/taskComment.dart';
+import 'package:taskermg/common/widgets/commentPopup.dart';
 import 'package:taskermg/models/attachment.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/utils/FilesManager.dart';
@@ -21,6 +25,8 @@ class TaskCommentsPage extends StatefulWidget {
 class _TaskCommentsPageState extends State<TaskCommentsPage> {
   final TaskCommentController _controller = Get.put(TaskCommentController());
   String fileName = '';
+  FileManager fileManager = FileManager();
+  Map<int, bool> _isDownloading = {};
 
   @override
   void initState() {
@@ -32,12 +38,12 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Comentarios de la Tarea'),
+        title: const Text('Comentarios de la Tarea'),
         backgroundColor: AppColors.primaryColor,
       ),
       body: Obx(() {
         return _controller.commentsList.isEmpty
-            ? Center(child: Text('No hay comentarios.'))
+            ? const Center(child: Text('No hay comentarios.'))
             : ListView.builder(
                 itemCount: _controller.commentsList.length,
                 itemBuilder: (context, index) {
@@ -50,8 +56,8 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         onPressed: () {
           _mostrarPopup(context);
         },
-        child: Icon(Icons.add),
         backgroundColor: AppColors.primaryColor,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -61,7 +67,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         .where(
             (attachment) => attachment.taskCommentID == comment.taskCommentID)
         .toList();
-    
+
     return FutureBuilder<String>(
       future: UserController.getProfilePicture(comment.userID),
       builder: (context, snapshot) {
@@ -77,7 +83,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
                 color: Colors.grey.withOpacity(0.2),
                 spreadRadius: 2,
                 blurRadius: 5,
-                offset: Offset(0, 3),
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -87,14 +93,18 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: userpic == '' ? AssetImage("Assets/images/profile.png") as ImageProvider : NetworkImage(userpic),
+                    backgroundImage: userpic.isEmpty
+                        ? const AssetImage("Assets/images/profile.png")
+                            as ImageProvider
+                        : NetworkImage(userpic),
                     radius: 20,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       comment.comment ?? '',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -111,7 +121,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
               Text(
                 DateFormat('dd-MM-yyyy HH:mm')
                     .format(comment.creationDate ?? DateTime.now()),
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -121,121 +131,126 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
   }
 
   void _mostrarPopup(BuildContext context) {
-    final TextEditingController textController = TextEditingController();
-    Map<String, dynamic>? selectedFile;
-    fileName = '';
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Enviar Comentario',
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      controller: textController,
-                      decoration: InputDecoration(
-                        labelText: 'Comentario',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                      maxLines: 3,
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        selectedFile = await FileManager.pickFile();
-                        setState(() {
-                          if (selectedFile != null) {
-                            fileName = selectedFile!["name"];
-                          }
-                        });
-                      },
-                      icon: fileName.isEmpty
-                          ? Icon(Icons.attach_file)
-                          : Icon(Icons.check),
-                      label: Text('Adjuntar Archivo'),
-                      style: ElevatedButton.styleFrom(
-                        primary: fileName.isEmpty
-                            ? AppColors.primaryColor
-                            : Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                    ),
-                    fileName.isNotEmpty
-                        ? Text(
-                            fileName,
-                            style: TextStyle(color: Colors.grey),
-                          )
-                        : Container(),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Cerrar el popup
-                          },
-                          child: Text('Cancelar'),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await sendComment(textController.text, selectedFile);
-                          },
-                          child: Text('Enviar'),
-                          style: ElevatedButton.styleFrom(
-                            primary: AppColors.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
+        return CommentPopup(
+          onSubmit: (String comment, Map<String, dynamic>? file) async {
+            if (comment.isEmpty) {
+              Get.snackbar('Error', 'El comentario no puede estar vacío.');
+              return;
+            }
+
+            await _controller.addComment(widget.task.taskID!, comment, file);
+            await _controller.fetchComments(widget.task.taskID!);
           },
         );
       },
     );
   }
 
-  Future<void> sendComment(String comment, Map<String, dynamic>? file) async {
-    if (comment.isEmpty) {
-      Get.snackbar('Error', 'El comentario no puede estar vacío.');
-      return;
-    }
-    await _controller.addComment(widget.task.taskID!, comment, file);
-    Navigator.of(context).pop();
-  }
-
   Widget _buildAttachmentTile(Attachment attachment) {
+    var fileIcon = Icons.attach_file;
+    switch (attachment.type) {
+      case 'pdf':
+        fileIcon = Icons.picture_as_pdf;
+        break;
+      case 'doc':
+      case 'docx':
+        fileIcon = Icons.description;
+        break;
+      case 'xls':
+      case 'xlsx':
+        fileIcon = Icons.table_chart;
+        break;
+      case 'ppt':
+      case 'pptx':
+        fileIcon = Icons.slideshow;
+        break;
+      case 'txt':
+        fileIcon = Icons.text_fields;
+        break;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        fileIcon = Icons.image;
+        break;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+        fileIcon = Icons.movie;
+        break;
+      case 'mp3':
+      case 'wav':
+      case 'wma':
+        fileIcon = Icons.music_note;
+        break;
+    }
+
+    var fileSize = attachment.size! / 1024 / 1024;
+    var fileSizeString = fileSize > 1
+        ? "${fileSize.toStringAsFixed(2)} MB"
+        : "${(attachment.size! / 1024).toStringAsFixed(2)} KB";
+
+    var downloadBTN = _isDownloading[attachment.attachmentID] == true
+        ? Row(
+            children: [
+              const SizedBox(width: 5),
+              Text(
+                "Descargando...",
+                style: const TextStyle(color: Colors.blue),
+              ),
+              CircularProgressIndicator(),
+            ],
+          )
+        : Row(
+            children: [
+              const SizedBox(width: 5),
+              Text(
+                "Descargar ($fileSizeString)",
+                style: const TextStyle(color: Colors.blue),
+              ),
+              IconButton(
+                icon: const Icon(Icons.download),
+                color: Colors.blue,
+                onPressed: () async {
+                  setState(() {
+                    _isDownloading[attachment.attachmentID!] = true;
+                  });
+                  File localFile = await fileManager.downloadFile(
+                      attachment.fileUrl!, attachment.name!, "attachments");
+                  await Attachment.updateAttachmentLocalPath(
+                      attachment.attachmentID!, localFile.path);
+                  setState(() {
+                    _isDownloading[attachment.attachmentID!] = false;
+                  });
+                  FileManager.openFile(localFile.path);
+                },
+              )
+            ],
+          );
+    if (attachment.localPath != null) {
+      downloadBTN = Row(
+        children: [
+          const SizedBox(width: 5),
+          Text(
+            "($fileSizeString)",
+            style: const TextStyle(color: Colors.blue),
+          ),
+        ],
+      );
+    }
+
     return GestureDetector(
       onTap: () {
-        // Implementa la lógica para descargar el archivo
+        if (attachment.localPath != null) {
+          FileManager.openFile(attachment.localPath!);
+        }
       },
       child: Container(
+        height: 50,
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -244,16 +259,16 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         ),
         child: Row(
           children: [
-            Icon(Icons.attach_file, color: Colors.blue),
+            Icon(fileIcon, color: Colors.blue),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 attachment.name ?? '',
-                style: TextStyle(color: Colors.blue),
+                style: const TextStyle(color: Colors.blue),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(Icons.download, color: Colors.blue),
+            downloadBTN ?? Container(),
           ],
         ),
       ),
