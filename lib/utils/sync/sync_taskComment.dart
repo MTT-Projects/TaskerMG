@@ -1,14 +1,11 @@
 import 'dart:convert';
-import 'package:googleapis/admob/v1.dart';
+import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
-import 'package:taskermg/controllers/task_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
-import 'package:taskermg/models/dbRelations.dart';
 import 'package:taskermg/models/taskComment.dart';
 import 'package:taskermg/utils/AppLog.dart';
-import 'package:intl/intl.dart';
 
 class SyncTaskComment {
   static String formatDateTime(DateTime dateTime) {
@@ -16,223 +13,300 @@ class SyncTaskComment {
     return formatter.format(dateTime);
   }
 
-  static Future<void> pullTaskComment() async {
+  static Future<void> pullTaskComments() async {
     var userID = MainController.getVar('currentUser');
     try {
-      var result = await DBHelper.query('''SELECT *
+      var result = await DBHelper.query('''
+        SELECT 
+          tc.taskCommentID, 
+          tc.taskID, 
+          tc.userID, 
+          tc.comment, 
+          tc.creationDate, 
+          tc.lastUpdate
         FROM 
-          taskComment 
+          taskComment tc
+        JOIN 
+          taskAssignment ta ON tc.taskID = ta.taskID
         WHERE 
-          userID = ?''', [userID]);
+          ta.userID = ?
+      ''', [userID]);
 
-      var remoteTaskComments = result
-          .map((taskCommentMap) => taskCommentMap['taskCommentID'])
-          .toList();
-      //fetch local task comments
-      var localTaskComments = await LocalDB.queryTaskComments();
+      var remoteTaskComments = result.map((commentMap) => commentMap['taskCommentID']).toList();
+      AppLog.d("Comentarios remotos: $remoteTaskComments");
+
+      // Fetch local task comments
+      var localTaskComments = await LocalDB.query('taskComment');
       if (localTaskComments.isEmpty) {
-        AppLog.d("No hay comentarios de tareas locales.");
+        AppLog.d("No hay comentarios locales.");
       } else {
-        var localTaskCommentIDs = localTaskComments
-            .map((taskComment) => taskComment['taskCommentID'])
-            .toList();
+        var localTaskCommentIDs = localTaskComments.map((comment) => comment['taskCommentID']).toList();
 
-        // Detect deleted task comments
+        // Detect deleted comments
         for (var localTaskCommentID in localTaskCommentIDs) {
           if (!remoteTaskComments.contains(localTaskCommentID)) {
             await LocalDB.rawDelete(
               "DELETE FROM taskComment WHERE taskCommentID = ?",
               [localTaskCommentID],
             );
-            AppLog.d(
-                "Comentario de tarea con ID $localTaskCommentID marcado como eliminado.");
+            AppLog.d("Comentario con ID $localTaskCommentID marcado como eliminado.");
           }
         }
       }
 
-      for (var taskCommentMap in result) {
-        var taskCommentMapped = TaskComment(
-          locId: taskCommentMap['locId'],
-          taskCommentID: taskCommentMap['taskCommentID'],
-          userID: taskCommentMap['userID'],
-          taskID: taskCommentMap['taskID'],
-          comment: taskCommentMap['comment'],
-          lastUpdate: taskCommentMap['lastUpdate'],
+      for (var commentMap in result) {
+        var commentMapped = TaskComment(
+          taskCommentID: commentMap['taskCommentID'],
+          taskID: commentMap['taskID'],
+          userID: commentMap['userID'],
+          comment: commentMap['comment'].toString(),
+          creationDate: commentMap['creationDate'],
+          lastUpdate: commentMap['lastUpdate'],
         ).toJson();
-        await handleTaskCommentSync(taskCommentMapped);
+        await handleCommentSync(commentMapped);
       }
+      AppLog.d("Comentarios obtenidos exitosamente.");
     } catch (e) {
-      AppLog.e("Error pulling task comments: $e");
+      AppLog.e("Error al obtener comentarios: $e");
     }
   }
 
-  static Future<void> pushTaskComment() async {
-    var userID = MainController.getVar('currentUser');
+  static Future<void> pushTaskComments() async {
     try {
-      var result = await LocalDB.rawQuery(
-        'SELECT * FROM taskComment WHERE userID = ?',
-        [userID],
-      );
+      var unsyncedComments = await LocalDB.queryUnsyncedCreations('taskComment');
+      AppLog.d("Comentarios sin sincronizar: ${jsonEncode(unsyncedComments)}");
 
-      for (var taskCommentMap in result) {
-        var taskCommentMapped = TaskComment(
-          locId: taskCommentMap['locId'],
-          taskCommentID: taskCommentMap['taskCommentID'],
-          userID: taskCommentMap['userID'],
-          taskID: taskCommentMap['taskID'],
-          comment: taskCommentMap['comment'],
-          lastUpdate: taskCommentMap['lastUpdate'],
-        ).toJson();
-        await handleTaskCommentSync(taskCommentMapped);
-      }
-    } catch (e) {
-      AppLog.e("Error pushing task comments: $e");
-    }
-  }
-
-  static Future<void> handleTaskCommentSync(Map<String, dynamic> taskComment) async {
-    try {
-      var taskCommentID = taskComment['taskCommentID'];
-      var taskID = taskComment['taskID'];
-      var userID = taskComment['userID'];
-      var comment = taskComment['comment'];
-      var lastUpdate = taskComment['lastUpdate'];
-
-      var result = await DBHelper.query(
-        'SELECT * FROM taskComment WHERE taskCommentID = ?',
-        [taskCommentID],
-      );
-
-      if (result.isNotEmpty) {
-        var remoteTaskComment = result.first;
-        var remoteTaskID = remoteTaskComment['taskID'];
-        var remoteUserID = remoteTaskComment['userID'];
-        var remoteComment = remoteTaskComment['comment'];
-        var remoteLastUpdate = remoteTaskComment['lastUpdate'];
-
-        if (taskID != remoteTaskID ||
-            userID != remoteUserID ||
-            comment != remoteComment ||
-            lastUpdate != remoteLastUpdate) {
-          await DBHelper.query(
-            'UPDATE taskComment SET taskID = ?, userID = ?, comment = ?, lastUpdate = ? WHERE taskCommentID = ?',
-            [taskID, userID, comment, lastUpdate, taskCommentID],
-          );
-          AppLog.d("TaskComment updated: $taskCommentID");
+      for (var actMap in unsyncedComments) {
+        var details = jsonDecode(actMap['activityDetails']);
+        var hasDeletion = await hasDeletionLog(details['taskCommentID'] ?? details['locId']);
+        if (!hasDeletion) {
+          var creationActivity = await getCreationActivityByCommentID(details['taskCommentID'] ?? details['locId']);
+          if (creationActivity != null) {
+            if (creationActivity['isSynced'] == 0) {
+              await handleRemoteCommentInsert(actMap);
+            }
+          }
+        } else {
+          await markActivityLogAsSyncedByCommentId(details['taskCommentID'] ?? details['locId']);
         }
-      } else {
-        await DBHelper.query(
-          'INSERT INTO taskComment (taskCommentID, taskID, userID, comment, lastUpdate) VALUES (?, ?, ?, ?, ?)',
-          [taskCommentID, taskID, userID, comment, lastUpdate],
-        );
-        AppLog.d("TaskComment inserted: $taskCommentID");
       }
+
+      var unsyncedCommentUpdates = await LocalDB.queryUnsyncedUpdates('taskComment');
+      AppLog.d("Comentarios sin actualizar: ${jsonEncode(unsyncedCommentUpdates)}");
+
+      for (var actMap in unsyncedCommentUpdates) {
+        var details = jsonDecode(actMap['activityDetails']);
+        var hasDeletion = await hasDeletionLog(actMap['taskCommentID'] ?? actMap['locId']);
+        if (!hasDeletion) {
+          var creationActivity = await getCreationActivityByCommentID(actMap['taskCommentID'] ?? actMap['locId']);
+          if (creationActivity != null) {
+            if (creationActivity['isSynced'] == 0) {
+              await handleRemoteCommentUpdate(actMap);
+            }
+          } else {
+            await handleRemoteCommentUpdate(actMap);
+          }
+        } else {
+          await markActivityLogAsSyncedByCommentId(details['taskCommentID']);
+        }
+      }
+
+      var unsyncedDeletions = await LocalDB.queryUnsyncedDeletions('taskComment');
+      AppLog.d("Comentarios sin eliminar: ${jsonEncode(unsyncedDeletions)}");
+
+      for (var deletion in unsyncedDeletions) {
+        await handleRemoteCommentDeletion(deletion);
+      }
+
+      AppLog.d("Comentarios enviados exitosamente.");
     } catch (e) {
-      AppLog.e("Error handling task comment sync: $e");
+      AppLog.e("Error al enviar comentarios: $e");
     }
   }
 
-  static Future<void> handleRemoteTaskCommentInsert(Map<String, dynamic> actMap) async {
-    var actDetails = jsonDecode(actMap['activityDetails']);
-    var taskCommentMap = Map<String, dynamic>();
-    if (actDetails['taskCommentID'] != null) {
-      taskCommentMap = (await LocalDB.queryTaskCommentByRemoteID(
-          actDetails['taskCommentID']))!;
+  //get creation activity by taskCommentID
+  static Future<Map<String, dynamic>?> getCreationActivityByCommentID(int taskCommentID) async {
+    var activities = await LocalDB.rawQuery(
+      "SELECT * FROM activityLog WHERE activityType = 'create'",
+    );
+    for (Map<String, dynamic> activity in activities) {
+      var details = jsonDecode(activity['activityDetails']);
+
+      var actCommentId = details['locId'];
+      if (details['table'] == 'taskComment' && actCommentId == taskCommentID) {
+        return activity;
+      }
+    }
+    return null;
+  }
+
+  //get update activity by taskCommentID
+  static Future<Map<String, dynamic>?> getUpdateActivityByCommentID(int taskCommentID) async {
+    var activities = await LocalDB.rawQuery(
+      "SELECT * FROM activityLog WHERE activityType = 'update'",
+    );
+    for (Map<String, dynamic> activity in activities) {
+      var details = jsonDecode(activity['activityDetails']);
+
+      var actCommentId = details['locId'];
+      if (details['table'] == 'taskComment' && actCommentId == taskCommentID) {
+        return activity;
+      }
+    }
+    return null;
+  }
+
+  static Future<void> handleCommentSync(Map<String, dynamic> commentMap) async {
+    var localComment = await LocalDB.queryTaskCommentByRemoteID(commentMap['taskCommentID']);
+    if (localComment == null) {
+      await LocalDB.insertTaskComment(TaskComment.fromJson(commentMap));
     } else {
-      taskCommentMap =
-          (await LocalDB.queryTaskCommentByLocalID(actDetails['locId']))!;
+      if (DateTime.parse(commentMap['lastUpdate']).isAfter(DateTime.parse(localComment['lastUpdate']))) {
+        var updated = TaskComment.fromJson(commentMap);
+        updated.locId = localComment['locId'];
+        await LocalDB.updateTaskComment(updated);
+      }
+    }
+  }
+
+  static Future<bool> hasDeletionLog(int taskCommentId) async {
+    var deletions = await LocalDB.queryUnsyncedDeletions('taskComment');
+    for (var deletion in deletions) {
+      var details = jsonDecode(deletion['activityDetails']);
+      if (details['taskCommentID'] == taskCommentId || details['locId'] == taskCommentId) {
+        var creationActivity = await getCreationActivityByCommentID(taskCommentId);
+        if (creationActivity != null) {
+          await LocalDB.markActivityLogAsSynced(creationActivity['locId']);
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<void> markActivityLogAsSyncedByCommentId(int taskCommentId) async {
+    var activities = await LocalDB.queryUnsyncedActivityLogs();
+    var filAct = [];
+    for (var act in activities) {
+      if (act['activityType'] == 'create' || act['activityType'] == 'update') {
+        filAct.add(act);
+      }
     }
 
-    String taskID = taskCommentMap['taskID'].toString();
-    String userID = taskCommentMap['userID'].toString();
-    String comment = taskCommentMap['comment'];
-    String lastUpdate =
-        formatDateTime(DateTime.parse(taskCommentMap['lastUpdate']));
+    for (var activity in filAct) {
+      var data = jsonDecode(activity['activityDetails']);
+      if (data['taskCommentID'] == taskCommentId || data['locId'] == taskCommentId) {
+        var updated = await LocalDB.markActivityLogAsSynced(activity['locId']);
+        AppLog.d("Actividad de creación marcada como sincronizada: $updated");
+      }
+    }
+
+    var updates = await LocalDB.queryUnsyncedUpdates('taskComment');
+    for (var update in updates) {
+      var details = jsonDecode(update['activityDetails']);
+      if (details['taskCommentID'] == taskCommentId || details['locId'] == taskCommentId) {
+        await LocalDB.markActivityLogAsSynced(update['locId']);
+      }
+    }
+
+    var deletions = await LocalDB.queryUnsyncedDeletions('taskComment');
+    for (var deletion in deletions) {
+      var details = jsonDecode(deletion['activityDetails']);
+      if (details['taskCommentID'] == taskCommentId || details['locId'] == taskCommentId) {
+        await LocalDB.markActivityLogAsSynced(deletion['locId']);
+      }
+    }
+  }
+
+  static Future<void> handleRemoteCommentInsert(Map<String, dynamic> actMap) async {
+    var actDetails = jsonDecode(actMap['activityDetails']);
+    var commentMap = <String, dynamic>{};
+    if (actDetails['taskCommentID'] != null) {
+      commentMap = (await LocalDB.queryTaskCommentByRemoteID(actDetails['taskCommentID']))!;
+    } else {
+      commentMap = (await LocalDB.queryTaskCommentByLocalID(actDetails['locId']))!;
+    }
+
+    String taskID = commentMap['taskID'].toString();
+    String userID = commentMap['userID'].toString();
+    String comment = commentMap['comment'];
+    String creationDate = formatDateTime(DateTime.parse(commentMap['creationDate']));
+    String lastUpdate = formatDateTime(DateTime.parse(commentMap['lastUpdate']));
 
     var response = await DBHelper.query(
-      "INSERT INTO taskComment (taskID, userID, comment, lastUpdate) VALUES (?, ?, ?, ?)",
-      [taskID, userID, comment, lastUpdate],
+      "INSERT INTO taskComment (taskID, userID, comment, creationDate, lastUpdate) VALUES (?, ?, ?, ?, ?)",
+      [taskID, userID, comment, creationDate, lastUpdate],
     );
 
     if (response is Results) {
       await LocalDB.markActivityLogAsSynced(actMap['locId']);
       var insertId = response.insertId;
       if (insertId != null) {
-        await LocalDB.updateTaskCommentSyncStatus(
-            taskCommentMap['locId'], insertId);
+        await LocalDB.updateTaskCommentSyncStatus(commentMap['locId'], insertId);
       }
     } else {
-      AppLog.e("Error inserting task comment in remote database: $response");
+      AppLog.e("Error inserting taskComment in remote database: $response");
     }
   }
 
-  static Future<void> handleRemoteTaskCommentUpdate(Map<String, dynamic> actMap) async {
+  static Future<void> handleRemoteCommentUpdate(Map<String, dynamic> actMap) async {
     var actDetails = jsonDecode(actMap['activityDetails']);
-    var taskCommentMap = Map<String, dynamic>();
+    var commentMap = <String, dynamic>{};
     if (actDetails['taskCommentID'] != null) {
-      taskCommentMap = (await LocalDB.queryTaskCommentByRemoteID(
-          actDetails['taskCommentID']))!;
+      commentMap = (await LocalDB.queryTaskCommentByRemoteID(actDetails['taskCommentID']))!;
     } else {
-      taskCommentMap =
-          (await LocalDB.queryTaskCommentByLocalID(actDetails['locId']))!;
+      commentMap = (await LocalDB.queryTaskCommentByLocalID(actDetails['locId']))!;
     }
 
-    String taskID = taskCommentMap['taskID'].toString();
-    String userID = taskCommentMap['userID'].toString();
-    String comment = taskCommentMap['comment'];
-    String lastUpdate =
-        formatDateTime(DateTime.parse(taskCommentMap['lastUpdate']));
+    if (commentMap.isEmpty) {
+      AppLog.e("No se encontró el comentario con ID ${actDetails['taskCommentID']}");
+      return;
+    }
+
+    String comment = commentMap['comment'];
+    String lastUpdate = formatDateTime(DateTime.parse(commentMap['lastUpdate']));
+
+    var remoteComment = await DBHelper.query(
+      "SELECT * FROM taskComment WHERE taskCommentID = ?",
+      [commentMap['taskCommentID']],
+    );
+    if (remoteComment.isNotEmpty) {
+      var remoteLastUpdate = remoteComment.first['lastUpdate'];
+
+      var localLastUpdate = DateTime.parse(commentMap['lastUpdate']);
+      if (remoteLastUpdate.isAfter(localLastUpdate)) {
+        AppLog.d("Comentario remoto más reciente, no se actualizará.");
+        return;
+      }
+    }
 
     var response = await DBHelper.query(
-      "UPDATE taskComment SET taskID = ?, userID = ?, comment = ?, lastUpdate = ? WHERE taskCommentID = ?",
-      [taskID, userID, comment, lastUpdate, taskCommentMap['taskCommentID']],
+      "UPDATE taskComment SET comment = ?, lastUpdate = ? WHERE taskCommentID = ?",
+      [comment, lastUpdate, commentMap['taskCommentID']],
     );
 
     if (response is Results) {
       await LocalDB.markActivityLogAsSynced(actMap['locId']);
     } else {
-      AppLog.e("Error updating task comment in remote database: $response");
+      AppLog.e("Error updating taskComment in remote database: $response");
     }
   }
 
-  static Future<void> handleRemoteTaskCommentDelete(Map<String, dynamic> actMap) async {
-    var actDetails = jsonDecode(actMap['activityDetails']);
-    var taskCommentMap = Map<String, dynamic>();
-    if (actDetails['taskCommentID'] != null) {
-      taskCommentMap = (await LocalDB.queryTaskCommentByRemoteID(
-          actDetails['taskCommentID']))!;
-    } else {
-      taskCommentMap =
-          (await LocalDB.queryTaskCommentByLocalID(actDetails['locId']))!;
-    }
-
-    var response = await DBHelper.query(
-      "DELETE FROM taskComment WHERE taskCommentID = ?",
-      [taskCommentMap['taskCommentID']],
+  static Future<void> handleRemoteCommentDeletion(Map<String, dynamic> deletion) async {
+    var activityDetails = jsonDecode(deletion['activityDetails']);
+    var remoteID = activityDetails['taskCommentID'] ?? activityDetails['locId'];
+    var existComment = await DBHelper.query(
+      "SELECT * FROM taskComment WHERE taskCommentID = ?",
+      [remoteID],
     );
-
-    if (response is Results) {
-      await LocalDB.markActivityLogAsSynced(actMap['locId']);
-    } else {
-      AppLog.e("Error deleting task comment in remote database: $response");
+    var commentMap = existComment.isNotEmpty ? existComment.first : null;
+    if (commentMap != null) {
+      await DBHelper.query(
+        "DELETE FROM taskComment WHERE taskCommentID = ?",
+        [remoteID],
+      );
     }
+    var delLocId = deletion['locId'];
+    await LocalDB.markActivityLogAsSynced(delLocId);
   }
-
-  static Future<void> handleRemoteTaskCommentSync(Map<String, dynamic> actMap) async {
-    var actType = actMap['activityType'];
-    if (actType == 'taskCommentInsert') {
-      await handleRemoteTaskCommentInsert(actMap);
-    } else if (actType == 'taskCommentUpdate') {
-      await handleRemoteTaskCommentUpdate(actMap);
-    } else if (actType == 'taskCommentDelete') {
-      await handleRemoteTaskCommentDelete(actMap);
-    }
-  }
-
-  static Future<void> syncTaskComment() async {
-    await pullTaskComment();
-    await pushTaskComment();
-  }
-
-
 }

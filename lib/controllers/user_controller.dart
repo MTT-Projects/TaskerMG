@@ -123,17 +123,19 @@ class UserController extends GetxController {
     return null;
   }
 
-  static getProfilePicture(userID) async {
+  static Future<String> getProfilePicture(userID) async {
 
     var response  = await DBHelper.query(
       '''SELECT profilePicUrl FROM profileData WHERE userID = ?''',
       [userID],
     );
 
+
     if (response.isNotEmpty) {
-      return response.first;
+      var profilePicUrl = response.first[0];
+      return profilePicUrl;
     } else {
-      return null;
+      return "";
     }
   }
 

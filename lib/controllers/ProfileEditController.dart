@@ -19,7 +19,7 @@ class ProfileEditController {
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
         String userId = MainController.getVar('currentUser').toString();
-        String downloadUrl = await fileManager.uploadFile(imageFile, userId, 'profile_$userId.png');
+        String downloadUrl = await fileManager.uploadFile(imageFile, userId, 'profile_$userId.png', 'profile_pics');
         await fileManager.saveFileLocally(imageFile, 'profile_$userId.png');
         await updateUserProfilePic(userId, downloadUrl);
       }

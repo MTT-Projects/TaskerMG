@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:taskermg/controllers/attatchmentController.dart';
 import 'package:taskermg/controllers/dbRelationscontroller.dart';
 import 'package:taskermg/controllers/project_controller.dart';
 import 'package:taskermg/controllers/sync_controller.dart';
@@ -291,16 +292,18 @@ class LocalDB {
 
   static Future<int> updateTaskCommentSyncStatus(
       int locId, int taskCommentId) async {
-    //cambiar taskCommentID de la relacion taskAttachment
-    var taskAttachments = await _db!.query('taskAttachment',
-        where: 'taskCommentID = ?', whereArgs: [locId]);
-    for (var taskAttachment in taskAttachments) {
-      var locId = taskAttachment['locId'] as int;
+    //cambiar taskCommentID de la relacion attatchment
+    var attachments = await _db!
+        .query('attachment', where: 'taskCommentID = ?', whereArgs: [locId]);
+    for (var attachment in attachments) {
+      var locId = attachment['locId'] as int;
       if (locId == -1) {
         continue;
       }
-      await DbRelationsCtr.updateTaskCommentID(_taskAttachmentTable,locId, taskCommentId);
+      await AttachmentController.updateTaskCommentID(locId, taskCommentId);
     }
+
+    
 
     return await _db!.update(
       'taskComment',
@@ -606,7 +609,7 @@ class LocalDB {
 
   static Future<int> insertTaskComment(TaskComment taskComment) async {
     return await _db!.rawInsert(
-      'INSERT INTO taskComment (taskCommentID, taskID, userID, comment, timestamp, lastUpdate) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO taskComment (taskCommentID, taskID, userID, comment, creationDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?)',
       [
         taskComment.taskCommentID,
         taskComment.taskID,
@@ -620,9 +623,10 @@ class LocalDB {
 
   static Future<int> insertAttachment(Attachment attachment) async {
     return await _db!.rawInsert(
-      'INSERT INTO attachment (attachmentID, userID, name, type, size, fileUrl, localPath, uploadDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO attachment (attachmentID, taskCommentID, userID, name, type, size, fileUrl, localPath, uploadDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         attachment.attachmentID,
+        attachment.taskCommentID,
         attachment.userID,
         attachment.name,
         attachment.type,

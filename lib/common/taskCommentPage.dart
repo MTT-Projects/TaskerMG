@@ -21,7 +21,6 @@ class TaskCommentsPage extends StatefulWidget {
 class _TaskCommentsPageState extends State<TaskCommentsPage> {
   final TaskCommentController _controller = Get.put(TaskCommentController());
   String fileName = '';
-  var SelectedFile;
 
   @override
   void initState() {
@@ -62,67 +61,70 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         .where(
             (attachment) => attachment.taskCommentID == comment.taskCommentID)
         .toList();
-    var userpic = UserController.getProfilePicture(comment.userID);
-    var userName = UserController.getUserName(comment.userID);
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundImage: userpic != null
-                    ? NetworkImage(userpic)
-                    : AssetImage("Assets/images/user.png") as ImageProvider,
-                radius: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  comment.comment ?? '',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+    
+    return FutureBuilder<String>(
+      future: UserController.getProfilePicture(comment.userID),
+      builder: (context, snapshot) {
+        String userpic = snapshot.data ?? '';
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: Offset(0, 3),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (attachments.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: attachments.map((attachment) {
-                return _buildAttachmentTile(attachment);
-              }).toList(),
-            ),
-          const SizedBox(height: 5),
-          Text(
-            DateFormat('dd-MM-yyyy HH:mm')
-                .format(comment.creationDate ?? DateTime.now()),
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: userpic == '' ? AssetImage("Assets/images/profile.png") as ImageProvider : NetworkImage(userpic),
+                    radius: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      comment.comment ?? '',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (attachments.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: attachments.map((attachment) {
+                    return _buildAttachmentTile(attachment);
+                  }).toList(),
+                ),
+              const SizedBox(height: 5),
+              Text(
+                DateFormat('dd-MM-yyyy HH:mm')
+                    .format(comment.creationDate ?? DateTime.now()),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   void _mostrarPopup(BuildContext context) {
     final TextEditingController textController = TextEditingController();
-    SelectedFile = null;
+    Map<String, dynamic>? selectedFile;
     fileName = '';
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -158,9 +160,11 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
                     SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: () async {
-                        SelectedFile = await FileManager.pickFile();
+                        selectedFile = await FileManager.pickFile();
                         setState(() {
-                          fileName = SelectedFile["name"];
+                          if (selectedFile != null) {
+                            fileName = selectedFile!["name"];
+                          }
                         });
                       },
                       icon: fileName.isEmpty
@@ -194,8 +198,8 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
                         ),
                         SizedBox(width: 8),
                         ElevatedButton(
-                          onPressed: () {
-                            // Aquí puedes implementar la lógica para enviar el formulario
+                          onPressed: () async {
+                            await sendComment(textController.text, selectedFile);
                           },
                           child: Text('Enviar'),
                           style: ElevatedButton.styleFrom(
@@ -217,8 +221,13 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     );
   }
 
-  String pickFile(AboutDialog aboutDialog) {
-    throw UnimplementedError();
+  Future<void> sendComment(String comment, Map<String, dynamic>? file) async {
+    if (comment.isEmpty) {
+      Get.snackbar('Error', 'El comentario no puede estar vacío.');
+      return;
+    }
+    await _controller.addComment(widget.task.taskID!, comment, file);
+    Navigator.of(context).pop();
   }
 
   Widget _buildAttachmentTile(Attachment attachment) {

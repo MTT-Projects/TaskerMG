@@ -1,5 +1,4 @@
 import 'package:mysql1/mysql1.dart';
-import 'package:taskermg/models/project.dart';
 import '../utils/AppLog.dart';
 
 class DBHelper {

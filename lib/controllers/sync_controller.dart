@@ -6,6 +6,7 @@ import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
+import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
 import 'package:taskermg/utils/sync/sync_tasks.dart';
 import 'package:taskermg/utils/sync/sync_user_projects.dart';
@@ -68,6 +69,7 @@ class SyncController extends GetxController {
     await SyncTasks.pullTasks();
     await SyncUserProjects.pullUserProjects();
     await SyncTaskAssignment.pullTaskAssignments();
+    await SyncTaskComment.pullTaskComments();
   }
 
   static Future<void> pushData() async {
@@ -75,5 +77,6 @@ class SyncController extends GetxController {
     await SyncTasks.pushTasks();
     await SyncUserProjects.pushUserProjects();
     await SyncTaskAssignment.pushTaskAssignments();
+    await SyncTaskComment.pushTaskComments();
   }
 }

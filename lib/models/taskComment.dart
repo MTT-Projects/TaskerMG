@@ -57,11 +57,12 @@ class TaskComment {
   static Future<void> createTable(Database db) async {
     await db.execute('''
 CREATE TABLE IF NOT EXISTS taskComment (
-    taskCommentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    locId INTEGER PRIMARY KEY AUTOINCREMENT,
+    taskCommentID INTEGER,
     taskID INTEGER,
     userID INTEGER,
     comment TEXT,
-    timestamp TEXT,
+    creationDate TEXT,
     lastUpdate TEXT,
     FOREIGN KEY (taskID) REFERENCES tasks(taskID) ON DELETE CASCADE,
     FOREIGN KEY (userID) REFERENCES user(userID) ON DELETE CASCADE

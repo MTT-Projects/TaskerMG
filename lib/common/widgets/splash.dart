@@ -68,6 +68,7 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
             MainController.getVar('currentUser'));
         if (profileData != null) {
           if (firstSync) {
+            MainController.setVar('onlyMine', true);
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => Dashboard()));
           } else {
