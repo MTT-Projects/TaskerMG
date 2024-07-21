@@ -37,7 +37,7 @@ class AttachmentController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    await LocalDB.delete("attachment", where: 'attachmentID = ?', whereArgs: [attachment.locId]);
+    await LocalDB.delete("attachment", where: 'locId = ?', whereArgs: [attachment.locId]);
   }
 
   static Future<void> updateAttachment(Attachment attachment) async {
@@ -72,7 +72,8 @@ class AttachmentController extends GetxController {
     ));
   }
 
-  Future<void> addAttachmentToComment(int taskCommentID, Map<String, dynamic> file) async {
+  static Future<void> addAttachmentToComment(int taskCommentID, Map<String, dynamic> file) async {
+    FileManager fileManager = FileManager();
     int userID = MainController.getVar('currentUser');
     DateTime now = DateTime.now().toUtc();
 
@@ -90,8 +91,6 @@ class AttachmentController extends GetxController {
       uploadDate: now,
       lastUpdate: now,
     );
-
-    int attachmentID = await LocalDB.insertAttachment(attachment);
     await addAttachment(attachment);
   }
 
@@ -104,7 +103,6 @@ class AttachmentController extends GetxController {
 
   static updateTaskCommentID(int locId, int taskCommentId) {
     LocalDB.update("attachment", {'taskCommentID': taskCommentId}, where: 'locId = ?', whereArgs: [locId]);
-    
   }
 
 }

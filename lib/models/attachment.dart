@@ -113,6 +113,7 @@ class Attachment {
   }
 
   static Future<bool> updateAttachmentLocalPath(int attatchmentlocId, String path) async {
+    AppLog.d("Updating attachment local path");
     //update local path of attachment
     var result  = await LocalDB.rawUpdate('''
         UPDATE attachment SET localPath = ? WHERE locId = ?

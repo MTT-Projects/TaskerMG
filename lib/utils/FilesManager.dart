@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/utils/AppLog.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_file/open_file.dart';
@@ -26,19 +27,7 @@ class FileManager {
     }
   }
 
-    Future<String> uploadAttatchment(File file, String userId, String fileName) async {
-    try {
-      Reference ref = _storage.ref().child('profile_pics/$userId/$fileName');
-      UploadTask uploadTask = ref.putFile(file);
-      TaskSnapshot taskSnapshot = await uploadTask;
-      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      throw Exception('Error uploading file: $e');
-    }
-  }
-
-
+    
 Future<File> downloadFile(String url, String fileName, String subfolder) async {
     try {
       Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -94,26 +83,46 @@ Future<File> downloadFile(String url, String fileName, String subfolder) async {
     }
   }
 
-  Future<String> copyFileToLocalPath(Map<String, dynamic>file, subfolder) async {
+  Future<String> copyFileToLocalPath(Map<String, dynamic> file, String subfolder) async {
     try {
-      //clamp file name to 100 characters
+      var finalName = file["name"];
+      // Clamp file name to 100 characters
       if (file["name"].length > 100) {
-        file["name"] = file["name"].substring(0, 100);
+        AppLog.d('File name too long, clamping to 100 characters');
+        finalName = file["name"].substring(0, 100);
       }
-      var currentUserID = MainController.getVar('currentUser').toString();
+      
       Directory appDocDir = await getApplicationDocumentsDirectory();
-      File localFile = File('${appDocDir.path}/$subfolder/${file["name"]}');
+      String dirPath = '${appDocDir.path}/$subfolder';
+      Directory dir = Directory(dirPath);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      
+      File localFile = File('$dirPath/$finalName');
+      AppLog.d('Local file path: ${localFile.path}');
+      
+      // Assuming file['path'] contains the original file path
+      File originalFile = File(file['path']);
+      await originalFile.copy(localFile.path);
+      
       return localFile.path;
     } catch (e) {
       throw Exception('Error copying file to local path: $e');
     }
-
   }
 
-   static Future<void> openFile(String filePath) async {
+  static Future<void> openFile(String filePath) async {
+  AppLog.d("Opening file: $filePath");
+  File file = File(filePath);
+  
+  if (await file.exists()) {
     final result = await OpenFile.open(filePath);
     if (result.type != ResultType.done) {
       throw Exception('Error opening file: ${result.message}');
     }
+  } else {
+    throw Exception('Error opening file: the $filePath file does not exist');
   }
+}
 }

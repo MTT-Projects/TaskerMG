@@ -336,16 +336,6 @@ class LocalDB {
   //update attatchment
   static Future<int> updateAttachmentSyncStatus(
       int locId, int attachmentId) async {
-    //cambiar attachmentID de la relacion taskAttachment
-    var taskAttachments = await _db!
-        .query('taskAttachment', where: 'attachmentID = ?', whereArgs: [locId]);
-    for (var taskAttachment in taskAttachments) {
-      var locId = taskAttachment['locId'] as int;
-      if (locId == -1) {
-        continue;
-      }
-      await DbRelationsCtr.updateAttachmentId(_taskAttachmentTable,locId, attachmentId);
-    }
 
     return await _db!.update(
       'attachment',

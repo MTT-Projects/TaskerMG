@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:taskermg/controllers/attatchmentController.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
@@ -17,6 +18,8 @@ class TaskCommentController extends GetxController {
   FileManager fileManager = FileManager();
 
   Future<void> fetchComments(int taskID) async {
+    commentsList.value = [];
+    attachmentsList.value = [];
     List<Map<String, dynamic>> commentsData = await LocalDB.rawQuery(
       "SELECT * FROM taskComment WHERE taskID = ? ORDER BY creationDate ASC",
       [taskID],
@@ -27,7 +30,6 @@ class TaskCommentController extends GetxController {
     commentsList.value = comments;
 
     for (var comment in comments) {
-
       List<Map<String, dynamic>> attachmentsData = await LocalDB.query(
         'attachment',
         where: 'taskCommentID = ?',
@@ -38,6 +40,9 @@ class TaskCommentController extends GetxController {
           attachmentsData.map((data) => Attachment.fromJson(data)).toList();
       attachmentsList.addAll(attachments);
     }
+    //wait two seconds
+    await Future.delayed(Duration(seconds: 1));
+    return;
   }
 
   static Future<void> deleteTaskComment(TaskComment taskComment) async {
@@ -54,8 +59,44 @@ class TaskCommentController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    await LocalDB.delete("attachment", where: 'taskCommentID = ?', whereArgs: [taskComment.locId]);
-    await LocalDB.delete("taskComment", where: 'taskCommentID = ?', whereArgs: [taskComment.locId]);
+    await LocalDB.delete("attachment", where: 'taskCommentID = ?', whereArgs: [taskComment.taskCommentID ??taskComment.locId]);
+    await LocalDB.delete("taskComment", where: 'locId = ?', whereArgs: [taskComment.locId]);
+  }
+
+  static Future<void> deleteComment(TaskComment taskComment) async {
+    int userID = MainController.getVar('currentUser');
+    DateTime now = DateTime.now().toUtc();
+
+    // Registrar la actividad de eliminación
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: userID,
+      projectID: taskComment.taskID,
+      activityType: 'delete',
+      activityDetails: {
+        'table': 'taskComment',
+        'locId': taskComment.locId,
+        'taskCommentID': taskComment.taskCommentID,
+      },
+      timestamp: now,
+      lastUpdate: now,
+    ));
+
+    // Eliminar los adjuntos relacionados con el comentario
+    List<Map<String, dynamic>> attachmentsData = await LocalDB.query(
+      'attachment',
+      where: 'taskCommentID = ?',
+      whereArgs: [taskComment.taskCommentID ?? taskComment.locId],
+    );
+
+    for (var attachmentData in attachmentsData) {
+      Attachment attachment = Attachment.fromJson(attachmentData);
+      await AttachmentController.deleteAttachment(attachment);
+    }
+
+    // Eliminar el comentario
+    await LocalDB.delete("taskComment", where: 'locId = ?', whereArgs: [taskComment.locId]);
+
+    await SyncController.pushData();
   }
 
   static Future<void> updateTaskComment(TaskComment taskComment) async {
@@ -74,7 +115,7 @@ class TaskCommentController extends GetxController {
     ));
   }
 
-  static Future<void> addTaskComment(TaskComment taskComment) async {
+  static Future<int> addTaskComment(TaskComment taskComment) async {
     int locId = await LocalDB.insert('taskComment', taskComment.toJson());
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('currentUser'),
@@ -88,6 +129,7 @@ class TaskCommentController extends GetxController {
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
+    return locId;
   }
 
   Future<void> addComment(int taskId, String commentText, Map<String, dynamic>? file) async {
@@ -102,8 +144,7 @@ class TaskCommentController extends GetxController {
       lastUpdate: now,
     );
 
-    int commentID = await LocalDB.insertTaskComment(taskComment);
-    await addTaskComment(taskComment);
+    var commentID = await addTaskComment(taskComment);
 
     if (file != null) {
       var userId = MainController.getVar('currentUser').toString();
@@ -122,21 +163,7 @@ class TaskCommentController extends GetxController {
         lastUpdate: now,
       );
 
-      await LocalDB.insertAttachment(attachment);
-
-      //insert activity log
-      await LocalDB.insertActivityLog(ActivityLog(
-        userID: userID,
-        projectID: taskId,
-        activityType: 'create',
-        activityDetails: {
-          'table': 'attachment',
-          'locId': commentID,
-          'attachmentID': commentID,
-        },
-        timestamp: now,
-        lastUpdate: now,
-      ));
+      await AttachmentController.addAttachment(attachment);
       
     }
     //inser activity log
@@ -152,12 +179,12 @@ class TaskCommentController extends GetxController {
       timestamp: now,
       lastUpdate: now,
     ));
+
+    await SyncController.pushData();
   }
 
   static updateTaskID(int locId, int taskId) {
     LocalDB.update("taskComment", {'taskID': taskId},
         where: 'commentID = ?', whereArgs: [locId]);
   }
-
-  //update 
 }

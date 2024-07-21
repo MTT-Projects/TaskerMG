@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -27,37 +26,111 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
   String fileName = '';
   FileManager fileManager = FileManager();
   Map<int, bool> _isDownloading = {};
+  Map<int, bool> _hasLocalPath = {};
+  late Future<void> _fetchCommentsFuture;
 
   @override
   void initState() {
     super.initState();
-    _controller.fetchComments(widget.task.taskID!);
+    _fetchCommentsFuture = _fetchComments();
+  }
+
+  Future<void> _fetchComments() async {
+    await _controller.fetchComments(widget.task.taskID!);
+  }
+
+  Future<void> _reloadComments() async {
+    setState(() {
+      _fetchCommentsFuture = _fetchComments();
+    });
+    await _fetchCommentsFuture;
   }
 
   @override
   Widget build(BuildContext context) {
+    var isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comentarios de la Tarea'),
         backgroundColor: AppColors.primaryColor,
       ),
-      body: Obx(() {
-        return _controller.commentsList.isEmpty
-            ? const Center(child: Text('No hay comentarios.'))
-            : ListView.builder(
-                itemCount: _controller.commentsList.length,
-                itemBuilder: (context, index) {
-                  TaskComment comment = _controller.commentsList[index];
-                  return _buildCommentTile(comment);
-                },
-              );
-      }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _mostrarPopup(context);
+      body: FutureBuilder<void>(
+        future: _fetchCommentsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+                child: Container(
+                  height: 200,
+                    child: Column(children: [
+                      Lottie.asset('Assets/lotties/loading.json', width: 100),
+                      const SizedBox(height: 25),
+                      const Text('Cargando comentarios...'),
+                    ])));
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Error al cargar comentarios'),
+            );
+          } else {
+            return Obx(() {
+              return _controller.commentsList.isEmpty
+                  ? const Center(child: Text('No hay comentarios.'))
+                  : ListView.builder(
+                      itemCount: _controller.commentsList.length,
+                      itemBuilder: (context, index) {
+                        TaskComment comment = _controller.commentsList[index];
+                        return _buildCommentTile(comment);
+                      },
+                    );
+            });
+          }
         },
-        backgroundColor: AppColors.primaryColor,
-        child: const Icon(Icons.add),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.values[1],
+            gradient: LinearGradient(
+              colors: [AppColors.secondaryColor, AppColors.primaryColor],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            border: Border.all(color: AppColors.backgroundColor, width: 3),
+          ),
+          child: Icon(
+            Icons.add,
+            size: 40,
+          ),
+        ),
+        onPressed: () async {
+          await _mostrarPopup(context);
+          await _reloadComments();
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        color: AppColors.secBackgroundColor,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Obx(() {
+              return Text(
+                'Comentarios: ${_controller.commentsList.length}',
+                style: TextStyle(
+                  color: AppColors.secTextColor,
+                ),
+              );
+            }),
+            IconButton(
+              icon: Icon(Icons.refresh, color: AppColors.secTextColor),
+              onPressed: () async {
+                await _reloadComments();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -130,7 +203,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     );
   }
 
-  void _mostrarPopup(BuildContext context) {
+  Future<void> _mostrarPopup(BuildContext context) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -151,6 +224,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
 
   Widget _buildAttachmentTile(Attachment attachment) {
     var fileIcon = Icons.attach_file;
+
     switch (attachment.type) {
       case 'pdf':
         fileIcon = Icons.picture_as_pdf;
@@ -194,43 +268,60 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         ? "${fileSize.toStringAsFixed(2)} MB"
         : "${(attachment.size! / 1024).toStringAsFixed(2)} KB";
 
-    var downloadBTN = _isDownloading[attachment.attachmentID] == true
+    if (attachment.localPath != null) {
+      _hasLocalPath[attachment.attachmentID!] = true;
+    }
+
+    var downloadBTN = _hasLocalPath[attachment.attachmentID] == true
         ? Row(
             children: [
               const SizedBox(width: 5),
               Text(
-                "Descargando...",
+                "($fileSizeString)",
                 style: const TextStyle(color: Colors.blue),
               ),
-              CircularProgressIndicator(),
             ],
           )
-        : Row(
-            children: [
-              const SizedBox(width: 5),
-              Text(
-                "Descargar ($fileSizeString)",
-                style: const TextStyle(color: Colors.blue),
-              ),
-              IconButton(
-                icon: const Icon(Icons.download),
-                color: Colors.blue,
-                onPressed: () async {
-                  setState(() {
-                    _isDownloading[attachment.attachmentID!] = true;
-                  });
-                  File localFile = await fileManager.downloadFile(
-                      attachment.fileUrl!, attachment.name!, "attachments");
-                  await Attachment.updateAttachmentLocalPath(
-                      attachment.attachmentID!, localFile.path);
-                  setState(() {
-                    _isDownloading[attachment.attachmentID!] = false;
-                  });
-                  FileManager.openFile(localFile.path);
-                },
+        : _isDownloading[attachment.attachmentID] == true
+            ? Row(
+                children: [
+                  const SizedBox(width: 5),
+                  Text(
+                    "Descargando...",
+                    style: const TextStyle(color: Colors.blue),
+                  ),
+                  CircularProgressIndicator(),
+                ],
               )
-            ],
-          );
+            : Row(
+                children: [
+                  const SizedBox(width: 5),
+                  Text(
+                    "Descargar ($fileSizeString)",
+                    style: const TextStyle(color: Colors.blue),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.download),
+                    color: Colors.blue,
+                    onPressed: () async {
+                      setState(() {
+                        _isDownloading[attachment.attachmentID!] = true;
+                      });
+                      File localFile = await fileManager.downloadFile(
+                          attachment.fileUrl!, attachment.name!, "attachments");
+                      await Attachment.updateAttachmentLocalPath(
+                          attachment.locId!, localFile.path);
+                      setState(() {
+                        _isDownloading[attachment.attachmentID!] = false;
+                        _hasLocalPath[attachment.attachmentID!] = true;
+                        attachment.localPath = localFile.path;
+                      });
+                      FileManager.openFile(localFile.path);
+                    },
+                  )
+                ],
+              );
+
     if (attachment.localPath != null) {
       downloadBTN = Row(
         children: [
@@ -268,7 +359,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            downloadBTN ?? Container(),
+            downloadBTN,
           ],
         ),
       ),

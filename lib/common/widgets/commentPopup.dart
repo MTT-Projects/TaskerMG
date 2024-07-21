@@ -29,9 +29,12 @@ class _CommentPopupState extends State<CommentPopup> {
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: isLoading
-            ? Center(
-                child: Lottie.asset('Assets/lotties/sending.json'),
-              )
+            ? Container(
+                height: 200,
+                width: 200,
+                child: Center(
+                  child: Lottie.asset('Assets/lotties/sending.json'),
+                ))
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
