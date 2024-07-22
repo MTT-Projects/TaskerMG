@@ -86,10 +86,12 @@ class ProjectCard extends StatelessWidget {
         var percentage = taskInfo['percentage'] ?? 0.0;
         var totalTasks = taskInfo['tasks'] ?? 0;
         var completedTasks = taskInfo['completed'] ?? 0;
+        var collaborators = taskInfo['collaborators'] ?? 0;
 
         return InkWell(
           onTap: () async {
             MainController.setVar('currentProject', project.projectID ?? project.locId);
+            MainController.setVar('currentProjectOwner', project.proprietaryID);
             await Get.to(() => ProyectDashboard(project: project));
             ProjectPage.updateProjects(); // Update projects after returning from project dashboard
           },
@@ -154,7 +156,7 @@ class ProjectCard extends StatelessWidget {
                               Icon(Icons.group, color: Colors.white70),
                               SizedBox(width: 4),
                               Text(
-                                '25', // Ejemplo de número de personas
+                                '$collaborators' ?? '1', // Ejemplo de número de personas
                                 style: TextStyle(color: Colors.white70),
                               ),
                               SizedBox(width: 16),
@@ -221,10 +223,12 @@ Future<Map<String, dynamic>> getTaskInfo(Project project) async {
     }
   }
   double percentage = totalTasks > 0 ? completedTasks / totalTasks : 0.0;
-
+  //obtener colaboradores en el proyecto 
+  var collaborators = await ProjectController.getCollaboratorsNumber(project.projectID ?? project.locId);
   return {
     'percentage': percentage,
     'tasks': totalTasks,
     'completed': completedTasks,
+    'collaborators': collaborators,
   };
 }

@@ -31,7 +31,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   Future<void> _loadUserData() async {
-    int currentUserId = MainController.getVar('currentUser');
+    int currentUserId = MainController.getVar('currentUser') ?? 0;
     var loadUser = await ProfileDataController.getUserById(currentUserId);
     _user = loadUser as User;
     _nameController = TextEditingController(text: _user?.name);

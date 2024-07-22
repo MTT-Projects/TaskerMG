@@ -48,9 +48,6 @@ class _DashboardState extends State<Dashboard> {
         MainController.setVar('onlyMine', false);
         ProjectPage.updateProjects();
         break;
-      case 2:
-        screenTitle.value = "Solicitudes";
-        break;
     }
   }
   
@@ -140,7 +137,7 @@ class _DashboardState extends State<Dashboard> {
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
-                        "Mios",
+                        "Mis Proyectos",
                         style: TextStyle(
                           color: AppColors.textColor,
                         ),
@@ -157,22 +154,7 @@ class _DashboardState extends State<Dashboard> {
                         color: AppColors.secBackgroundColor,
                       ),
                       title: Text(
-                        "Otros",
-                        style: TextStyle(color: AppColors.textColor),
-                      ),
-                    ),
-                    BubbleBottomBarItem(
-                      backgroundColor: AppColors.secondaryColor,
-                      icon: Icon(
-                        Icons.person_add_alt_1,
-                        color: AppColors.backgroundColor,
-                      ),
-                      activeIcon: Icon(
-                        Icons.person_add_alt_1,
-                        color: AppColors.secBackgroundColor,
-                      ),
-                      title: Text(
-                        "Solicitudes.",
+                        "Otros Proyectos",
                         style: TextStyle(color: AppColors.textColor),
                       ),
                     ),

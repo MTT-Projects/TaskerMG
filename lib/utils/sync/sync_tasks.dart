@@ -93,7 +93,7 @@ class SyncTasks {
       AppLog.d("Tareas sin sincronizar: ${jsonEncode(unsyncedTasks)}");
 
       for (var actMap in unsyncedTasks) {
-         var details = jsonDecode(actMap['activityDetails']);
+        var details = jsonDecode(actMap['activityDetails']);
         var hasDeletion =
             await hasDeletionLog(details['taskID'] ?? details['locId']);
         if (!hasDeletion) {
@@ -121,12 +121,10 @@ class SyncTasks {
           var creationActivity = await getCreationActivityByTaskID(
               actMap['taskID'] ?? actMap['locId']);
           if (creationActivity != null) {
-            if (creationActivity['isSynced'] == 0) {
+            if (creationActivity['isSynced'] == 1) {
               await handleRemoteTaskUpdate(actMap);
             }
-          }
-          else
-          {
+          } else {
             await handleRemoteTaskUpdate(actMap);
           }
         } else {
@@ -188,8 +186,10 @@ class SyncTasks {
     } else {
       if (DateTime.parse(taskMap['lastUpdate'])
           .isAfter(DateTime.parse(localTask['lastUpdate']))) {
-            var updated = Task.fromJson(taskMap);
-            updated.locId = localTask['locId'];
+        AppLog.d("Tarea ${localTask} local más antigua, actualizando...");
+        var updated = Task.fromJson(taskMap);
+        updated.locId = localTask['locId'];
+        AppLog.d("Tarea ${localTask} actualizada con $updated");
         await LocalDB.updateTask(updated);
       }
     }
@@ -327,6 +327,7 @@ class SyncTasks {
       "SELECT * FROM tasks WHERE taskID = ?",
       [taskMap['taskID']],
     );
+
     if (remoteTask.isNotEmpty) {
       var remoteLastUpdate = remoteTask.first['lastUpdate'];
 
@@ -338,9 +339,8 @@ class SyncTasks {
     }
 
     var response = await DBHelper.query(
-      "UPDATE tasks SET projectID = ?, title = ?, description = ?, deadline = ?, priority = ?, status = ?, lastUpdate = ? WHERE taskID = ?",
+      "UPDATE tasks SET title = ?, description = ?, deadline = ?, priority = ?, status = ?, lastUpdate = ? WHERE taskID = ?",
       [
-        projectID,
         title,
         description,
         deadline,
@@ -353,6 +353,27 @@ class SyncTasks {
 
     if (response is Results) {
       await LocalDB.markActivityLogAsSynced(actMap['locId']);
+
+      //insert remote activityLog
+      var activityDetails = jsonDecode(actMap['activityDetails']);
+      var remoteDetail = {
+        "table": activityDetails["table"],
+        "tableActivity": activityDetails["tableActivity"],
+        "newState": activityDetails["newState"],
+        "taskID": taskMap['taskID'],
+      };
+      if (activityDetails['tableActivity'] == 'changeTaskState') {
+        await LocalDB.markActivityLogAsVisible(actMap['locId']);
+      }
+
+      var logResponse = await DBHelper.query(
+          "INSERT INTO activityLog (userID,projectID, activityType, activityDetails) VALUES (?, ?, ?, ?)",
+          [
+            actMap['userID'],
+            actMap['projectID'],
+            actMap['activityType'],
+            jsonEncode(remoteDetail),
+          ]);
     } else {
       AppLog.e("Error updating task in remote database: $response");
     }

@@ -112,13 +112,13 @@ class _AssignTaskPageState extends State<AssignTaskPage> {
           ),
           buttons: PopUpButtons.yesNo(context, () async {
             String email = emailController.text.trim();
-            User? user = await CollaboratorsController.getUserWithEmail(email);
+            User? user = await CollaboratorsController.getCollaboratorByEmail(email);
             if (user != null) {
               _taskController.assignUser(widget.task.taskID!, user.userID!);
               Navigator.of(context).pop();
             } else {
               // Mostrar un mensaje de error si el usuario no se encuentra
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario no encontrado')));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario no existe o no es colaborador.')));
             }
           }),
         );

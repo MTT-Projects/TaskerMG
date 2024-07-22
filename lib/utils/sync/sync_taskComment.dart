@@ -18,18 +18,22 @@ class SyncTaskComment {
     try {
       var result = await DBHelper.query('''
         SELECT 
-          tc.taskCommentID, 
-          tc.taskID, 
-          tc.userID, 
-          tc.comment, 
-          tc.creationDate, 
-          tc.lastUpdate
+            tc.taskCommentID, 
+            tc.taskID, 
+            tc.userID, 
+            tc.comment, 
+            tc.creationDate, 
+            tc.lastUpdate
         FROM 
-          taskComment tc
+            taskComment tc
         JOIN 
-          taskAssignment ta ON tc.taskID = ta.taskID
+            tasks t ON tc.taskID = t.taskID
+        JOIN 
+            project p ON t.projectID = p.projectID
+        JOIN 
+            userProject up ON p.projectID = up.projectID
         WHERE 
-          ta.userID = ?
+            up.userID = ?
       ''', [userID]);
 
       var remoteTaskComments = result.map((commentMap) => commentMap['taskCommentID']).toList();

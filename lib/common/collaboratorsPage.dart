@@ -28,6 +28,10 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     _checkConnection();
   }
 
+  bool imOwner() {
+    return MainController.getVar("currentUser") == widget.project.proprietaryID;
+  }
+
   Future<void> _checkConnection() async {
     bool isConnected = await ConnectionChecker.checkConnection();
     setState(() {
@@ -72,12 +76,12 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
                     ),
                     title: Text(collaborator.name ?? ''),
                     subtitle: Text(collaborator.email),
-                    trailing: IconButton(
+                    trailing: imOwner() ? IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
                         controller.removeCollaborator(collaborator.userID!);
                       },
-                    ),
+                    ): null,
                   );
                 },
               );

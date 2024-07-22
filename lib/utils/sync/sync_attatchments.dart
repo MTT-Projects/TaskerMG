@@ -17,7 +17,7 @@ class SyncAttachment {
     var userID = MainController.getVar('currentUser');
     try {
       var result = await DBHelper.query('''
-        SELECT 
+       SELECT 
           a.attachmentID, 
           a.taskCommentID, 
           a.userID, 
@@ -27,14 +27,18 @@ class SyncAttachment {
           a.fileUrl, 
           a.uploadDate, 
           a.lastUpdate
-        FROM 
+      FROM 
           attachment a
-        JOIN 
+      JOIN 
           taskComment tc ON a.taskCommentID = tc.taskCommentID
-        JOIN 
-          taskAssignment ta ON tc.taskID = ta.taskID
-        WHERE 
-          ta.userID = ?
+      JOIN 
+          tasks t ON tc.taskID = t.taskID
+      JOIN 
+          project p ON t.projectID = p.projectID
+      JOIN 
+          userProject up ON p.projectID = up.projectID
+      WHERE 
+          up.userID = ?
       ''', [userID]);
 
       var remoteAttachments = result.map((attachmentMap) => attachmentMap['attachmentID']).toList();

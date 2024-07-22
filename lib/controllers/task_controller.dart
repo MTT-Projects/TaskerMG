@@ -21,10 +21,10 @@ class TaskController extends GetxController {
 
   @override
   void onReady() {
-    getTasks();
     super.onReady();
   }
 
+  bool onlyAssigned = false;
   var taskList = <Task>[].obs;
 
   Future<int> addTask({required Task task}) async {
@@ -43,13 +43,14 @@ class TaskController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-            //sync tables
+    //sync tables
     await SyncController.pushData();
-    
+
     return locId;
   }
 
   Future<RxList<Task>> getTasks([project]) async {
+    taskList.clear();
     AppLog.d(
         "Getting tasks from Project: ${MainController.getVar('currentProject')}");
     final currentProjectID = project ?? MainController.getVar('currentProject');
@@ -70,6 +71,7 @@ class TaskController extends GetxController {
 
   //get assigned taskss
   Future<RxList<Task>> getAssignedTasks([project]) async {
+    taskList.clear();
     final currentUserID = MainController.getVar('userID');
     final currentProjectID = project ?? MainController.getVar('currentProject');
 
@@ -77,14 +79,17 @@ class TaskController extends GetxController {
       List<Map<String, dynamic>> tasks = await LocalDB.rawQuery(
         '''
           SELECT 
-              t.taskID,
+              t.locId,
+              t.taskID,              
+              t.projectID,
               t.title,
               t.description,
               t.deadline,
               t.priority,
-              t.status,
-              t.creationDate,
-              t.lastUpdate
+              t.status,              
+              t.createdUserID,
+              t.lastUpdate,
+              t.creationDate
           FROM 
               tasks t
           INNER JOIN 
@@ -115,8 +120,6 @@ class TaskController extends GetxController {
       LEFT JOIN profileData pd ON u.userID = pd.userID
       WHERE ta.taskID = ?
     ''', [taskId]);
-
-    
 
     List<User> collaborators = result.map<User>((data) {
       var profileData = {
@@ -158,12 +161,6 @@ class TaskController extends GetxController {
     getAssignedUsers(taskId);
   }
 
-  void markTaskCompleted(Task task) {
-    task.status = 'Completada';
-    task.lastUpdate = DateTime.now().toUtc();
-    updateTask(task);
-  }
-
   static Future<void> deleteTask(Task task) async {
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
@@ -184,18 +181,14 @@ class TaskController extends GetxController {
     for (var comment in comments) {
       await TaskCommentController.deleteTaskComment(
           TaskComment.fromJson(comment));
-
-    
     }
-
 
     // Eliminar asignaciones de tareas relacionadas
     await LocalDB.delete('taskAssignment',
         where: 'taskID = ?', whereArgs: [task.taskID ?? task.locId]);
 
     // Eliminar la tarea
-    await LocalDB
-        .delete('tasks', where: 'locId = ?', whereArgs: [task.locId]);
+    await LocalDB.delete('tasks', where: 'locId = ?', whereArgs: [task.locId]);
 
     //sync tables
     await SyncController.pushData();
@@ -203,20 +196,26 @@ class TaskController extends GetxController {
 
   //delete tasks by projectID
   void deleteTasksByProjectID(int projectID) async {
-    await LocalDB
-        .delete("tasks", where: 'projectID = ?', whereArgs: [projectID]);
+    await LocalDB.delete("tasks",
+        where: 'projectID = ?', whereArgs: [projectID]);
     getTasks();
   }
 
-  Future<void> updateTask(Task task) async {
-    await LocalDB.update(
-      "tasks",
-      task.toMap(),
-      where: 'locId = ?',
-      whereArgs: [task.locId],
-    );
+  Future<void> changeTaskState(Task task, String state) async {
+    
+    //revisar si es diferente
+    var oldTask = await LocalDB.query('tasks', where: 'locId = ?', whereArgs: [task.locId]);
+    if (oldTask.isEmpty) {
+      return;
+    }
+    var oldTaskData = Task.fromJson(oldTask[0]);
+    if (oldTaskData.status == state) {
+      return;
+    } 
 
-    // Registrar la actividad
+    var retTask = task;
+    retTask.status = state;
+
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('userID'),
       projectID: task.projectID,
@@ -225,13 +224,28 @@ class TaskController extends GetxController {
         'table': 'tasks',
         'locId': task.locId,
         'taskID': task.taskID,
+        'tableActivity' : "changeTaskState",
+        'newState': state,
       },
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
-      
-    getTasks();
-            //sync tables
+
+    await onlyupdateTask(task);
+  }
+
+  Future<void> onlyupdateTask(Task task) async {
+    task.lastUpdate = DateTime.now().toUtc();
+
+    await LocalDB.update(
+      "tasks",
+      task.toMap(),
+      where: 'locId = ?',
+      whereArgs: [task.locId],
+    );
+
+    onlyAssigned ? await getAssignedTasks(): await getTasks();
+    //sync tables
     await SyncController.pushData();
   }
 
@@ -246,5 +260,51 @@ class TaskController extends GetxController {
       where: 'locId = ?',
       whereArgs: [locId],
     );
+  }
+
+  Future<int> getTaskCommentsCount(int taskID) async {
+    var response = await LocalDB.rawQuery(
+      '''
+      SELECT COUNT(*) as count
+      FROM taskComment
+      WHERE taskID = ?
+    ''',
+      [taskID],
+    );
+
+    return response[0]["count"];
+  }
+
+  Future<void> updateTaskDetails(Task task) async {
+    //revisar si es diferente en todos los campos
+    var oldTask = await LocalDB.query('tasks', where: 'locId = ?', whereArgs: [task.locId]);
+    if (oldTask.isEmpty) {
+      return;
+    }
+    var oldTaskData = Task.fromJson(oldTask[0]);
+    if (oldTaskData.title == task.title &&
+        oldTaskData.description == task.description &&
+        oldTaskData.deadline == task.deadline &&
+        oldTaskData.priority == task.priority &&
+        oldTaskData.status == task.status) {
+      return;
+    }
+    
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MainController.getVar('userID'),
+      projectID: task.projectID,
+      activityType: 'update',
+      activityDetails: {
+        'table': 'tasks',
+        'locId': task.locId,
+        'taskID': task.taskID,
+        'tableActivity' : "updateTaskDetails",
+        'newState': "Updated",
+      },
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
+    ));
+
+    onlyupdateTask(task);
   }
 }

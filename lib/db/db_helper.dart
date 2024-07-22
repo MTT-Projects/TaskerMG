@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import '../utils/AppLog.dart';
 
 class DBHelper {
@@ -14,6 +15,14 @@ class DBHelper {
   
 
   static Future<void> initialize() async {
+    //check internet connection
+    if(await ConnectionChecker.checkConnection() == false)
+    {
+      AppLog.d("No internet connection, skipping DB initialization");
+      return;
+    }
+    AppLog.d("Initializing DBHelper");
+    
     _settings = ConnectionSettings(
       host: 'tasker-db-matiw172.d.aivencloud.com',
       port: 11312,

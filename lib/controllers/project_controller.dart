@@ -213,6 +213,18 @@ class ProjectController extends GetxController {
     await SyncController.pushData();
     return res == 1;
   }
+
+  static getCollaboratorsNumber(int? proyectID) async {
+    var response =  await LocalDB.rawQuery('''
+      SELECT 
+        COUNT(userID) as collaborators 
+      FROM 
+        userProject 
+      WHERE 
+        projectID = ? 
+    ''', [proyectID]);
+    return response[0]['collaborators'];
+  }
 }
 
 class ProjectGoalController {

@@ -1,28 +1,20 @@
-// ignore_for_file: prefer_const_constructors
-
-import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/add_task_bar.dart';
 import 'package:taskermg/common/assignTaskPage.dart';
 import 'package:taskermg/common/editTaskPage.dart';
-import 'package:taskermg/common/pages/profile.dart';
 import 'package:taskermg/common/taskCommentPage.dart';
 import 'package:taskermg/common/theme.dart';
-import 'package:taskermg/common/widgets/button.dart';
 import 'package:taskermg/common/widgets/popUpDialog.dart';
 import 'package:taskermg/common/widgets/task_tile.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/services/notification_services.dart';
-import 'package:taskermg/services/theme_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 
 import '../controllers/task_controller.dart';
 import '../models/task.dart';
-import '../views/globalheader.dart';
 import '../utils/AppLog.dart';
 
 class TasksPage extends StatefulWidget {
@@ -34,10 +26,10 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   var screenTitle = "Todas las tareas";
-  DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
 
   var notifyHelper;
+  bool imOwner = false;
 
   @override
   void initState() {
@@ -45,12 +37,47 @@ class _TasksPageState extends State<TasksPage> {
     notifyHelper = NotifyHelper();
     notifyHelper.initializeNotification();
     notifyHelper.requestIOSPermissions();
+
+    initialize();
   }
 
-  void updateTasks() {
+  Future<void> initialize() async {
+    imOwner = MainController.getVar("currentUser") ==
+        MainController.getVar("currentProjectOwner");
+    if (!imOwner) {
+      taskFilter = 1;
+      screenTitle = "Tareas Asignadas";
+      _taskController.onlyAssigned = true;
+      await _taskController.getAssignedTasks();
+    } else {
+      taskFilter = 0;
+      _taskController.onlyAssigned = false;
+      await _taskController.getTasks();
+    }
     setState(() {
-      _taskController.getTasks();
+      if (!imOwner) {
+        taskFilter = 1;
+        _taskController.onlyAssigned = true;
+        screenTitle = "Tareas Asignadas";
+      } else {
+        taskFilter = 0;
+        _taskController.onlyAssigned = false;
+        screenTitle = "Todas las tareas";
+      }
     });
+  }
+
+  void updateTasks() async {
+    if (mounted) {
+      if (taskFilter == 0) {
+        _taskController.onlyAssigned = false;
+        await _taskController.getTasks();
+      } else {
+        _taskController.onlyAssigned = true;
+        await _taskController.getAssignedTasks();
+      }
+      setState(() {});
+    }
   }
 
   int _filterIndex = -1;
@@ -82,54 +109,85 @@ class _TasksPageState extends State<TasksPage> {
       },
     );
 
+    var bottomBarOwner = BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      color: AppColors.secBackgroundColor,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          //Button "Todas las tareas"
+          IconButton(
+            onPressed: () {
+              setState(() {
+                taskFilter = 0;
+                screenTitle = "Todas las tareas";
+                _taskController.onlyAssigned = false;
+                _taskController.getTasks();
+              });
+            },
+            icon: Icon(Icons.all_inbox,
+                color: taskFilter == 0
+                    ? AppColors.secondaryColor
+                    : AppColors.backgroundColor),
+          ),
+          //Espacio en blanco
+          SizedBox(
+            width: 50,
+          ),
+          //Button "Tareas Asignadas"
+          IconButton(
+            onPressed: () {
+              setState(() {
+                taskFilter = 1;
+                screenTitle = "Tareas Asignadas";
+                _taskController.onlyAssigned = true;
+                _taskController.getAssignedTasks();
+              });
+            },
+            icon: Icon(Icons.timelapse,
+                color: taskFilter == 1
+                    ? AppColors.secondaryColor
+                    : AppColors.backgroundColor),
+          ),
+        ],
+      ),
+    );
+
+    var bottomBar = BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      color: AppColors.secBackgroundColor,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                taskFilter = 1;
+                screenTitle = "Tareas Asignadas";
+                _taskController.getAssignedTasks();
+              });
+            },
+            icon: Icon(Icons.timelapse,
+                color: taskFilter == 1
+                    ? AppColors.secondaryColor
+                    : AppColors.backgroundColor),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      //add float buton
-      floatingActionButton: taskFilter == 0 ? addButton : null,
+      //add float button
+      floatingActionButton: imOwner
+          ? taskFilter == 0
+              ? addButton
+              : null
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       //bottom appbar
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        color: AppColors.secBackgroundColor,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            //Button "Todas las tareas"
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  taskFilter = 0;
-                  screenTitle = "Todas las tareas";
-                  _taskController.getTasks();
-                });
-              },
-              icon: Icon(Icons.all_inbox,
-                  color: taskFilter == 0
-                      ? AppColors.secondaryColor
-                      : AppColors.backgroundColor),
-            ),
-            //Espacio en blancl
-            SizedBox(
-              width: 50,
-            ),
-            //Button "Tareas Asignadas"
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  taskFilter = 1;
-                  screenTitle = "Tareas Asignadas";
-                  _taskController.getAssignedTasks();
-                });
-              },
-              icon: Icon(Icons.timelapse,
-                  color: taskFilter == 1
-                      ? AppColors.secondaryColor
-                      : AppColors.backgroundColor),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: imOwner ? bottomBarOwner : bottomBar,
       body: Column(
         children: [
           _addTaskbar(),
@@ -160,11 +218,24 @@ class _TasksPageState extends State<TasksPage> {
 
         if (filteredTasks.isEmpty) {
           return Center(
-            child: Lottie.asset('Assets/lotties/done3.json',
-                width: 200,
-                height: 200,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.high),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset('Assets/lotties/done3.json',
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high),
+                const SizedBox(height: 25),
+                Text(
+                  _getEmptyMessage(),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
           );
         }
 
@@ -199,6 +270,9 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   String _getEmptyMessage() {
+    if (taskFilter == 1) {
+      return 'No tienes tareas asignadas';
+    }
     if (_filterIndex == 0) {
       return 'Sin tareas pendientes, prueba agregar una';
     } else if (_filterIndex == 1) {
@@ -210,139 +284,153 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
-_showBottomSheet(BuildContext context, Task task) {
-  Get.bottomSheet(
-    Container(
-      padding: const EdgeInsets.only(top: 4),
-      height: MediaQuery.of(context).size.height * 0.7,
-      color: Get.isDarkMode ? darkGreyClr : Colors.white,
-      child: Column(
-        children: [
-          Container(
-            height: 6,
-            width: 120,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Get.isDarkMode ? Colors.grey[600] : Colors.grey[300],
+  _showBottomSheet(BuildContext context, Task task) {
+    final imOwner = MainController.getVar("currentUser") ==
+        MainController.getVar("currentProjectOwner");
+    List<Widget> actionButtons = [
+      Container(
+        alignment: Alignment.center,
+        transformAlignment: Alignment.center,
+        height: 50,
+        child: ListView(
+          shrinkWrap: true,
+          scrollDirection: Axis.horizontal,
+          children: [
+            _buttonSheetButtonIcon(
+              context: context,
+              icon: Icons.timelapse,
+              label: "Pendiente",
+              onTap: () async {
+                task.status = 'Pendiente';
+                await _taskController.changeTaskState(task, "Pendiente");
+                Get.back();
+              },
+              clr: task.status == 'Pendiente'
+                  ? AppColors.primaryColor
+                  : Colors.grey,
             ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            height: MediaQuery.of(context).size.height * 0.5,
-            child: ListView(
-              children: [
-                Container(
-                  height: 50,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buttonSheetButtonIcon(
-                        context: context,
-                        icon: Icons.timelapse,
-                        label: "Pendiente",
-                        onTap: () {
-                          task.status = 'Pendiente';
-                          _taskController.updateTask(task);
-                          Get.back();
-                        },
-                        clr: task.status == 'Pendiente'
-                            ? AppColors.primaryColor
-                            : Colors.grey,
-                      ),
-                      SizedBox(width: 5),
-                      _buttonSheetButtonIcon(
-                        context: context,
-                        icon: Icons.timelapse,
-                        label: "En Proceso",
-                        onTap: () {
-                          task.status = 'En Proceso';
-                          _taskController.updateTask(task);
-                          Get.back();
-                        },
-                        clr: task.status == 'En Proceso'
-                            ? Colors.orange
-                            : Colors.grey,
-                      ),
-                      SizedBox(width: 5),
-                      _buttonSheetButtonIcon(
-                        context: context,
-                        icon: Icons.check_circle,
-                        label: "Completada",
-                        onTap: () {
-                          task.status = 'Completada';
-                          _taskController.updateTask(task);
-                          Get.back();
-                        },
-                        clr: task.status == 'Completada'
-                            ? Colors.green
-                            : Colors.grey,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 5),
-                _bottomSheetButton(
-                  label: "Editar Tarea",
-                  onTap: () async {
-                    await Get.to(() => EditTaskPage(task: task));
-                    updateTasks();
-                  },
-                  clr: Colors.blue[300]!,
-                  context: context,
-                ),
-                const SizedBox(height: 5),
-                _bottomSheetButton(
-                  label: "Asignar Tarea",
-                  onTap: () async {
-                    await Get.to(() => AssignTaskPage(task: task));
-                    updateTasks();
-                  },
-                  clr: Colors.blue[300]!,
-                  context: context,
-                ),
-                const SizedBox(height: 5),
-                _bottomSheetButton(
-                  label: "Archivos Adjuntos",
-                  onTap: () async {
-                    await Get.to(() => TaskCommentsPage(task: task));
-                    updateTasks();
-                  },
-                  clr: Colors.blue[300]!,
-                  context: context,
-                ),
-                const SizedBox(height: 25),
-                _bottomSheetButton(
-                  label: "Eliminar Tarea",
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return PopUpDialog(
-                          title: "Eliminar Tarea",
-                          text: "¿Estás seguro de que deseas eliminar esta tarea?",
-                          icon: Icons.warning,
-                          buttons: PopUpButtons.deleteCancel(context, () async {
-                            TaskController.deleteTask(task);
-                            updateTasks();
-                            Navigator.of(context).pop(); // Cerrar el diálogo
-                            Get.back(); // Cerrar el BottomSheet
-                          }),
-                        );
-                      },
-                    );
-                  },
-                  clr: Colors.red[300]!,
-                  context: context,
-                ),
-              ],
+            SizedBox(width: 5),
+            _buttonSheetButtonIcon(
+              context: context,
+              icon: Icons.timelapse,
+              label: "En Proceso",
+              onTap: () async {
+                task.status = 'En Proceso';
+                await _taskController.changeTaskState(task, "En Proceso");
+                Get.back();
+              },
+              clr: task.status == 'En Proceso' ? Colors.orange : Colors.grey,
             ),
-          ),
-        ],
+            SizedBox(width: 5),
+            _buttonSheetButtonIcon(
+              context: context,
+              icon: Icons.check_circle,
+              label: "Completada",
+              onTap: () async {
+                task.status = 'Completada';
+                await _taskController.changeTaskState(task, "Completada");
+                Get.back();
+              },
+              clr: task.status == 'Completada' ? Colors.green : Colors.grey,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    ];
 
+    if (imOwner) {
+      actionButtons.addAll([
+        const SizedBox(height: 15),
+        _bottomSheetButton(
+          label: "Editar Tarea",
+          onTap: () async {
+            await Get.to(() => EditTaskPage(task: task));
+            updateTasks();
+          },
+          clr: Colors.blue[300]!,
+          context: context,
+        ),
+        const SizedBox(height: 15),
+        _bottomSheetButton(
+          label: "Asignar Tarea",
+          onTap: () async {
+            await Get.to(() => AssignTaskPage(task: task));
+            updateTasks();
+          },
+          clr: Colors.blue[300]!,
+          context: context,
+        ),
+      ]);
+    }
+
+    actionButtons.addAll([
+      const SizedBox(height: 15),
+      _bottomSheetButton(
+        label: "Comentarios",
+        onTap: () async {
+          await Get.to(() => TaskCommentsPage(task: task));
+          updateTasks();
+        },
+        clr: Colors.blue[300]!,
+        context: context,
+      ),
+      const SizedBox(height: 20),
+    ]);
+
+    if (imOwner) {
+      actionButtons.addAll([
+        _bottomSheetButton(
+          label: "Eliminar Tarea",
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return PopUpDialog(
+                  title: "Eliminar Tarea",
+                  text: "¿Estás seguro de que deseas eliminar esta tarea?",
+                  icon: Icons.warning,
+                  buttons: PopUpButtons.deleteCancel(context, () async {
+                    TaskController.deleteTask(task);
+                    updateTasks();
+                    Navigator.of(context).pop(); // Cerrar el diálogo
+                    Get.back(); // Cerrar el BottomSheet
+                  }),
+                );
+              },
+            );
+          },
+          clr: Colors.red[300]!,
+          context: context,
+        ),
+      ]);
+    }
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.only(top: 4),
+        height: (actionButtons.length - 1) * 75.0 +
+            30, // Ajusta la altura según el número de botones
+        color: Get.isDarkMode ? darkGreyClr : Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 6,
+              width: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Get.isDarkMode ? Colors.grey[600] : Colors.grey[300],
+              ),
+            ),
+            const SizedBox(height: 5),
+            ...actionButtons,
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool isTaskPropieraty(Task task) {
+    return task.createdUserID == MainController.getVar("currentUser");
+  }
 
   _buttonSheetButtonIcon({
     required IconData icon,
@@ -384,8 +472,8 @@ _showBottomSheet(BuildContext context, Task task) {
             Text(
               label,
               style: isClosed
-                  ? titleStyle
-                  : titleStyle.copyWith(color: Colors.white),
+                  ? titleStyleBt
+                  : titleStyleBt.copyWith(color: Colors.white),
             ),
           ],
         ),
@@ -405,7 +493,7 @@ _showBottomSheet(BuildContext context, Task task) {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         height: 55,
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.of(context).size.width * 0.75,
         decoration: BoxDecoration(
           border: Border.all(
             width: 2,
@@ -429,6 +517,11 @@ _showBottomSheet(BuildContext context, Task task) {
       ),
     );
   }
+
+  TextStyle titleStyleBt = GoogleFonts.roboto(
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+  );
 
   _addTaskbar() {
     var allColor = Get.isDarkMode ? Colors.white : Colors.black;
@@ -510,12 +603,12 @@ _showBottomSheet(BuildContext context, Task task) {
       },
       icon: Icon(
         icon,
-        color: isSelected ? AppColors.textColor : AppColors.primaryColor,
+        color: isSelected ? AppColors.textColor : AppColors.secTextColor,
       ),
       label: Text(
         label,
         style: TextStyle(
-          color: isSelected ? AppColors.textColor : AppColors.primaryColor,
+          color: isSelected ? AppColors.textColor : AppColors.secTextColor,
         ),
       ),
     );

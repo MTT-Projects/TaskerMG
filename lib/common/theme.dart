@@ -36,6 +36,8 @@ const Color darkGreyClr = Color.fromRGBO(18, 18, 18, 1);
 const Color darkHeaderClr = Color.fromRGBO(66, 66, 66, 1);
 
 class AppColors {
+  static Color errorColor = Colors.red;
+
   static Color get primaryColor => Get.isDarkMode ? darkPrimaryColor : lightPrimaryColor;
   static Color get secondaryColor => Get.isDarkMode ? darkSecondaryColor : lightSecondaryColor;
   static Color get backgroundColor => Get.isDarkMode ? darkBackgroundColor : lightBackgroundColor;

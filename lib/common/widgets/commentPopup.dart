@@ -33,7 +33,8 @@ class _CommentPopupState extends State<CommentPopup> {
                 height: 200,
                 width: 200,
                 child: Center(
-                  child: Lottie.asset('Assets/lotties/sending.json'),
+                  child: Lottie.asset('Assets/lotties/sending.json',
+                  width: 300),
                 ))
             : Column(
                 mainAxisSize: MainAxisSize.min,

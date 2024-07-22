@@ -5,9 +5,11 @@ import 'package:get/get.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:taskermg/common/collaboratorsPage.dart';
 import 'package:taskermg/common/edit_project.dart';
+import 'package:taskermg/common/pages/logs.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/tasks_page.dart';
 import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/models/project.dart';
 import 'package:taskermg/controllers/project_controller.dart';
 import 'package:taskermg/common/settings_page.dart';
@@ -22,8 +24,10 @@ class ProyectDashboard extends StatefulWidget {
 }
 
 class _ProyectDashboardState extends State<ProyectDashboard> {
-  static var screenTitle = "Mis Proyectos".obs;
+  static var screenTitle = "Tareas".obs;
   static var selectedIndex = 0.obs;
+
+  bool imOwner = false;
 
   getprojectTitle() {
     return widget.project.name.toString();
@@ -31,18 +35,19 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
 
   TasksPage tasksPage = TasksPage();
 
-  
-
   void changePage(int index) {
     selectedIndex.value = index;
     switch (selectedIndex.value) {
       case 0:
-        screenTitle.value = getprojectTitle();
+        screenTitle.value = "Tareas";
         break;
       case 1:
         screenTitle.value = "Colaboradores";
         break;
       case 2:
+        screenTitle.value = "Registros";
+        break;
+      case 3:
         screenTitle.value = "Editar Proyecto";
         break;
     }
@@ -69,9 +74,12 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
 
   @override
   Widget build(BuildContext context) {
+
     var project = widget.project;
+    imOwner = MainController.getVar("currentUser") == project.proprietaryID;
     return WillPopScope(
       onWillPop: () async {
+        changePage(0);
         ProjectPage.projectController.getProjects();
         return true;
       },
@@ -85,6 +93,7 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
                 icon: Icon(Icons.arrow_back, color: AppColors.backgroundColor),
                 onPressed: () {
                   ProjectPage.projectController.getProjects();
+                  changePage(0);
                   Navigator.pop(context);
                 },
               ),
@@ -126,6 +135,7 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
                       children: [
                         tasksPage,
                         CollaboratorsPage(project: project),
+                        LogActivityPage(project: project),
                         EditProjectScreen(project: project),
                       ],
                     );
@@ -146,8 +156,10 @@ class CustomDrawer extends StatelessWidget {
   final Project project;
   final Future<Map<String, dynamic>> Function(Project) getTaskInfo;
   final Function(int) changePage;
-
   CustomDrawer({required this.project, required this.getTaskInfo, required this.changePage});
+  bool imOwner() {
+    return MainController.getVar("currentUser") == project.proprietaryID;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,15 +224,27 @@ class CustomDrawer extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Editar"),
+            imOwner() ? ListTile(
+              leading: Icon(Icons.local_activity),
+              title: Text("Actividad"),
               textColor: AppColors.textColor,
               onTap: () {
                 changePage(2);
                 Navigator.pop(context);
               },
+            ): Container(),
+            SizedBox(
+              height: 25,
             ),
+            imOwner() ? ListTile(
+              leading: Icon(Icons.settings),
+              title: Text("Editar"),
+              textColor: AppColors.textColor,
+              onTap: () {
+                changePage(3);
+                Navigator.pop(context);
+              },
+            ): Container(),
           ],
         ),
       ),

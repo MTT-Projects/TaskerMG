@@ -1,162 +1,111 @@
-import 'package:taskermg/common/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:taskermg/controllers/logActivityController.dart';
+import 'package:taskermg/models/activity_log.dart';
+import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/models/project.dart';
 
-import '../../controllers/task_controller.dart';
-import '../../models/task.dart';
-import '../widgets/task_tile.dart';
-import 'package:taskermg/common/pages/profile.dart';
-import '../../views/globalheader.dart';
+class LogActivityPage extends StatefulWidget {
+  final Project project;
 
-class Logs extends StatefulWidget {
-  final Task? task;
-  const Logs({super.key, this.task});
+  LogActivityPage({required this.project});
 
   @override
-  State<Logs> createState() => _LogsState();
+  _LogActivityPageState createState() => _LogActivityPageState();
 }
 
-class _LogsState extends State<Logs> {
-  final _taskController = Get.put(TaskController());
+class _LogActivityPageState extends State<LogActivityPage> {
+  final LogActivityController _controller = Get.put(LogActivityController());
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.fetchActivityLogs(widget.project.projectID!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: globalheader(context.theme.backgroundColor, 'En proceso'),
-      body: CustomScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: true,
-            child: Row(
+      body: Obx(() {
+        if (_controller.activityLogs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      //ovedue tasks display
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(children: [
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            "OverDue Tasks",
-                            style: subHeadingStyle,
-                          ),
-                        ),
-                      ]),
-                      const Divider(
-                        color: Colors.black,
-                        indent: 20,
-                        endIndent: 120,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      _showOverdueTasks(),
+                Text('No hay registros de actividad.'),
+              ],
+            ),
+          );
+        }
 
-                      //end to overdue
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(children: [
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            "Completed Tasks",
-                            style: subHeadingStyle,
-                          ),
-                        ),
-                      ]),
-                      const Divider(
-                        color: Colors.black,
-                        indent: 20,
-                        endIndent: 120,
-                      ),
+        return ListView.builder(
+          itemCount: _controller.activityLogs.length,
+          itemBuilder: (context, index) {
+            ActivityLog log = _controller.activityLogs[index];
+            return FutureBuilder<Map<String, dynamic>?>(
+              future: _controller.getUserDataById(log.userID!),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                      _showTasks(),
-                    ],
+                var userData = snapshot.data;
+                return _buildLogTile(log, userData);
+              },
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildLogTile(ActivityLog log, Map<String, dynamic>? userData) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundImage: userData != null && userData['profilePicUrl'] != null
+                ? NetworkImage(userData['profilePicUrl'])
+                : AssetImage("Assets/images/profile.png") as ImageProvider,
+            radius: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${userData?['name'] ?? 'Usuario'} ha marcado la tarea como ${log.activityDetails?['newState']}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  DateFormat('dd-MM-yyyy HH:mm').format(log.timestamp!),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  _showTasks() {
-    return Expanded(
-      child: Obx(() {
-        return ListView.builder(
-            itemCount: _taskController.taskList.length,
-            itemBuilder: (_, index) {
-              Task task = _taskController.taskList[index];
-
-              if (task.status == 'Completada') {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              } else {
-                return Container();
-              }
-            });
-      }),
-    );
-  }
-
-  _showOverdueTasks() {
-    return Expanded(
-      child: Obx(() {
-        return ListView.builder(
-            itemCount: _taskController.taskList.length,
-            itemBuilder: (_, index) {
-              Task task = _taskController.taskList[index];
-              if (task.status == 'Vencida') {
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  child: SlideAnimation(
-                      child: FadeInAnimation(
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            // task is _taskController.taskList[index]
-                          },
-                          child: TaskTile(task),
-                        ),
-                      ],
-                    ),
-                  )),
-                );
-              } else {
-                return Container();
-              }
-            });
-      }),
     );
   }
 }

@@ -809,6 +809,16 @@ class LocalDB {
     );
   }
 
+  //Mark activitylog has visible
+  static Future<int> markActivityLogAsVisible(int activityID) async {
+    return await _db!.update(
+      _activityLogTable,
+      {'showLog': 1},
+      where: 'locId = ?',
+      whereArgs: [activityID],
+    );
+  }
+
   static queryCommentsForTask(int taskId) {}
 
   static queryAttachmentsForComment(comment) {}

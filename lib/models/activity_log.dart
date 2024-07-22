@@ -12,6 +12,7 @@ class ActivityLog {
   DateTime? timestamp;
   DateTime? lastUpdate;
 
+
   ActivityLog({
     this.locId,
     this.activityID,
@@ -72,7 +73,8 @@ class ActivityLog {
         activityDetails TEXT,
         timestamp TEXT,
         lastUpdate TEXT,
-        isSynced INTEGER DEFAULT 0
+        isSynced INTEGER DEFAULT 0,
+        showLog INTEGER DEFAULT 0
       )
     ''');
     AppLog.d('Table ActivityLog created');

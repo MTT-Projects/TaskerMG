@@ -17,15 +17,31 @@ class SyncUserProjects {
   static Future<void> pullUserProjects() async {
     var userID = MainController.getVar('currentUser');
     try {
-      var result = await DBHelper.query('''SELECT *
-        FROM 
-          userProject 
-        WHERE 
-          userID = ?''', [userID]);
+      var result = await DBHelper.query('''
+      SELECT 
+        up.userProjectID, 
+        up.userID, 
+        up.projectID, 
+        up.lastUpdate
+      FROM 
+        userProject up
+      JOIN 
+        project p ON up.projectID = p.projectID
+      WHERE 
+        up.projectID IN (
+          SELECT 
+            up_inner.projectID 
+          FROM 
+            userProject up_inner
+          WHERE 
+            up_inner.userID = ?
+        )
+    ''', [userID]);
 
       var remoteUserProjects = result
           .map((userProjectMap) => userProjectMap['userProjectID'])
           .toList();
+      AppLog.d("Proyectosusuario remotos: $remoteUserProjects");
       //fetch local user projects
       var localUserProjects = await LocalDB.queryUserProjects();
       if (localUserProjects.isEmpty) {
@@ -70,7 +86,8 @@ class SyncUserProjects {
     AppLog.d("Proyectosusuario: ${jsonEncode(alluserproject)}");
 
     try {
-      var unsyncedUserProjects = await LocalDB.queryUnsyncedCreations('userProject');
+      var unsyncedUserProjects =
+          await LocalDB.queryUnsyncedCreations('userProject');
       AppLog.d(
           "Proyectosusuario sin sincronizar: ${jsonEncode(unsyncedUserProjects)}");
       for (var actMap in unsyncedUserProjects) {

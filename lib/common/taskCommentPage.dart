@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/controllers/taskCommentController.dart';
 import 'package:taskermg/models/task.dart';
@@ -28,6 +29,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
   Map<int, bool> _isDownloading = {};
   Map<int, bool> _hasLocalPath = {};
   late Future<void> _fetchCommentsFuture;
+  Map<int, bool> _isLongPressing = {};
 
   @override
   void initState() {
@@ -135,69 +137,121 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     );
   }
 
-  Widget _buildCommentTile(TaskComment comment) {
+Widget _buildCommentTile(TaskComment comment) {
     List<Attachment> attachments = _controller.attachmentsList
         .where(
             (attachment) => attachment.taskCommentID == comment.taskCommentID)
         .toList();
 
+    int currentUserID = MainController.getVar('currentUser');
+
     return FutureBuilder<String>(
       future: UserController.getProfilePicture(comment.userID),
       builder: (context, snapshot) {
         String userpic = snapshot.data ?? '';
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: userpic.isEmpty
-                        ? const AssetImage("Assets/images/profile.png")
-                            as ImageProvider
-                        : NetworkImage(userpic),
-                    radius: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      comment.comment ?? '',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (attachments.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: attachments.map((attachment) {
-                    return _buildAttachmentTile(attachment);
-                  }).toList(),
+        return GestureDetector(
+          onLongPressStart: (_) {
+            if (comment.userID == currentUserID) {
+              setState(() {
+                _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] = true;
+              });
+            }
+          },
+          onLongPressEnd: (_) {
+            if (comment.userID == currentUserID) {
+              setState(() {
+                _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] = false;
+              });
+              _showDeleteDialog(context, comment);
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] == true
+                  ? Colors.red.withOpacity(0.5)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
                 ),
-              const SizedBox(height: 5),
-              Text(
-                DateFormat('dd-MM-yyyy HH:mm')
-                    .format(comment.creationDate ?? DateTime.now()),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: userpic.isEmpty
+                          ? const AssetImage("Assets/images/profile.png")
+                              as ImageProvider
+                          : NetworkImage(userpic),
+                      radius: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        comment.comment ?? '',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (attachments.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: attachments.map((attachment) {
+                      return _buildAttachmentTile(attachment);
+                    }).toList(),
+                  ),
+                const SizedBox(height: 5),
+                Text(
+                  DateFormat('dd-MM-yyyy HH:mm')
+                      .format(comment.creationDate ?? DateTime.now()),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, TaskComment comment) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Eliminar Comentario'),
+          content: Text('¿Estás seguro de que quieres eliminar este comentario?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await TaskCommentController.deleteComment(comment);
+                await _reloadComments();
+                Navigator.of(context).pop();
+              },
+              child: Text('Eliminar'),
+              style: ElevatedButton.styleFrom(
+                primary: Colors.red,
+              ),
+            ),
+          ],
         );
       },
     );
@@ -269,10 +323,10 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         : "${(attachment.size! / 1024).toStringAsFixed(2)} KB";
 
     if (attachment.localPath != null) {
-      _hasLocalPath[attachment.attachmentID!] = true;
+      _hasLocalPath[attachment.locId!] = true;
     }
 
-    var downloadBTN = _hasLocalPath[attachment.attachmentID] == true
+    var downloadBTN = _hasLocalPath[attachment.locId] == true
         ? Row(
             children: [
               const SizedBox(width: 5),
@@ -282,7 +336,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
               ),
             ],
           )
-        : _isDownloading[attachment.attachmentID] == true
+        : _isDownloading[attachment.locId] == true
             ? Row(
                 children: [
                   const SizedBox(width: 5),
@@ -305,15 +359,15 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
                     color: Colors.blue,
                     onPressed: () async {
                       setState(() {
-                        _isDownloading[attachment.attachmentID!] = true;
+                        _isDownloading[attachment.locId!] = true;
                       });
                       File localFile = await fileManager.downloadFile(
                           attachment.fileUrl!, attachment.name!, "attachments");
                       await Attachment.updateAttachmentLocalPath(
                           attachment.locId!, localFile.path);
                       setState(() {
-                        _isDownloading[attachment.attachmentID!] = false;
-                        _hasLocalPath[attachment.attachmentID!] = true;
+                        _isDownloading[attachment.locId!] = false;
+                        _hasLocalPath[attachment.locId!] = true;
                         attachment.localPath = localFile.path;
                       });
                       FileManager.openFile(localFile.path);

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, use_build_context_synchronously, unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +30,8 @@ class _EditTaskPageState extends State<EditTaskPage> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
-    _descriptionController = TextEditingController(text: widget.task.description);
+    _descriptionController =
+        TextEditingController(text: widget.task.description);
     _selectedDate = widget.task.deadline ?? DateTime.now();
     _selectedPriority = widget.task.priority ?? 'Baja';
     _selectedStatus = widget.task.status ?? 'Pendiente';
@@ -72,7 +75,8 @@ class _EditTaskPageState extends State<EditTaskPage> {
               ),
               SizedBox(height: 16),
               ListTile(
-                title: Text('Fecha de Vencimiento: ${DateFormat.yMd().format(_selectedDate)}'),
+                title: Text(
+                    'Fecha de Vencimiento: ${DateFormat.yMd().format(_selectedDate)}'),
                 trailing: Icon(Icons.calendar_today),
                 onTap: _selectDate,
               ),
@@ -102,7 +106,8 @@ class _EditTaskPageState extends State<EditTaskPage> {
                   labelText: 'Estado',
                   border: OutlineInputBorder(),
                 ),
-                items: ['Pendiente', 'En Proceso', 'Completada'].map((String status) {
+                items: ['Pendiente', 'En Proceso', 'Completada']
+                    .map((String status) {
                   return DropdownMenuItem<String>(
                     value: status,
                     child: Text(status),
@@ -116,9 +121,15 @@ class _EditTaskPageState extends State<EditTaskPage> {
               ),
               SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _saveTask,
+                onPressed: () async {
+                  var saveRes = await _saveTask();
+                  //pop
+                  if (saveRes) {
+                    Navigator.pop(context);
+                  }
+                },
                 style: ElevatedButton.styleFrom(
-                  primary: AppColors.primaryColor,
+                  backgroundColor: AppColors.primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: Text(
@@ -147,9 +158,11 @@ class _EditTaskPageState extends State<EditTaskPage> {
     }
   }
 
-  void _saveTask() {
+  Future<bool> _saveTask() async {
     if (_formKey.currentState!.validate()) {
       Task updatedTask = Task(
+        locId: widget.task.locId,
+        createdUserID: widget.task.createdUserID,
         taskID: widget.task.taskID,
         projectID: widget.task.projectID,
         title: _titleController.text,
@@ -161,12 +174,21 @@ class _EditTaskPageState extends State<EditTaskPage> {
         lastUpdate: DateTime.now(),
       );
 
-      _taskController.updateTask(updatedTask);
+      await _taskController.updateTaskDetails(updatedTask);
 
-      SnackBar snackBar = SnackBar(content: Text('Tarea actualizada correctamente', 
-        style: TextStyle(color: Colors.white)),
+      SnackBar snackBar = SnackBar(
+        content: Text('Tarea actualizada correctamente',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
-        );
+      );
+      return true;
+    } else {
+      SnackBar snackBar = SnackBar(
+        content: Text('Error al actualizar la tarea',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.errorColor,
+      );
+      return false;
     }
   }
 }
