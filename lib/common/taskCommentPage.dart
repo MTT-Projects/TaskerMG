@@ -24,12 +24,15 @@ class TaskCommentsPage extends StatefulWidget {
 
 class _TaskCommentsPageState extends State<TaskCommentsPage> {
   final TaskCommentController _controller = Get.put(TaskCommentController());
+  final ScrollController _scrollController = ScrollController();
   String fileName = '';
   FileManager fileManager = FileManager();
   Map<int, bool> _isDownloading = {};
   Map<int, bool> _hasLocalPath = {};
   late Future<void> _fetchCommentsFuture;
   Map<int, bool> _isLongPressing = {};
+  Map<int, String> _userNames = {};
+  Map<int, String> _userPictures = {};
 
   @override
   void initState() {
@@ -39,6 +42,8 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
 
   Future<void> _fetchComments() async {
     await _controller.fetchComments(widget.task.taskID!);
+    await _loadUserDetails();
+    _scrollToBottom();
   }
 
   Future<void> _reloadComments() async {
@@ -48,12 +53,34 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     await _fetchCommentsFuture;
   }
 
+  Future<void> _loadUserDetails() async {
+    for (var comment in _controller.commentsList) {
+      if (!_userNames.containsKey(comment.userID)) {
+        var userName = await UserController.getUserName(comment.userID);
+        var userPic = await UserController.getProfilePicture(comment.userID);
+        setState(() {
+          _userNames[comment.userID!] = userName;
+          _userPictures[comment.userID!] = userPic;
+        });
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Comentarios de la Tarea'),
+        title: Text('Comentarios de la Tarea',
+            style: TextStyle(color: AppColors.secTextColor)),
         backgroundColor: AppColors.secBackgroundColor,
       ),
       body: FutureBuilder<void>(
@@ -62,7 +89,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
                 child: Container(
-                  height: 200,
+                    height: 200,
                     child: Column(children: [
                       Lottie.asset('Assets/lotties/loading.json', width: 100),
                       const SizedBox(height: 25),
@@ -77,9 +104,12 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
               return _controller.commentsList.isEmpty
                   ? const Center(child: Text('No hay comentarios.'))
                   : ListView.builder(
+                      controller: _scrollController,
+                      reverse: false, // Scroll de abajo hacia arriba
                       itemCount: _controller.commentsList.length,
                       itemBuilder: (context, index) {
-                        TaskComment comment = _controller.commentsList[index];
+                        TaskComment comment =
+                            _controller.commentsList.reversed.toList()[index];
                         return _buildCommentTile(comment);
                       },
                     );
@@ -137,92 +167,106 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     );
   }
 
-Widget _buildCommentTile(TaskComment comment) {
+  Widget _buildCommentTile(TaskComment comment) {
     List<Attachment> attachments = _controller.attachmentsList
         .where(
             (attachment) => attachment.taskCommentID == comment.taskCommentID)
         .toList();
 
     int currentUserID = MainController.getVar('currentUser');
-
-    return FutureBuilder<String>(
-      future: UserController.getProfilePicture(comment.userID),
-      builder: (context, snapshot) {
-        String userpic = snapshot.data ?? '';
-        return GestureDetector(
-          onLongPressStart: (_) {
-            if (comment.userID == currentUserID) {
-              setState(() {
-                _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] = true;
-              });
-            }
-          },
-          onLongPressEnd: (_) {
-            if (comment.userID == currentUserID) {
-              setState(() {
-                _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] = false;
-              });
-              _showDeleteDialog(context, comment);
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] == true
-                  ? Colors.red.withOpacity(0.5)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundImage: userpic.isEmpty
-                          ? const AssetImage("Assets/images/profile.png")
-                              as ImageProvider
-                          : NetworkImage(userpic),
-                      radius: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        comment.comment ?? '',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                if (attachments.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: attachments.map((attachment) {
-                      return _buildAttachmentTile(attachment);
-                    }).toList(),
-                  ),
-                const SizedBox(height: 5),
-                Text(
-                  DateFormat('dd-MM-yyyy HH:mm')
-                      .format(comment.creationDate ?? DateTime.now()),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        );
+    String userName = _userNames[comment.userID] ?? '';
+    String userPic = _userPictures[comment.userID] ?? '';
+    bool isMine = comment.userID == currentUserID;
+    return GestureDetector(
+      onLongPressStart: (_) {
+        if (comment.userID == currentUserID) {
+          setState(() {
+            _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] = true;
+          });
+        }
       },
+      onLongPressEnd: (_) {
+        if (comment.userID == currentUserID) {
+          setState(() {
+            _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] =
+                false;
+          });
+          _showDeleteDialog(context, comment);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _isLongPressing[comment.locId ?? comment.taskCommentID ?? 0] ==
+                  true
+              ? Colors.red.withOpacity(0.5)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage: userPic.isEmpty
+                      ? const AssetImage("Assets/images/profile.png")
+                          as ImageProvider
+                      : NetworkImage(userPic),
+                  radius: 20,
+                ),
+                const SizedBox(width: 10),
+                Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+              ],
+              mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  comment.comment ?? '',
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: isMine ? TextAlign.end : TextAlign.start,
+                ),
+              ],
+              mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            ),
+            const SizedBox(height: 10),
+            if (attachments.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: attachments.map((attachment) {
+                  return _buildAttachmentTile(attachment);
+                }).toList(),
+              ),
+            const SizedBox(height: 5),
+            Text(
+              DateFormat('dd-MM-yyyy HH:mm')
+                  .format(comment.creationDate ?? DateTime.now()),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -232,7 +276,8 @@ Widget _buildCommentTile(TaskComment comment) {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Eliminar Comentario'),
-          content: Text('¿Estás seguro de que quieres eliminar este comentario?'),
+          content:
+              Text('¿Estás seguro de que quieres eliminar este comentario?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -269,7 +314,8 @@ Widget _buildCommentTile(TaskComment comment) {
             }
 
             await _controller.addComment(widget.task.taskID!, comment, file);
-            await _controller.fetchComments(widget.task.taskID!);
+
+            await _reloadComments();
           },
         );
       },

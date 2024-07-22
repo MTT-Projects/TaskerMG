@@ -51,7 +51,9 @@ class DBHelper {
 
   static Future<MySqlConnection> get connection async {
     if (_connection == null) {
-      throw Exception('DBHelper connection is not initialized.');
+      AppLog.d('DBHelper connection is not initialized.');
+      await _connect();
+      return _connection!;
     }
     return _connection!;
   }

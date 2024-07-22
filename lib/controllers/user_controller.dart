@@ -141,14 +141,14 @@ class UserController extends GetxController {
 
 
 
-  static getUserName(int? userID) async {
+  static Future<String> getUserName(int? userID) async {
     final result = await DBHelper.query(
-      '''SELECT name FROM user WHERE userID = ?''',
+      '''SELECT username FROM user WHERE userID = ?''',
       [userID],
     );
     if (result.isNotEmpty) {
-      var user = result.first;
-      return user['name'];
+      var username = result.first[0];
+      return username;
     } else {
       return "";
     }

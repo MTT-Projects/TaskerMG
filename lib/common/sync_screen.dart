@@ -1,10 +1,14 @@
 // ignore_for_file: prefer_const_constructors, prefer_final_fields, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/controllers/attatchmentController.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/utils/sync/sync_attatchments.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
 import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
@@ -24,8 +28,10 @@ class SyncScreen extends StatefulWidget {
 }
 
 class _SyncScreenState extends State<SyncScreen> {
+    // Inicializa el SyncController
+  final SyncController syncController = Get.put(SyncController());
+  
   String _message = 'Sincronizando información...';
-  SyncController syncController = SyncController();
   double _progress = 0.0;
   List<String> _syncSteps = [
     'Sincronizando proyectos...',
@@ -33,6 +39,7 @@ class _SyncScreenState extends State<SyncScreen> {
     'Sincronizando relaciones...',
     'Sincronizando asignaciones...',
     'Sincronizando comentarios...',
+    'Sincronizando archivos...',
     // Agrega más pasos de sincronización aquí
   ];
 
@@ -84,7 +91,10 @@ class _SyncScreenState extends State<SyncScreen> {
         await SyncTaskComment.pullTaskComments();
         await SyncTaskComment.pushTaskComments();
         break;
-      // Agrega más casos para otros pasos de sincronización
+      case 5:
+        await SyncAttachment.pullAttachments();
+        await SyncAttachment.pushAttachments();
+        break;
     }
   }
 

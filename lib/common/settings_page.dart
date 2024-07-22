@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/common/profileEditPage.dart';
 import 'package:taskermg/common/theme.dart';
@@ -124,8 +125,10 @@ class _SettingsScrState extends State<SettingsScr> {
                       await AuthService.logout();
                       //delete db
                       await LocalDB.dropDB();
+                      await const FlutterSecureStorage().deleteAll();
+
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (context) => const LoginScreen()));
+                          builder: (context) => const Splash()));
                     },
                     child: Text(
                       "Cerrar",

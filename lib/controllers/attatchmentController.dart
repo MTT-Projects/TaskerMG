@@ -65,7 +65,7 @@ class AttachmentController extends GetxController {
       activityDetails: {
         'table': 'attachment',
         'locId': locId,
-        'attachmentID': attachment.attachmentID,
+        'attachmentID': null,
       },
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
@@ -81,6 +81,7 @@ class AttachmentController extends GetxController {
     String localPath = await fileManager.copyFileToLocalPath(file, "attachments");
 
     Attachment attachment = Attachment(
+      attachmentID: null,
       taskCommentID: taskCommentID,
       userID: userID,
       name: file['name'],

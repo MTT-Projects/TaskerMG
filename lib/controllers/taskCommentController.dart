@@ -21,7 +21,7 @@ class TaskCommentController extends GetxController {
     commentsList.value = [];
     attachmentsList.value = [];
     List<Map<String, dynamic>> commentsData = await LocalDB.rawQuery(
-      "SELECT * FROM taskComment WHERE taskID = ? ORDER BY creationDate ASC",
+      "SELECT * FROM taskComment WHERE taskID = ? ORDER BY creationDate DESC",
       [taskID],
     );
 
@@ -99,24 +99,10 @@ class TaskCommentController extends GetxController {
     await SyncController.pushData();
   }
 
-  static Future<void> updateTaskComment(TaskComment taskComment) async {
-    await LocalDB.update('taskComment', taskComment.toJson(), where: 'locId = ?', whereArgs: [taskComment.locId]);
-    await LocalDB.insertActivityLog(ActivityLog(
-      userID: MainController.getVar('currentUser'),
-      projectID: taskComment.taskID,
-      activityType: 'update',
-      activityDetails: {
-        'table': 'taskComment',
-        'locId': taskComment.locId,
-        'taskCommentID': taskComment.taskCommentID,
-      },
-      timestamp: DateTime.now().toUtc(),
-      lastUpdate: DateTime.now().toUtc(),
-    ));
-  }
 
   static Future<int> addTaskComment(TaskComment taskComment) async {
     int locId = await LocalDB.insert('taskComment', taskComment.toJson());
+
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('currentUser'),
       projectID: taskComment.taskID,
@@ -124,7 +110,7 @@ class TaskCommentController extends GetxController {
       activityDetails: {
         'table': 'taskComment',
         'locId': locId,
-        'taskCommentID': taskComment.taskCommentID,
+        'taskCommentID': null,
       },
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
@@ -167,20 +153,10 @@ class TaskCommentController extends GetxController {
       
     }
     //inser activity log
-    await LocalDB.insertActivityLog(ActivityLog(
-      userID: userID,
-      projectID: taskId,
-      activityType: 'create',
-      activityDetails: {
-        'table': 'taskComment',
-        'locId': commentID,
-        'taskCommentID': commentID,
-      },
-      timestamp: now,
-      lastUpdate: now,
-    ));
 
     await SyncController.pushData();
+
+    return;
   }
 
   static updateTaskID(int locId, int taskId) {

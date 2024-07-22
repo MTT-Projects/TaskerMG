@@ -17,8 +17,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await DBHelper.initialize();
-  // Inicializa el SyncController
-  final SyncController syncController = Get.put(SyncController());
   AppLog.d("DB initialized");
   var localdb = await LocalDB.initDb();
   var str = localdb.toString();

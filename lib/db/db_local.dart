@@ -22,7 +22,7 @@ import '../utils/AppLog.dart';
 class LocalDB {
   static Database? _db;
   static const int _version = 1;
-  static const String _dbName = 'taskerMG_db.db';
+  static const String _dbName = 'DB_taskerMG.db';
   static const String _taskTable = "tasks";
   static const String _projectTable = "project";
   static const String _activityLogTable = "activityLog";
@@ -46,9 +46,9 @@ class LocalDB {
       _db = await openDatabase(_path, version: _version,
           onCreate: (dba, version) async {
         AppLog.d("Creating a new one");
+        await createTables(dba);
       });
-      await createTables(_db);
-       AppLog.d("LocalDatabase initialized");
+      AppLog.d("LocalDatabase initialized");
     } catch (e) {
       AppLog.e(e.toString());
     }
@@ -88,64 +88,74 @@ class LocalDB {
       return instance;
     }
   }
+
   // Raw query, optional values
-  static Future<List<Map<String, dynamic>>> rawQuery(String query, [List<dynamic>? values]) async {
+  static Future<List<Map<String, dynamic>>> rawQuery(String query,
+      [List<dynamic>? values]) async {
     return await _db!.rawQuery(query, values);
   }
 
   //raw delete query an values
-  static Future<int>rawDelete(String query, List<dynamic> values) async {
-    return await _db!.rawDelete(query, values);}
+  static Future<int> rawDelete(String query, List<dynamic> values) async {
+    return await _db!.rawDelete(query, values);
+  }
+
   //raw insert query an values
-  static Future<int>rawInsert(String query, List<dynamic> values) async {
-    return await _db!.rawInsert(query, values);}
+  static Future<int> rawInsert(String query, List<dynamic> values) async {
+    return await _db!.rawInsert(query, values);
+  }
 
   //raw update query an values
-  static Future<int>rawUpdate(String query, List<dynamic> values) async {
-    return await _db!.rawUpdate(query, values);}
+  static Future<int> rawUpdate(String query, List<dynamic> values) async {
+    return await _db!.rawUpdate(query, values);
+  }
 
- 
   //query table, where an wherevalues optional
-  static Future<List<Map<String, dynamic>>> query(String table, {String? where, List<dynamic>? whereArgs}) async {
-    return await _db!.query(table, where: where, whereArgs: whereArgs);}
+  static Future<List<Map<String, dynamic>>> query(String table,
+      {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.query(table, where: where, whereArgs: whereArgs);
+  }
 
   //delete
-  static Future<int> delete(String table, {String? where, List<dynamic>? whereArgs}) async {
-    return await _db!.delete(table, where: where, whereArgs: whereArgs);}
-  
+  static Future<int> delete(String table,
+      {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.delete(table, where: where, whereArgs: whereArgs);
+  }
+
   //insert
   static Future<int> insert(String table, Map<String, dynamic> values) async {
-    return await _db!.insert(table, values);}
-  
+    return await _db!.insert(table, values);
+  }
+
   //update
-  static Future<int> update(String table, Map<String, dynamic> values, {String? where, List<dynamic>? whereArgs}) async {
-    return await _db!.update(table, values, where: where, whereArgs: whereArgs);}
+  static Future<int> update(String table, Map<String, dynamic> values,
+      {String? where, List<dynamic>? whereArgs}) async {
+    return await _db!.update(table, values, where: where, whereArgs: whereArgs);
+  }
 
-
-   // Delete functions for all tables
+  // Delete functions for all tables
 
   static Future<void> dropDB() async {
     try {
-      //drop all tables
-      _db?.execute('DROP TABLE IF EXISTS $_taskTable');
-      _db?.execute('DROP TABLE IF EXISTS $_projectTable');
-      _db?.execute('DROP TABLE IF EXISTS $_activityLogTable');
-      _db?.execute('DROP TABLE IF EXISTS $_userTable');
-      _db?.execute('DROP TABLE IF EXISTS $_userProjectTable');
-      _db?.execute('DROP TABLE IF EXISTS $_profileDataTable');
-      _db?.execute('DROP TABLE IF EXISTS $_taskCommentTable');
-      _db?.execute('DROP TABLE IF EXISTS $_attachmentTable');
-      _db?.execute('DROP TABLE IF EXISTS $_taskAttachmentTable');
-      _db?.execute('DROP TABLE IF EXISTS $_taskAssignmentTable');
-      _db!.execute('DROP TABLE IF EXISTS $_projectGoalTable');
-      //create tables again
-      await createTables(_db);
+      //delete db file
+      await deleteDatabase('${await getDatabasesPath()}/$_dbName');
+      _db = null;
+      //recreate db
+      await initDb();
+
     } catch (e) {
       print("Error deleting database file: $e");
     }
   }
 
-  
+  static Future<void> dropAttatchmentsTable() async {
+    try {
+      await _db!.execute('DROP TABLE IF EXISTS attachment');
+      await Attachment.createTable(_db!);
+    } catch (e) {
+      print("Error deleting attachment table: $e");
+    }
+  }
 
   // Query functions for all tables
   static Future<List<Map<String, dynamic>>> queryTasks() async {
@@ -203,8 +213,7 @@ class LocalDB {
     return await _db!.query(_projectGoalTable);
   }
 
-
-  // update sync status 
+  // update sync status
 
   static Future<int> updateProjectSyncStatus(int locId, int projectId) async {
     //cambiar projectID de la relacion userProject
@@ -216,7 +225,7 @@ class LocalDB {
         continue;
       }
       //update userProject projectID
-      await DbRelationsCtr.updateProjectID(_userProjectTable,locId, projectId);
+      await DbRelationsCtr.updateProjectID(_userProjectTable, locId, projectId);
     }
 
     //cambiar projectID de la relacion tasks
@@ -268,7 +277,7 @@ class LocalDB {
       if (locId == -1) {
         continue;
       }
-      await DbRelationsCtr.updateTaskID(_taskAssignmentTable,locId, taskId);
+      await DbRelationsCtr.updateTaskID(_taskAssignmentTable, locId, taskId);
     }
 
     //cambiar taskID de la relacion taskComment
@@ -293,17 +302,25 @@ class LocalDB {
   static Future<int> updateTaskCommentSyncStatus(
       int locId, int taskCommentId) async {
     //cambiar taskCommentID de la relacion attatchment
-    var attachments = await _db!
+    var allattachments = await _db!
         .query('attachment', where: 'taskCommentID = ?', whereArgs: [locId]);
+
+    for (var attachment in allattachments) {
+      var locId = attachment['locId'] as int;
+      if (locId == -1) {
+        continue;
+      }
+    }
+    var attachments = await _db!.rawQuery(
+        'SELECT * FROM attachment WHERE taskCommentID = ? AND attachmentID IS NULL', [locId]);
     for (var attachment in attachments) {
       var locId = attachment['locId'] as int;
       if (locId == -1) {
         continue;
       }
+
       await AttachmentController.updateTaskCommentID(locId, taskCommentId);
     }
-
-    
 
     return await _db!.update(
       'taskComment',
@@ -336,7 +353,6 @@ class LocalDB {
   //update attatchment
   static Future<int> updateAttachmentSyncStatus(
       int locId, int attachmentId) async {
-
     return await _db!.update(
       'attachment',
       {'attachmentID': attachmentId},
@@ -353,6 +369,11 @@ class LocalDB {
       where: 'locId = ?',
       whereArgs: [locId],
     );
+  }
+
+  static Future<int> updateActivityLogSyncStatus(logMap, int insertId) {
+    return _db!.update('activityLog', logMap,
+        where: 'locId = ?', whereArgs: [insertId]);
   }
 
   // Query unsynced data
@@ -526,16 +547,16 @@ class LocalDB {
   static Future<int> insertActivityLog(ActivityLog activityLog) async {
     AppLog.d("Insert activity log called");
     var inserted = await _db!.rawInsert(
-          'INSERT INTO activityLog (userID, projectID, activityType, activityDetails, timestamp, lastUpdate) VALUES (?, ?, ?, ?, ?, ?)',
-          [
-            activityLog.userID,
-            activityLog.projectID,
-            activityLog.activityType,
-            jsonEncode(activityLog.activityDetails),
-            activityLog.timestamp?.toIso8601String(),
-            activityLog.lastUpdate?.toIso8601String(),
-          ],
-        );
+      'INSERT INTO activityLog (userID, projectID, activityType, activityDetails, timestamp, lastUpdate) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        activityLog.userID,
+        activityLog.projectID,
+        activityLog.activityType,
+        jsonEncode(activityLog.activityDetails),
+        activityLog.timestamp?.toIso8601String(),
+        activityLog.lastUpdate?.toIso8601String(),
+      ],
+    );
     return inserted;
   }
 
@@ -687,8 +708,6 @@ class LocalDB {
   }
 
   static Future<int> updateUser(User user) async {
-
-
     return await _db!.rawUpdate(
       'UPDATE user SET name = ?, email = ?, password = ?, lastUpdate = ? WHERE userID = ?',
       [
@@ -744,17 +763,16 @@ class LocalDB {
     } else {
       return [];
     }
-
   }
 
-
-  static Future<List<Map<String, dynamic>>> queryAttachmentsForTask(int taskId) async {
+  static Future<List<Map<String, dynamic>>> queryAttachmentsForTask(
+      int taskId) async {
     return _db!.query('attachment', where: 'taskID = ?', whereArgs: [taskId]);
   }
+
   // Query unsynced updates
   static Future<List<Map<String, dynamic>>> queryUnsyncedUpdates(
       String table) async {
-    
     var res = await _db!.rawQuery(
       'SELECT * FROM $_activityLogTable WHERE activityType = "update" AND activityID IS NULL AND isSynced = 0',
     );
@@ -818,8 +836,4 @@ class LocalDB {
       whereArgs: [activityID],
     );
   }
-
-  static queryCommentsForTask(int taskId) {}
-
-  static queryAttachmentsForComment(comment) {}
 }

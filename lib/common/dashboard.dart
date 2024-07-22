@@ -7,6 +7,7 @@ import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/utils/Dashboardcontroller.dart';
 import 'package:taskermg/views/globalheader.dart';
 import 'package:taskermg/common/widgets/syncIndicator.dart';
@@ -19,6 +20,9 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+    // Inicializa el SyncController
+  final SyncController syncController = Get.put(SyncController());
+  
   final DashboardController _dashboardController =
       Get.put(DashboardController());
   final ProjectPage projectPage = ProjectPage();

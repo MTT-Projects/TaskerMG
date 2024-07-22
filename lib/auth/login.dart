@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Variable booleana para mostrar y ocultar la contraseña
   bool isVisible = false;
-  bool isLoginTrue = false;
+  bool? isLoginTrue;
 
   final storage = const FlutterSecureStorage();
 
@@ -45,14 +45,16 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => SyncScreen()));
       } else {
-        // Si no, muestra un mensaje de error
+        Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
         setState(() {
           isLoginTrue = true;
         });
       }
     } else {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
+      setState(() {
+        isLoginTrue = false;
+      });
     }
 
     // Si el inicio de sesión es correcto, redirige a la página principal
@@ -190,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   // Desactivaremos este mensaje por defecto, cuando el usuario y la contraseña sean incorrectos, activaremos este mensaje para el usuario
-                  isLoginTrue
+                  isLoginTrue == false
                       ? const Text(
                           "El nombre de usuario o la contraseña son incorrectos",
                           style: TextStyle(color: Colors.red),

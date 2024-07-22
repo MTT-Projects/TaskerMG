@@ -25,7 +25,7 @@ class LogActivityController extends GetxController {
 
     if (userName.isNotEmpty && profileData != null) {
       return {
-        'name': userName.first['name'],
+        'name': userName,
         'profilePicUrl': profileData['profilePicUrl'],
       };
     }

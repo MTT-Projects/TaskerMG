@@ -37,7 +37,7 @@ class _SignUpState extends State<SignUp> {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: const Text("Close"),
+                child: const Text("Cerrar"),
               )
             ],
           );
@@ -87,7 +87,7 @@ class _SignUpState extends State<SignUp> {
                       controller: username,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "username is required";
+                          return "El nombre de usuario es requerido";
                         }
                         return null;
                       },
@@ -110,7 +110,7 @@ class _SignUpState extends State<SignUp> {
                       controller: email,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "email is required";
+                          return "El correo es requerido";
                         }
                         return null;
                       },
@@ -133,7 +133,7 @@ class _SignUpState extends State<SignUp> {
                       controller: password,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "password is required";
+                          return "La contraseña es requerida";
                         }
                         return null;
                       },
@@ -141,7 +141,7 @@ class _SignUpState extends State<SignUp> {
                       decoration: InputDecoration(
                           icon: const Icon(Icons.lock),
                           border: InputBorder.none,
-                          hintText: "Password",
+                          hintText: "Contraseña",
                           suffixIcon: IconButton(
                               onPressed: () {
                                 //In here we will create a click to show and hide the password a toggle button
@@ -169,9 +169,9 @@ class _SignUpState extends State<SignUp> {
                       controller: confirmPassword,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "password is required";
+                          return "La contraseña es requerida";
                         } else if (password.text != confirmPassword.text) {
-                          return "Passwords don't match";
+                          return "Las contraseñas no coinciden";
                         }
                         return null;
                       },
@@ -179,7 +179,7 @@ class _SignUpState extends State<SignUp> {
                       decoration: InputDecoration(
                           icon: const Icon(Icons.lock),
                           border: InputBorder.none,
-                          hintText: "Re-Password",
+                          hintText: "RE-Contraseña",
                           suffixIcon: IconButton(
                               onPressed: () {
                                 //In here we will create a click to show and hide the password a toggle button
@@ -207,7 +207,7 @@ class _SignUpState extends State<SignUp> {
                           signup(username.text, email.text, password.text);
                         },
                         child: const Text(
-                          "SIGN UP",
+                          "REGISTRARSE",
                           style: TextStyle(color: Colors.white),
                         )),
                   ),
@@ -216,7 +216,7 @@ class _SignUpState extends State<SignUp> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Already have an account?"),
+                      const Text("¿Ya tienes una cuenta?"),
                       TextButton(
                           onPressed: () {
                             //Navigate to sign up
@@ -225,7 +225,7 @@ class _SignUpState extends State<SignUp> {
                                 MaterialPageRoute(
                                     builder: (context) => const LoginScreen()));
                           },
-                          child: const Text("Login"))
+                          child: const Text("Iniciar Sesión")),
                     ],
                   )
                 ],
