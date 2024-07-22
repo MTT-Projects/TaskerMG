@@ -54,7 +54,7 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comentarios de la Tarea'),
-        backgroundColor: AppColors.primaryColor,
+        backgroundColor: AppColors.secBackgroundColor,
       ),
       body: FutureBuilder<void>(
         future: _fetchCommentsFuture,

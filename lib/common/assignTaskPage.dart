@@ -46,6 +46,7 @@ class _AssignTaskPageState extends State<AssignTaskPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Asignar Tarea'),
+         backgroundColor: AppColors.secBackgroundColor,
       ),
       body: Column(
         children: [

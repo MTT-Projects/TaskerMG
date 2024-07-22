@@ -42,7 +42,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Editar Tarea'),
-        backgroundColor: AppColors.primaryColor,
+         backgroundColor: AppColors.secBackgroundColor,
       ),
       backgroundColor: AppColors.backgroundColor,
       body: Padding(

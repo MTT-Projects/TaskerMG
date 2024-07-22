@@ -225,6 +225,16 @@ class ProjectController extends GetxController {
     ''', [proyectID]);
     return response[0]['collaborators'];
   }
+
+  static getProjectName(projectID) async {
+    //return project name
+    var result = await LocalDB.rawQuery(
+      'SELECT name FROM project WHERE projectID = ?',
+      [projectID],
+    );
+    return result[0]['name'];
+
+  }
 }
 
 class ProjectGoalController {

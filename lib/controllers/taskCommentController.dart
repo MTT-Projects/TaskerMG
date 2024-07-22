@@ -33,7 +33,7 @@ class TaskCommentController extends GetxController {
       List<Map<String, dynamic>> attachmentsData = await LocalDB.query(
         'attachment',
         where: 'taskCommentID = ?',
-        whereArgs: [comment.taskCommentID ?? comment.locId],
+        whereArgs: [comment.taskCommentID],
       );
 
       List<Attachment> attachments =

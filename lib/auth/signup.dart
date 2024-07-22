@@ -251,7 +251,7 @@ class _SignUpState extends State<SignUp> {
       if (response == true) {
         // ignore: use_build_context_synchronously
         Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const ProfileEditPage()));
+            MaterialPageRoute(builder: (context) => const LoginScreen()));
       } else {
         AppLog.d(response.toString());
         showpopuperror(response.toString());

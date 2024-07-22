@@ -34,6 +34,14 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
   }
 
   TasksPage tasksPage = TasksPage();
+  static LogActivityPage? logActivityPage;
+
+  @override
+  void initState() {
+    super.initState();
+    logActivityPage = LogActivityPage(project: widget.project);
+  }
+  
 
   void changePage(int index) {
     selectedIndex.value = index;
@@ -135,7 +143,7 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
                       children: [
                         tasksPage,
                         CollaboratorsPage(project: project),
-                        LogActivityPage(project: project),
+                        logActivityPage!,
                         EditProjectScreen(project: project),
                       ],
                     );

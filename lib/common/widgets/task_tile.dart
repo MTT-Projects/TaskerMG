@@ -1,9 +1,8 @@
-// ignore_for_file: prefer_const_constructors
-
-import 'package:taskermg/common/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:taskermg/common/theme.dart';
 import '../../models/task.dart';
 import '../../db/db_local.dart';
 
@@ -45,30 +44,32 @@ class TaskTile extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                      Text(
-                        task?.title ?? "",
-                        style: GoogleFonts.lato(
-                          textStyle: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
+                          Text(
+                            task?.title ?? "",
+                            style: GoogleFonts.lato(
+                              textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                          ),
+                          Row(children: [
+                            Icon(
+                              Icons.comment_rounded,
+                              color: Colors.grey[200],
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "$commentCount",
+                              style: GoogleFonts.lato(
+                                textStyle: TextStyle(
+                                    fontSize: 13, color: Colors.grey[100]),
+                              ),
+                            ),
+                          ]),
+                        ],
                       ),
-                      Row(children: [
-                      Icon(
-                        Icons.comment_rounded,
-                        color: Colors.grey[200],
-                        size: 18,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "$commentCount",
-                        style: GoogleFonts.lato(
-                          textStyle:
-                              TextStyle(fontSize: 13, color: Colors.grey[100]),
-                        ),
-                      )]),
-                      ]),
                       const SizedBox(height: 12),
                       Text(
                         task?.description ?? "",
@@ -85,45 +86,46 @@ class TaskTile extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 4),
-                      Text(
-                        DateFormat('yyyy-MM-dd').format(task?.deadline ?? DateTime.now()),
-                        style: GoogleFonts.lato(
-                          textStyle:
-                              TextStyle(fontSize: 13, color: Colors.grey[100]),
+                        Text(
+                          DateFormat('yyyy-MM-dd')
+                              .format(task?.deadline ?? DateTime.now()),
+                          style: GoogleFonts.lato(
+                            textStyle:
+                                TextStyle(fontSize: 13, color: Colors.grey[100]),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time_rounded,
-                            color: Colors.grey[200],
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${DateTime.now().difference(task?.deadline ?? DateTime.now()).inDays} días restantes",
-                            style: GoogleFonts.lato(
-                              textStyle:
-                                  TextStyle(fontSize: 13, color: Colors.grey[100]),
+                        const SizedBox(width: 12),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              color: Colors.grey[200],
+                              size: 18,
                             ),
-                          ),
-                        ],
-                      )]),
+                            const SizedBox(width: 4),
+                            Text(
+                              _getDeadlineText(task?.deadline),
+                              style: GoogleFonts.lato(
+                                textStyle: TextStyle(
+                                    fontSize: 13, color: Colors.grey[100]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ]),
                     ],
                   ),
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 10),
-                  //max height
                   height: 100,
-                  width: 8, // Make the divider thicker
+                  width: 8,
                   color: _getPriorityColor(task?.priority ?? "Media"),
                 ),
                 RotatedBox(
                   quarterTurns: 3,
                   child: Text(
-                    task!.status ?? "",
+                    task?.status ?? "",
                     style: GoogleFonts.lato(
                       textStyle: const TextStyle(
                           fontSize: 12,
@@ -151,6 +153,23 @@ class TaskTile extends StatelessWidget {
     );
 
     return response[0]["count"];
+  }
+
+  String _getDeadlineText(DateTime? deadline) {
+    if (deadline == null) {
+      return "Sin fecha límite";
+    }
+
+    final now = DateTime.now();
+    final difference = deadline.difference(now).inDays;
+
+    if (difference > 0) {
+      return "$difference días restantes";
+    } else if (difference == 0) {
+      return "Vence hoy";
+    } else {
+      return "Retrasada por ${difference.abs()} días";
+    }
   }
 
   Color _getPriorityColor(String priority) {

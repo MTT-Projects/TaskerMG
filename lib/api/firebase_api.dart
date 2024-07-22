@@ -107,7 +107,7 @@ class FirebaseApi {
     required String to,
     required String title,
     required String body,
-    required Map<String, dynamic> data,
+    required Map<String, dynamic>? data,
   }) async {
     final String serverAccessToken = await getAccessToken();
     String endpointFirebaseCloudMesssaging =

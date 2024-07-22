@@ -51,7 +51,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     return Scaffold(
       body: Column(
         children: [
-          Padding(
+          imOwner() ? Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               decoration: const InputDecoration(
@@ -60,7 +60,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
               ),
               onChanged: controller.filterCollaborators,
             ),
-          ),
+          ): const SizedBox(height: 25,),
           Expanded(
             child: Obx(() {
               if (controller.filteredCollaborators.isEmpty) {
@@ -76,12 +76,12 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
                     ),
                     title: Text(collaborator.name ?? ''),
                     subtitle: Text(collaborator.email),
-                    trailing: imOwner() ? IconButton(
+                    trailing: collaborator.userID != currentUserID ? imOwner() ? IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
                         controller.removeCollaborator(collaborator.userID!);
                       },
-                    ): null,
+                    ): null : null,
                   );
                 },
               );

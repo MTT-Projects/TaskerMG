@@ -139,10 +139,51 @@ class UserController extends GetxController {
     }
   }
 
-  static getUserName(int? userID) {
-    return DBHelper.query(
+
+
+  static getUserName(int? userID) async {
+    final result = await DBHelper.query(
       '''SELECT name FROM user WHERE userID = ?''',
       [userID],
     );
+    if (result.isNotEmpty) {
+      var user = result.first;
+      return user['name'];
+    } else {
+      return "";
+    }
+  }
+
+  static Future<Map<String,dynamic>?> getUserData(userID) async {
+    final result = await DBHelper.query(
+      '''SELECT * FROM user WHERE userID = ?''',
+      [userID],
+    );
+    if (result.isNotEmpty) {
+      var user = result.first;
+      
+      var ret = {
+        "userID": user['userID'],
+        "username": user['username'],
+        "name": user['name'],
+        "email": user['email'],
+      };
+      return ret;
+    } else {
+      return null;
+    }
+  }
+
+  static getUserEmail(int userId) async {
+    final result = await DBHelper.query(
+      '''SELECT email FROM user WHERE userID = ?''',
+      [userId],
+    );
+    if (result.isNotEmpty) {
+      var user = result.first;
+      return user['email'];
+    } else {
+      return "";
+    }
   }
 }

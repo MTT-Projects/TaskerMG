@@ -16,7 +16,8 @@ class SyncController extends GetxController {
   var isSyncing = false.obs;
   late Timer _syncTimer;
   bool canSync = true;
-
+  static bool isPushing = false;
+  static bool isPulling = false;
   @override
   void onInit() {
     super.onInit();
@@ -66,20 +67,34 @@ class SyncController extends GetxController {
   }
 
   static Future<void> pullData() async {
+    if(isPulling)
+    {
+      AppLog.d("Already pulling data, skipping");
+      return;
+    }
+    isPulling = true;
     await SyncProjects.pullProjects();
     await SyncTasks.pullTasks();
     await SyncUserProjects.pullUserProjects();
     await SyncTaskAssignment.pullTaskAssignments();
     await SyncTaskComment.pullTaskComments();
     await SyncAttachment.pullAttachments();
+    isPulling = false;
   }
 
   static Future<void> pushData() async {
+    if(isPushing)
+    {
+      AppLog.d("Already pushing data, skipping");
+      return;
+    }
+    isPushing = true;
     await SyncProjects.pushProjects();
     await SyncTasks.pushTasks();
     await SyncUserProjects.pushUserProjects();
     await SyncTaskAssignment.pushTaskAssignments();
     await SyncTaskComment.pushTaskComments();
     await SyncAttachment.pushAttachments();
+    isPushing = false;
   }
 }

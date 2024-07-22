@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:taskermg/common/pages/notified_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -116,7 +118,10 @@ class NotifyHelper {
     if (payload == "Theme Changed") {
       print("nothing to navigate");
     } else {
+      //check type in jsondecode payload
+
       Get.to(() => NotifiedPage(label: payload));
+      
     }
   }
 

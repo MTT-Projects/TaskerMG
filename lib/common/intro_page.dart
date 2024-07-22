@@ -1,10 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api
 
-import 'package:taskermg/auth/login.dart';
-import 'package:taskermg/common/dashboard.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+import 'package:taskermg/auth/login.dart';
+import 'package:taskermg/common/theme.dart';
 
 class OnBoardingPage extends StatefulWidget {
   const OnBoardingPage({super.key});
@@ -18,8 +19,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
 
   void _onIntroEnd(context) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-          builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 
@@ -43,13 +43,13 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     const bodyStyle = TextStyle(fontSize: 19.0);
 
     const pageDecoration = PageDecoration(
-        titleTextStyle: TextStyle(fontSize: 28.0, fontWeight: FontWeight.w700),
-        bodyTextStyle: bodyStyle,
-        bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-        pageColor: Colors.white,
-        imageFlex: 2,
-        imagePadding: EdgeInsets.zero //(top: 100),
-        );
+      titleTextStyle: TextStyle(fontSize: 28.0, fontWeight: FontWeight.w700),
+      bodyTextStyle: bodyStyle,
+      bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      pageColor: Colors.white,
+      imageFlex: 2,
+      imagePadding: EdgeInsets.zero,
+    );
 
     return IntroductionScreen(
       key: introKey,
@@ -67,45 +67,46 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
         width: double.infinity,
         height: 60,
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryColor,
+            textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+          ),
           child: const Text(
-            'Let\'s go right away!',
-            style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+            '¡Vamos allá!',
+            style: TextStyle(color: Colors.white),
           ),
           onPressed: () => _onIntroEnd(context),
         ),
       ),
       pages: [
         PageViewModel(
-          title: "Manage and organize workloads",
-          body:
-              "Know what you have to do, and which items have priority. Assign and execute.",
+          title: "Gestiona y organiza las cargas de trabajo",
+          body: "Saber lo que tienes que hacer y qué elementos tienen prioridad. Asigna y ejecuta.",
           image: _buildImage('img1.jpg'),
           decoration: pageDecoration,
         ),
         PageViewModel(
-          title: "Meet deadlines",
-          body:
-              "Work more efficiently making missed deadlines a thing of the past.",
+          title: "Cumple con los plazos",
+          body: "Trabaja de manera más eficiente, haciendo que los plazos incumplidos sean cosa del pasado.",
           image: _buildImage('img2.jpg'),
           decoration: pageDecoration,
         ),
         PageViewModel(
-          title: "Reduce waste",
-          body:
-              "Eliminate time spent thinking of what to do next or reworking tasks that were not completed correctly on the first attempt.",
+          title: "Reduce el desperdicio",
+          body: "Elimina el tiempo dedicado a pensar qué hacer a continuación o volver a trabajar en tareas que no se completaron correctamente en el primer intento.",
           image: _buildImage('img3.jpg'),
           footer: ElevatedButton(
             onPressed: () {
               introKey.currentState?.animateScroll(0);
             },
             style: ElevatedButton.styleFrom(
-              primary: Colors.lightBlue,
+              primary: AppColors.primaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
             child: const Text(
-              'Visit website',
+              'Visitar sitio web',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -113,16 +114,14 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
         ),
       ],
       onDone: () => _onIntroEnd(context),
-      //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
       showSkipButton: true,
       skipOrBackFlex: 0,
       nextFlex: 0,
       showBackButton: false,
-      //rtl: true, // Display as right-to-left
       back: const Icon(Icons.arrow_back),
-      skip: const Text('Skip', style: TextStyle(fontWeight: FontWeight.w600)),
+      skip: const Text('Saltar', style: TextStyle(fontWeight: FontWeight.w600)),
       next: const Icon(Icons.arrow_forward),
-      done: const Text('Done', style: TextStyle(fontWeight: FontWeight.w600)),
+      done: const Text('Hecho', style: TextStyle(fontWeight: FontWeight.w600)),
       curve: Curves.fastLinearToSlowEaseIn,
       controlsMargin: const EdgeInsets.all(16),
       controlsPadding: kIsWeb

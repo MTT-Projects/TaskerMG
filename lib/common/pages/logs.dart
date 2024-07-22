@@ -51,7 +51,17 @@ class _LogActivityPageState extends State<LogActivityPage> {
                 }
 
                 var userData = snapshot.data;
-                return _buildLogTile(log, userData);
+                return FutureBuilder<String?>(
+                  future: _controller.getTaskNameById(log.activityDetails?['taskID']),
+                  builder: (context, taskSnapshot) {
+                    if (!taskSnapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    var taskName = taskSnapshot.data;
+                    return _buildLogTile(log, userData, taskName);
+                  },
+                );
               },
             );
           },
@@ -60,12 +70,41 @@ class _LogActivityPageState extends State<LogActivityPage> {
     );
   }
 
-  Widget _buildLogTile(ActivityLog log, Map<String, dynamic>? userData) {
+  Widget _buildLogTile(ActivityLog log, Map<String, dynamic>? userData, String? taskName) {
+    LinearGradient getStatusGradient(String? state) {
+      switch (state) {
+        case 'Pendiente':
+          return LinearGradient(
+            colors: [Colors.grey.shade300, Colors.grey.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+        case 'En Proceso':
+          return LinearGradient(
+            colors: [Colors.orange.shade300, Colors.orange.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+        case 'Completada':
+          return LinearGradient(
+            colors: [Colors.green.shade300, Colors.green.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+        default:
+          return LinearGradient(
+            colors: [Colors.white, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: getStatusGradient(log.activityDetails?['newState']),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -78,29 +117,53 @@ class _LogActivityPageState extends State<LogActivityPage> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundImage: userData != null && userData['profilePicUrl'] != null
-                ? NetworkImage(userData['profilePicUrl'])
-                : AssetImage("Assets/images/profile.png") as ImageProvider,
-            radius: 20,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.black, width: 2),
+            ),
+            child: CircleAvatar(
+              backgroundImage: userData != null && userData['profilePicUrl'] != null
+                  ? NetworkImage(userData['profilePicUrl'])
+                  : AssetImage("Assets/images/profile.png") as ImageProvider,
+              radius: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${userData?['name'] ?? 'Usuario'} ha marcado la tarea como ${log.activityDetails?['newState']}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${userData?['name'] ?? 'Usuario'} ',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: 'ha marcado la tarea ',
+                        style: const TextStyle(fontWeight: FontWeight.normal, color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: '"${taskName ?? 'desconocida'}" ',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: 'como ',
+                        style: const TextStyle(fontWeight: FontWeight.normal, color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: '${log.activityDetails?['newState']}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   DateFormat('dd-MM-yyyy HH:mm').format(log.timestamp!),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+                  style: const TextStyle(fontSize: 12, color: Color.fromRGBO(43, 43, 43, 1)))
               ],
             ),
           ),
