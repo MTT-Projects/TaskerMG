@@ -11,6 +11,7 @@ import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
 import 'package:taskermg/utils/sync/sync_tasks.dart';
 import 'package:taskermg/utils/sync/sync_user_projects.dart';
+import 'package:taskermg/utils/sync/sync_activityLogs.dart';
 import 'package:taskermg/utils/AppLog.dart';
 class SyncController extends GetxController {
   var isSyncing = false.obs;
@@ -79,6 +80,7 @@ class SyncController extends GetxController {
     await SyncTaskAssignment.pullTaskAssignments();
     await SyncTaskComment.pullTaskComments();
     await SyncAttachment.pullAttachments();
+    await SyncActivityLogs.pullActivityLogs();
     isPulling = false;
   }
 

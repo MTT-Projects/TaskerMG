@@ -50,6 +50,20 @@ class ActivityLog {
     );
   }
 
+  //from map
+  factory ActivityLog.fromMap(Map<String, dynamic> map) {
+    return ActivityLog(
+      locId: map['locId'],
+      activityID: map['activityID'],
+      userID: map['userID'],
+      projectID: map['projectID'],
+      activityType: map['activityType'],
+      activityDetails: map['activityDetails'] != null ? jsonDecode(map['activityDetails']) : null,
+      timestamp: DateTime.parse(map['timestamp']),
+      lastUpdate: DateTime.parse(map['lastUpdate']),
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'locId': locId,
         'activityID': activityID,

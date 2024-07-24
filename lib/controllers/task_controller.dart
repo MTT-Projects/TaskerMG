@@ -283,9 +283,6 @@ class TaskController extends GetxController {
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
     ));
-    // Actualizar los logs de actividad después de cambiar el estado de la tarea
-    final logActivityController = Get.find<LogActivityController>();
-    logActivityController.fetchActivityLogs(task.projectID!);
     await onlyupdateTask(task);
   }
 
@@ -331,6 +328,7 @@ class TaskController extends GetxController {
   }
 
   Future<void> updateTaskDetails(Task task) async {
+    final LogActivityController _controller = Get.put(LogActivityController());
     //revisar si es diferente en todos los campos
     var oldTask = await LocalDB.query('tasks', where: 'locId = ?', whereArgs: [task.locId]);
     if (oldTask.isEmpty) {

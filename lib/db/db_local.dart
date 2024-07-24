@@ -836,4 +836,15 @@ class LocalDB {
       whereArgs: [activityID],
     );
   }
+
+  static updateActivityLogID(locId, activityLogId) async {
+    return await _db!.update(
+      _activityLogTable,
+      {'activityID': activityLogId},
+      where: 'locId = ?',
+      whereArgs: [locId],
+    );
+  }
+
+
 }

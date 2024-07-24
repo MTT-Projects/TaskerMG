@@ -374,6 +374,17 @@ class SyncTasks {
             actMap['activityType'],
             jsonEncode(remoteDetail),
           ]);
+          //update ActivityLogID
+          await LocalDB.updateActivityLogID(actMap['locId'], logResponse.insertId);
+          
+      if (logResponse is Results) {
+        var logRemoteID = logResponse.insertId;
+
+        AppLog.d("Actividad remota insertada exitosamente.");
+      } else {
+        AppLog.e("Error al insertar actividad remota: $logResponse");
+      }
+
     } else {
       AppLog.e("Error updating task in remote database: $response");
     }

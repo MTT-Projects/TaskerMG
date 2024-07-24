@@ -14,6 +14,7 @@ import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
 import 'package:taskermg/utils/sync/sync_tasks.dart';
 import 'package:taskermg/utils/sync/sync_user_projects.dart';
+import 'package:taskermg/utils/sync/sync_activityLogs.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
 import 'package:taskermg/utils/sync/sync_tasks.dart';
@@ -40,6 +41,7 @@ class _SyncScreenState extends State<SyncScreen> {
     'Sincronizando asignaciones...',
     'Sincronizando comentarios...',
     'Sincronizando archivos...',
+    'Sincronizando registros de actividad...',
     // Agrega más pasos de sincronización aquí
   ];
 
@@ -94,6 +96,9 @@ class _SyncScreenState extends State<SyncScreen> {
       case 5:
         await SyncAttachment.pullAttachments();
         await SyncAttachment.pushAttachments();
+        break;
+      case 6: 
+        await SyncActivityLogs.pullActivityLogs();
         break;
     }
   }

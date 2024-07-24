@@ -28,6 +28,12 @@ class _LogActivityPageState extends State<LogActivityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() {
+        if (_controller.isLoading.value) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
         if (_controller.activityLogs.isEmpty) {
           return Center(
             child: Column(
@@ -43,27 +49,9 @@ class _LogActivityPageState extends State<LogActivityPage> {
           itemCount: _controller.activityLogs.length,
           itemBuilder: (context, index) {
             ActivityLog log = _controller.activityLogs[index];
-            return FutureBuilder<Map<String, dynamic>?>(
-              future: _controller.getUserDataById(log.userID!),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                var userData = snapshot.data;
-                return FutureBuilder<String?>(
-                  future: _controller.getTaskNameById(log.activityDetails?['taskID']),
-                  builder: (context, taskSnapshot) {
-                    if (!taskSnapshot.hasData) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-
-                    var taskName = taskSnapshot.data;
-                    return _buildLogTile(log, userData, taskName);
-                  },
-                );
-              },
-            );
+            var userData = _controller.getUserData(log.userID!);
+            var taskName = _controller.getTaskName(log.activityDetails?['taskID']);
+            return _buildLogTile(log, userData, taskName);
           },
         );
       }),
@@ -163,7 +151,7 @@ class _LogActivityPageState extends State<LogActivityPage> {
                 const SizedBox(height: 5),
                 Text(
                   DateFormat('dd-MM-yyyy HH:mm').format(log.timestamp!),
-                  style: const TextStyle(fontSize: 12, color: Color.fromRGBO(43, 43, 43, 1)))
+                  style: const TextStyle(fontSize: 12, color: Color.fromRGBO(43, 43, 43, 1))),
               ],
             ),
           ),

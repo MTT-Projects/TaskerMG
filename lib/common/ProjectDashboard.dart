@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -23,9 +21,11 @@ class ProyectDashboard extends StatefulWidget {
   _ProyectDashboardState createState() => _ProyectDashboardState();
 }
 
-class _ProyectDashboardState extends State<ProyectDashboard> {
+class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerProviderStateMixin {
   static var screenTitle = "Tareas".obs;
   static var selectedIndex = 0.obs;
+
+  late TabController _tabController;
 
   bool imOwner = false;
 
@@ -39,9 +39,24 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabSelection);
     logActivityPage = LogActivityPage(project: widget.project);
   }
-  
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.index == 2) {
+      logActivityPage = LogActivityPage(project: widget.project); // Reload log activity page
+    }
+    changePage(_tabController.index);
+  }
 
   void changePage(int index) {
     selectedIndex.value = index;
@@ -80,17 +95,21 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
     };
   }
 
+  Future<bool> _onWillPop() async {
+    if (selectedIndex.value != 0) {
+      changePage(0);
+      return false; // Prevent exiting the app
+    } else {
+      return true; // Exit the app
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-
     var project = widget.project;
     imOwner = MainController.getVar("currentUser") == project.proprietaryID;
     return WillPopScope(
-      onWillPop: () async {
-        changePage(0);
-        ProjectPage.projectController.getProjects();
-        return true;
-      },
+      onWillPop: _onWillPop,
       child: Container(
         color: AppColors.secBackgroundColor,
         child: SafeArea(
@@ -100,9 +119,12 @@ class _ProyectDashboardState extends State<ProyectDashboard> {
               leading: IconButton(
                 icon: Icon(Icons.arrow_back, color: AppColors.backgroundColor),
                 onPressed: () {
-                  ProjectPage.projectController.getProjects();
-                  changePage(0);
-                  Navigator.pop(context);
+                  if (selectedIndex.value != 0) {
+                    changePage(0);
+                  } else {
+                    ProjectPage.projectController.getProjects();
+                    Navigator.pop(context);
+                  }
                 },
               ),
               title: Obx(() => Text(screenTitle.value, style: headingStyleInv)),
@@ -232,7 +254,7 @@ class CustomDrawer extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
-            imOwner() ? ListTile(
+            ListTile(
               leading: Icon(Icons.local_activity),
               title: Text("Actividad"),
               textColor: AppColors.textColor,
@@ -240,7 +262,7 @@ class CustomDrawer extends StatelessWidget {
                 changePage(2);
                 Navigator.pop(context);
               },
-            ): Container(),
+            ),
             SizedBox(
               height: 25,
             ),
