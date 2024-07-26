@@ -82,6 +82,12 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
         title: Text('Comentarios de la Tarea',
             style: TextStyle(color: AppColors.secTextColor)),
         backgroundColor: AppColors.secBackgroundColor,
+        leading: IconButton(
+                icon: Icon(Icons.arrow_back, color: AppColors.backgroundColor),
+                onPressed: () {
+                  //pop
+                  Navigator.pop(context);
+                },)
       ),
       body: FutureBuilder<void>(
         future: _fetchCommentsFuture,
