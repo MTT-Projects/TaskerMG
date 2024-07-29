@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypt/crypt.dart';
 import 'package:get_storage/get_storage.dart';
@@ -185,5 +186,60 @@ class UserController extends GetxController {
     } else {
       return "";
     }
+  }
+
+  static Future<bool> verifyValidationCode(int userId, String code) async {
+    final result = await DBHelper.query(
+      'SELECT validatedCode FROM user WHERE userID = ? AND validatedCode = ?',
+      [userId, code],
+    );
+    if (result.isNotEmpty) {
+      await DBHelper.query(
+        'UPDATE user SET validated = 1, validatedCode = NULL WHERE userID = ?',
+        [userId],
+      );
+      return true;
+    }
+    return false;
+  }
+
+  static Future<int> generateValidationCode(int userId) async {
+    int newCode = _generateCode();
+    await DBHelper.query(
+      'UPDATE user SET validatedCode = ? WHERE userID = ?',
+      [newCode, userId],
+    );
+    return newCode;
+  }
+
+  static int _generateCode() {
+    return 100000 + Random().nextInt(900000); // Generar código de 6 dígitos
+  }
+
+  static Future<bool> validateCode(int userId, String enteredCode) async {
+    final result = await DBHelper.query(
+      'SELECT validatedCode FROM user WHERE userID = ?',
+      [userId],
+    );
+
+    if (result.isNotEmpty) {
+      var user = result.first;
+      return user['validatedCode'].toString() == enteredCode;
+    }
+    return false;
+  }
+
+  static Future<void> markAsValidated(int userId) async {
+    await DBHelper.query(
+      'UPDATE user SET validated = 1 WHERE userID = ?',
+      [userId],
+    );
+  }
+
+  static Future<void> updateValidationCode(int userId, int newCode) async {
+    await DBHelper.query(
+      'UPDATE user SET validatedCode = ? WHERE userID = ?',
+      [newCode, userId],
+    );
   }
 }

@@ -11,25 +11,29 @@ import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/models/user.dart';
 import 'package:taskermg/utils/AppLog.dart';
 import 'package:mysql1/mysql1.dart' as mysql;
+import 'package:taskermg/services/MailService.dart';
 
 class AuthService {
   static final firebase_auth.FirebaseAuth _auth =
       firebase_auth.FirebaseAuth.instance;
   static const storage = FlutterSecureStorage();
 
-  static Future<firebase_auth.User?> login(
+  static Future<Map<String, dynamic>?> login(
       String username, String password) async {
     try {
       var result = await DBHelper.query(
-          "SELECT password, salt, email, firebaseToken FROM user WHERE username = ?",
+          "SELECT userID, password, salt, email, firebaseToken, validated, validatedCode FROM user WHERE username = ?",
           [username]);
 
       if (result.isNotEmpty) {
         var user = result.first;
+        var userID = user['userID'];
         var storedHash = user['password'];
         var salt = user['salt'];
         var email = user['email'];
         var firebaseToken = user['firebaseToken'];
+        var validated = user['validated'];
+        var validatedCode = user['validatedCode'];
 
         var hashedPassword = Crypt.sha256(password, salt: salt).toString();
 
@@ -52,7 +56,24 @@ class AuthService {
             AppLog.d("token de usuario: ${token}");
 
             await setUserdataFromDB(username);
-            return firebaseUser;
+
+            if (validated != 1) {
+              // Enviar código de validación por correo electrónico
+              await sendValidationCode(email, validatedCode);
+
+              return {
+                'validated': 0,
+                'userID': userID,
+                'email': email,
+              };
+            }
+
+            return 
+              {
+                'validated': 1,
+                'userID': userID,
+                'email': email,
+              };
           }
         }
       }
@@ -117,9 +138,10 @@ class AuthService {
     var hashedPassword = Crypt.sha256(user.password, salt: salt).toString();
 
     try {
+      var validationCode = generateValidationCode();
       var response = await DBHelper.query(
-          "INSERT INTO user (username, name, email, password, salt) VALUES (?, ?, ?, ?, ?)",
-          [user.username, user.name, user.email, hashedPassword, salt]);
+          "INSERT INTO user (username, name, email, password, salt, validated, validatedCode) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [user.username, user.name, user.email, hashedPassword, salt, 0, validationCode]);
 
       if (response is mysql.Results) {
         // Registrar usuario en Firebase Auth
@@ -140,6 +162,9 @@ class AuthService {
             [token, user.email],
           );
         }
+
+        // Enviar código de validación por correo electrónico
+        await sendValidationCode(user.email, validationCode);
 
         return true;
       } else {
@@ -162,5 +187,15 @@ class AuthService {
   static Future<void> logout() async {
     await _auth.signOut();
     await storage.deleteAll();
+  }
+
+  static int generateValidationCode() {
+    return 100000 + (DateTime.now().millisecondsSinceEpoch % 900000); // Código de 6 dígitos
+  }
+
+  static Future<void> sendValidationCode(String email, int code) async {
+    // Implementar el envío de correo electrónico aquí
+    await MailService.sendMail(to: 
+    email, subject: "Verificación TaskerMG", code: code.toString());
   }
 }

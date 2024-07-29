@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:taskermg/common/profileEditPage.dart';
+import 'package:taskermg/common/validationScreen.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/profileDataController.dart';
 import 'package:taskermg/services/AuthService.dart';
@@ -64,6 +65,15 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
       var response = await AuthService.login(savedUsername, savedPassword);
 
       if (response != null) {
+        if (response['validated'] != 1) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => ValidationScreen(userId: response['userID'],  email: response['email']),
+            ),
+          );
+          return;
+        }
+
         var profileData = await ProfileDataController.getProfileDataByUserID(
             MainController.getVar('currentUser'));
         if (profileData != null) {

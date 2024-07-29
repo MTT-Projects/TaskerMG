@@ -9,7 +9,8 @@ CREATE TABLE user (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     creationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    validated BOOL //agregar validacion por correo electronico.    
+    validated BOOL, //agregar validacion por correo electronico.    
+    validatedCode INT,
     salt VARCHAR(255) NOT NULL,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     firebaseToken TEXT

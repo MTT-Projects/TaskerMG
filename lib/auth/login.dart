@@ -1,6 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/profileEditPage.dart';
 import 'package:taskermg/common/sync_screen.dart';
+import 'package:taskermg/common/validationScreen.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/profileDataController.dart';
 import 'package:taskermg/controllers/user_controller.dart';
@@ -32,24 +35,36 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> login(String username, String password) async {
     var response = await AuthService.login(username, password);
     if (response != null) {
-      await storage.write(key: 'isLoggedIn', value: "true");
-      await storage.write(key: 'username', value: username);
-      await storage.write(key: 'password', value: password);
-
-      //check if has profileData
-      var profileData = await ProfileDataController.getProfileDataByUserID(
-          MainController.getVar('currentUser'));
-      if (profileData != null) {
-        await storage.write(key: 'profileData', value: profileData.toString());
-        if (!mounted) return;
+      if (response['validated'] != 1) {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => SyncScreen()));
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              var validationScreen = ValidationScreen(userId: response['userID'],  email: response['email']);
+              return validationScreen;
+            },
+          ),
+        );
       } else {
-        Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
-        setState(() {
-          isLoginTrue = true;
-        });
+        await storage.write(key: 'isLoggedIn', value: "true");
+        await storage.write(key: 'username', value: username);
+        await storage.write(key: 'password', value: password);
+
+        //check if has profileData
+        var profileData = await ProfileDataController.getProfileDataByUserID(
+            MainController.getVar('currentUser'));
+        if (profileData != null) {
+          await storage.write(key: 'profileData', value: profileData.toString());
+          if (!mounted) return;
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => SyncScreen()));
+        } else {
+          Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
+          setState(() {
+            isLoginTrue = true;
+          });
+        }
       }
     } else {
       setState(() {

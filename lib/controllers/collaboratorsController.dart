@@ -34,6 +34,7 @@ class CollaboratorsController extends GetxController {
         JOIN userProject up ON u.userID = up.userID
         LEFT JOIN profileData pd ON u.userID = pd.userID
         WHERE up.projectID = ?
+        and u.validated = 1
   ''', [projectId]);
 
     List<User> collaborators = result.map<User>((data) {
@@ -103,6 +104,7 @@ class CollaboratorsController extends GetxController {
         WHERE 
           u.email = ? 
           AND up.projectID = ? 
+          and u.validated = 1
         ''',
       [email, projectID],
     );
@@ -171,7 +173,7 @@ class CollaboratorsController extends GetxController {
            pd.lastUpdate as profileLastUpdate
     FROM user u
     LEFT JOIN profileData pd ON u.userID = pd.userID
-    WHERE u.email= ?''',
+    WHERE u.email= ? and u.validated = 1''',
       [email],
     );
     if (result.isNotEmpty) {
