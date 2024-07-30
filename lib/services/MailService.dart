@@ -1,10 +1,17 @@
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MailService {
+  // static const String _host = 'smtp.mailersend.net';
+  // static const int _port = 587;
+  // static const String _username = 'MS_UiddCV@trial-vywj2lpykk1l7oqz.mlsender.net';
+  // static const String _password = 'pYLnSKZdFQ6kuVSC';
 
-  static const String _username = 'MS_UiddCV@trial-vywj2lpykk1l7oqz.mlsender.net';
-  static const String _password = 'pYLnSKZdFQ6kuVSC';
+  static final String _host = dotenv.env['MAIL_HOST'] ?? '';
+  static final int _port = int.parse(dotenv.env['MAIL_PORT'] ?? '');
+  static final String _username = dotenv.env['MAIL_USERNAME'] ?? '';
+  static final String _password = dotenv.env['MAIL_PASSWORD'] ?? '';
 
   static Future<void> sendMail({
     required String to,
@@ -12,14 +19,14 @@ class MailService {
     required String code,
   }) async {
     final smtpServer = SmtpServer(
-      'smtp.mailersend.net',
-      port: 587,
+      _host,
+      port: _port,
       username: _username,
       password: _password,
     );
 
     final message = Message()
-      ..from = Address(_username, 'MttProjects')
+      ..from = Address(_username, 'Mtt Projects')
       ..recipients.add(to)
       ..subject = subject
       ..html = _buildEmailHtml(code);

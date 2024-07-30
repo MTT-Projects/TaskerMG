@@ -55,7 +55,11 @@ class TaskController extends GetxController {
   }
 
   Future<RxList<Task>> getTasks([project]) async {
+    //clear the list
+    if(taskList.isNotEmpty)
+    {
     taskList.clear();
+    }
     AppLog.d(
         "Getting tasks from Project: ${MainController.getVar('currentProject')}");
     final currentProjectID = project ?? MainController.getVar('currentProject');

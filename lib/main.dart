@@ -8,12 +8,14 @@ import 'package:taskermg/services/theme_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'common/theme.dart';
 import 'utils/AppLog.dart';
 import 'api/firebase_api.dart';
 
 Future<void> main() async {
+  await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await DBHelper.initialize();

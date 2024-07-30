@@ -13,7 +13,7 @@ import '../models/user.dart';
 class CollaboratorsController extends GetxController {
   var collaboratorsList = <User>[].obs;
   var searchQuery = ''.obs;
-
+  var searchResults = <User>[].obs;
   int? projectId;
 
   CollaboratorsController({this.projectId});
@@ -61,11 +61,68 @@ class CollaboratorsController extends GetxController {
     collaboratorsList.value = collaborators;
   }
 
-  void addCollaborator(User user) async {
+  Future<String> addCollaborator(User user) async {
+    //check if user is already a collaborator
+    var result = await DBHelper.query(
+      'SELECT * FROM userProject WHERE userID = ? AND projectID = ?',
+      [user.userID, projectId],
+    );
+    if (result.isNotEmpty) {
+      AppLog.d('El usuario ya es un colaborador');
+      return 'El usuario ya es un colaborador';
+    }
+    
     await DbRelationsCtr.addUserProject(user.userID, projectId);
     await SyncController.pushData();
     fetchCollaborators();
     sendInviteNotification(user.email);
+    return 'El usuario ya es un colaborador';
+  }
+
+   Future<void> searchUser(String query) async {
+    if (query.isEmpty) {
+      searchResults.clear();
+      return;
+    }
+    var result = await DBHelper.query('''
+      SELECT u.*, 
+              pd.profilePicUrl, 
+              pd.profileDataID,
+              pd.lastUpdate as profileLastUpdate
+      FROM user u
+      LEFT JOIN profileData pd ON u.userID = pd.userID
+      WHERE 
+      (u.name LIKE ? OR u.email LIKE ?) 
+      AND u.validated = 1 
+      AND u.userID NOT IN (SELECT up.userID FROM userProject up WHERE up.projectID = ?)
+    ''', ['$query%', '$query%', projectId]);
+
+
+    if (result.isNotEmpty) {
+      List<User> users = result.map<User>((data) {
+        var profileData = {
+          'profileDataID': data['profileDataID'],
+          'profilePicUrl': data['profilePicUrl'],
+          'lastUpdate': data['profileLastUpdate']
+        };
+        var userData = {
+          'userID': data['userID'],
+          'username': data['username'],
+          'name': data['name'],
+          'email': data['email'],
+          'password': data['password'],
+          'creationDate': data['creationDate'],
+          'salt': data['salt'],
+          'lastUpdate': data['lastUpdate'],
+          'firebaseToken': data['firebaseToken'],
+          'profileData': profileData
+        };
+        return User.fromJsonWithProfile(userData);
+      }).toList();
+      searchResults.value = users;
+    } else {
+      searchResults.clear();
+    }
   }
 
   //get profileData by ID else return null
@@ -82,6 +139,7 @@ class CollaboratorsController extends GetxController {
         'lastUpdate': result.first['lastUpdate']
       };
       return retprofile;
+
     } else {
       return null;
     }

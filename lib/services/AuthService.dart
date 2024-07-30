@@ -58,6 +58,13 @@ class AuthService {
             await setUserdataFromDB(username);
 
             if (validated != 1) {
+              if(validatedCode == null) {
+                validatedCode = generateValidationCode();
+                await DBHelper.query(
+                  'UPDATE user SET validatedCode = ? WHERE email = ?',
+                  [validatedCode, email],
+                );
+              }
               // Enviar código de validación por correo electrónico
               await sendValidationCode(email, validatedCode);
 

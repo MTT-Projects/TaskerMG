@@ -1,6 +1,7 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
 import '../utils/AppLog.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DBHelper {
   static MySqlConnection? _connection;
@@ -24,11 +25,11 @@ class DBHelper {
     AppLog.d("Initializing DBHelper");
     
     _settings = ConnectionSettings(
-      host: 'tasker-db-matiw172.d.aivencloud.com',
-      port: 11312,
-      user: 'avnadmin',
-      password: 'AVNS_10qhYse1CcZic175-9l',
-      db: 'taskermg_db',
+      host: dotenv.env['DB_HOST'] ?? 'localhost',
+      port: int.parse(dotenv.env['DB_PORT'] ?? '3306'),
+      user: dotenv.env['DB_USER'] ?? 'taskermg_user',
+      password: dotenv.env['DB_PASSWORD'] ?? 'taskermg_password',
+      db: dotenv.env['DB_NAME'] ?? 'taskermg',
     );
     await _connect();
   }

@@ -20,7 +20,7 @@ class CollaboratorsPage extends StatefulWidget {
 }
 
 class _CollaboratorsPageState extends State<CollaboratorsPage> {
-  bool _isConnected = true;  // Default to true, will be updated in initState
+  bool _isConnected = true; // Default to true, will be updated in initState
 
   @override
   void initState() {
@@ -41,7 +41,8 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final CollaboratorsController controller = Get.put(CollaboratorsController(projectId: widget.project.projectID));
+    final CollaboratorsController controller =
+        Get.put(CollaboratorsController(projectId: widget.project.projectID));
     final currentUserID = MainController.getVar('currentUser');
 
     if (!_isConnected) {
@@ -51,20 +52,25 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     return Scaffold(
       body: Column(
         children: [
-          imOwner() ? Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: 'Buscar',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: controller.filterCollaborators,
-            ),
-          ): const SizedBox(height: 25,),
+          imOwner()
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Buscar',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: controller.filterCollaborators,
+                  ),
+                )
+              : const SizedBox(
+                  height: 25,
+                ),
           Expanded(
             child: Obx(() {
               if (controller.filteredCollaborators.isEmpty) {
-                return const Center(child: Text('No se encontraron colaboradores.'));
+                return const Center(
+                    child: Text('No se encontraron colaboradores.'));
               }
               return ListView.builder(
                 itemCount: controller.filteredCollaborators.length,
@@ -72,16 +78,24 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
                   final collaborator = controller.filteredCollaborators[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(collaborator.profileData?['profilePicUrl'] ?? 'https://via.placeholder.com/150'),
+                      backgroundImage: NetworkImage(
+                          collaborator.profileData?['profilePicUrl'] ??
+                              'https://via.placeholder.com/150'),
                     ),
                     title: Text(collaborator.name ?? ''),
                     subtitle: Text(collaborator.email),
-                    trailing: collaborator.userID != currentUserID ? imOwner() ? IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        controller.removeCollaborator(collaborator.userID!);
-                      },
-                    ): null : null,
+                    trailing: collaborator.userID != currentUserID
+                        ? imOwner()
+                            ? IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  controller
+                                      .removeCollaborator(collaborator.userID!);
+                                },
+                              )
+                            : null
+                        : null,
                   );
                 },
               );
@@ -92,6 +106,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed: () {
+                  controller.searchResults.clear();
                   showAddCollaboratorDialog(context, controller);
                 },
                 child: const Text('Agregar Colaborador'),
@@ -102,35 +117,58 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     );
   }
 
-  void showAddCollaboratorDialog(BuildContext context, CollaboratorsController controller) {
-    final TextEditingController emailController = TextEditingController();
+  void showAddCollaboratorDialog(
+      BuildContext context, CollaboratorsController controller) {
+    final TextEditingController searchController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Agregar Colaborador'),
-          content: TextField(
-            controller: emailController,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Buscar usuario por nombre o correo',
+                ),
+                onChanged: (value) {
+                  controller.searchUser(value);
+                },
+              ),
+              const SizedBox(height: 20),
+              Obx(() {
+                if (controller.searchResults.isEmpty) {
+                  return const Text('No se encontraron usuarios.');
+                }
+                return SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    itemCount: controller.searchResults.length,
+                    itemBuilder: (context, index) {
+                      final user = controller.searchResults[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(
+                              user.profileData?['profilePicUrl'] ??
+                                  'https://via.placeholder.com/150'),
+                        ),
+                        title: Text(user.name ?? ''),
+                        subtitle: Text(user.email),
+                        onTap: () async {                          
+                          await controller.addCollaborator(user);
+                          controller.searchResults.clear();
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  ),
+                );
+              }),
+            ],
           ),
           actions: [
-            TextButton(
-              onPressed: () async {
-                AppLog.d('Botón de agregar colaborador presionado');
-                String email = emailController.text.trim();
-                User? user = await CollaboratorsController.getUserWithEmail(email);
-                if (user != null) {
-                  controller.addCollaborator(user);
-                  Navigator.of(context).pop();
-                } else {
-                  AppLog.d('Usuario no encontrado');
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario no encontrado')));
-                }
-              },
-              child: const Text('Añadir'),
-            ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();

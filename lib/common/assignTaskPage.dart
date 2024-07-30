@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:taskermg/common/widgets/popUpDialog.dart';
 import 'package:taskermg/controllers/collaboratorsController.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/task_controller.dart';
@@ -20,13 +19,19 @@ class AssignTaskPage extends StatefulWidget {
 
 class _AssignTaskPageState extends State<AssignTaskPage> {
   final TaskController _taskController = Get.put(TaskController());
-  final CollaboratorsController _collaboratorsController = Get.put(CollaboratorsController());
+  late CollaboratorsController _collaboratorsController;
   bool _isConnected = true;
 
   @override
   void initState() {
     super.initState();
     _checkConnection();
+    _taskController.getAssignedUsers(widget.task.taskID!);
+    _collaboratorsController = Get.put(CollaboratorsController(projectId: widget.task.projectID!));
+  }
+
+  //get assigned users
+  void getAssignedUsers() async {
     _taskController.getAssignedUsers(widget.task.taskID!);
   }
 
@@ -46,84 +51,58 @@ class _AssignTaskPageState extends State<AssignTaskPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Asignar Tarea'),
-         backgroundColor: AppColors.secBackgroundColor,
+        backgroundColor: AppColors.secBackgroundColor,
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'Buscar',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: _collaboratorsController.filterCollaborators,
+            ),
+          ),
           Expanded(
             child: Obx(() {
-              if (_taskController.assignedUsers.isEmpty) {
-                return Center(
-                  child: Text('No hay usuarios asignados a esta tarea.'),
-                );
+              if (_collaboratorsController.filteredCollaborators.isEmpty) {
+                return const Center(child: Text('No se encontraron colaboradores.'));
               }
               return ListView.builder(
-                itemCount: _taskController.assignedUsers.length,
+                itemCount: _collaboratorsController.filteredCollaborators.length,
                 itemBuilder: (context, index) {
-                  User user = _taskController.assignedUsers[index];
+                  User user = _collaboratorsController.filteredCollaborators[index];
+                  bool isAssigned = _taskController.assignedUsers.any((u) => u.userID == user.userID);
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(user.profileData!["profilePicUrl"] ?? 'https://via.placeholder.com/150'),
+                      backgroundImage: NetworkImage(user.profileData?["profilePicUrl"] ?? 'https://via.placeholder.com/150'),
                     ),
                     title: Text(user.name ?? ''),
                     subtitle: Text(user.email),
-                    trailing: IconButton(
-                      icon: Icon(Icons.remove_circle, color: Colors.red),
-                      onPressed: () {
-                        _taskController.unassignUser(widget.task.taskID!, user.userID!);
-                      },
-                    ),
+                    trailing: Obx(() {
+                      bool isCurrentlyAssigned = _taskController.assignedUsers.any((u) => u.userID == user.userID);
+                      return IconButton(
+                        icon: Icon(isCurrentlyAssigned ? Icons.remove_circle : Icons.add_circle, color: isCurrentlyAssigned ? Colors.red : Colors.green),
+                        onPressed: () {
+                          if (isCurrentlyAssigned) {
+                            _taskController.unassignUser(widget.task.taskID!, user.userID!);
+                            getAssignedUsers();
+                          } else {
+                            _taskController.assignUser(widget.task.taskID!, user.userID!);
+                            getAssignedUsers();
+                          }
+                        },
+                      );
+                    }),
                   );
                 },
               );
             }),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                _showAssignUserDialog(context);
-              },
-              child: Text('Agregar Usuario'),
-              style: ElevatedButton.styleFrom(
-                primary: AppColors.primaryColor,
-              ),
-            ),
-          ),
         ],
       ),
-    );
-  }
-
-  void _showAssignUserDialog(BuildContext context) {
-    final TextEditingController emailController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return PopUpDialog(
-          title: 'Asignar Usuario',
-          text: 'Ingresa el correo del usuario a asignar:',
-          icon: Icons.person_add,
-          content: TextField(
-            controller: emailController,
-            decoration: InputDecoration(
-              labelText: 'Correo electrónico',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          buttons: PopUpButtons.yesNo(context, () async {
-            String email = emailController.text.trim();
-            User? user = await CollaboratorsController.getCollaboratorByEmail(email);
-            if (user != null) {
-              _taskController.assignUser(widget.task.taskID!, user.userID!);
-              Navigator.of(context).pop();
-            } else {
-              // Mostrar un mensaje de error si el usuario no se encuentra
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario no existe o no es colaborador.')));
-            }
-          }),
-        );
-      },
     );
   }
 }
