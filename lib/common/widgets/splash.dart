@@ -66,10 +66,13 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
 
       if (response != null) {
         if (response['validated'] != 1) {
-          Navigator.of(context).pushReplacement(
+
+          Navigator.pushAndRemoveUntil(
+            context,
             MaterialPageRoute(
-              builder: (context) => ValidationScreen(userId: response['userID'],  email: response['email']),
-            ),
+                builder: (context) => ValidationScreen(
+                    userId: response['userID'], email: response['email'])),
+            (Route<dynamic> route) => false,
           );
           return;
         }
@@ -79,16 +82,25 @@ class SplashState extends State<Splash> with AfterLayoutMixin<Splash> {
         if (profileData != null) {
           if (firstSync) {
             MainController.setVar('onlyMine', true);
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => Dashboard()));
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboard()),
+              (Route<dynamic> route) => false,
+            );
           } else {
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => SyncScreen()));
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => SyncScreen()),
+              (Route<dynamic> route) => false,
+            );
             await storage.write(key: 'firstSync', value: 'false');
           }
         } else {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const ProfileEditPage()));
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => ProfileEditPage()),
+            (Route<dynamic> route) => false,
+          );
         }
 
         return;

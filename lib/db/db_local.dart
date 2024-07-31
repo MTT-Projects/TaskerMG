@@ -213,6 +213,12 @@ class LocalDB {
     return await _db!.query(_projectGoalTable);
   }
 
+  //queryProjectGoalsByProjectID
+  static Future<List<Map<String, dynamic>>> queryProjectGoalsByProjectID(
+      int projectID) async {
+    return await _db!.query(_projectGoalTable, where: 'projectID = ?', whereArgs: [projectID]);
+  }
+
   // update sync status
 
   static Future<int> updateProjectSyncStatus(int locId, int projectId) async {

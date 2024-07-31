@@ -27,7 +27,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
 
   @override
   Widget build(BuildContext context) {
-    syncController.switchCanSync() ;
+    syncController.switchCanSync();
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -77,13 +77,13 @@ class _AddProjectPageState extends State<AddProjectPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveProject,
-              child: Text('Guardar Proyecto'),
-            ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _saveProject,
+        child: Icon(Icons.save),
+        backgroundColor: AppColors.primaryColor,
       ),
     );
   }
@@ -151,7 +151,6 @@ class _AddProjectPageState extends State<AddProjectPage> {
                         TextButton(
                           child: Text('CANCELAR'),
                           onPressed: () {
-                            
                             Navigator.pop(context);
                           },
                         ),
@@ -192,7 +191,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
 
       await _projectController.addProject(project);
       await ProjectPage.projectController.getProjects();
-      syncController.switchCanSync() ;
+      syncController.switchCanSync();
       Get.back();
     }
   }

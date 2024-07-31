@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/collaboratorsController.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/db/db_helper.dart';
@@ -50,6 +51,7 @@ class _CollaboratorsPageState extends State<CollaboratorsPage> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       body: Column(
         children: [
           imOwner()

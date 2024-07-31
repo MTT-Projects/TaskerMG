@@ -44,12 +44,11 @@ class ProjectController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
     AppLog.d("Project added with locId: $locId with data: ${project.toJson()}");
-            //sync tables
+    //sync tables
     await SyncController.pushData();
   }
 
   Future<void> getProjects() async {
-   
     AppLog.d("Getting projects for User: ${MainController.getVar('userID')}");
     final userID = MainController.getVar('userID');
     final localDBinit = MainController.getVar('initLDB');
@@ -76,9 +75,7 @@ class ProjectController extends GetxController {
               userProject up ON p.projectID = up.projectID
           WHERE 
               p.proprietaryID = ?
-              AND up.userID = ?'''
-            , [userID, userID]);
-
+              AND up.userID = ?''', [userID, userID]);
       } else {
         projects = await LocalDB.rawQuery('''
         SELECT 
@@ -108,26 +105,23 @@ class ProjectController extends GetxController {
       ''', [userID, userID]);
       }
 
-      if(projects.isEmpty) {
+      if (projects.isEmpty) {
         AppLog.d("No projects found for user $userID");
-         projectList.clear();
-      }
-      else
-      {
-      
-      projectList
-          .assignAll(projects.map((data) => Project.fromJson(data)).toList());
-      AppLog.d("Projects: ${jsonEncode(projectList)}");
-      //allprojects
-      var res2 = await LocalDB.rawQuery('''
+        projectList.clear();
+      } else {
+        projectList
+            .assignAll(projects.map((data) => Project.fromJson(data)).toList());
+        AppLog.d("Projects: ${jsonEncode(projectList)}");
+        //allprojects
+        var res2 = await LocalDB.rawQuery('''
         SELECT 
           * 
         FROM 
           project 
       ''', []);
-      AppLog.d("All Projects: ${jsonEncode(res2)}");
-      //applog relations
-      var res = await LocalDB.rawQuery('''
+        AppLog.d("All Projects: ${jsonEncode(res2)}");
+        //applog relations
+        var res = await LocalDB.rawQuery('''
         SELECT 
           * 
         FROM 
@@ -135,7 +129,7 @@ class ProjectController extends GetxController {
         WHERE 
           userID = ? 
       ''', [userID]);
-      AppLog.d("UserProject: ${jsonEncode(res)}");
+        AppLog.d("UserProject: ${jsonEncode(res)}");
       }
     } else {
       AppLog.d("No user selected or LocalDB not initialized");
@@ -179,7 +173,7 @@ class ProjectController extends GetxController {
         where: 'locId = ?', whereArgs: [project.locId]);
     getProjects();
 
-            //sync tables
+    //sync tables
     await SyncController.pushData();
   }
 
@@ -209,13 +203,13 @@ class ProjectController extends GetxController {
     ));
 
     getProjects();
-            //sync tables
+    //sync tables
     await SyncController.pushData();
     return res == 1;
   }
 
   static getCollaboratorsNumber(int? proyectID) async {
-    var response =  await LocalDB.rawQuery('''
+    var response = await LocalDB.rawQuery('''
       SELECT 
         COUNT(userID) as collaborators 
       FROM 
@@ -233,16 +227,154 @@ class ProjectController extends GetxController {
       [projectID],
     );
     return result[0]['name'];
-
   }
 }
 
-class ProjectGoalController {
-  //add
-  void addProjectGoal(ProjectGoal projectGoal) async {
+class ProjectGoalController extends GetxController {
+  var goals = <ProjectGoal>[].obs;
+
+  @override
+  void onReady() {
+    try {
+      getGoals();
+    } catch (e) {
+      AppLog.e("Error getting project goals: $e");
+    }
+    super.onReady();
+  }
+
+  Future<void> addProjectGoal(ProjectGoal projectGoal) async {
     int locId = await LocalDB.insertProjectGoal(projectGoal);
+    projectGoal.locId = locId;
+    goals.add(projectGoal);
+
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MainController.getVar('userID'),
+      projectID: projectGoal.projectID,
+      activityType: 'create',
+      activityDetails: {
+        'table': 'projectGoal',
+        'locId': locId,
+      },
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
+    ));
     AppLog.d(
         "ProjectGoal added with locId: $locId with data: ${projectGoal.toJson()}");
+
+    await SyncController.pushData();
+  }
+
+  Future<void> getGoals() async {
+    AppLog.d("Getting goals for User: ${MainController.getVar('userID')}");
+    final userID = MainController.getVar('userID');
+    final localDBinit = MainController.getVar('initLDB');
+
+    if (userID != null && localDBinit == true) {
+      List<Map<String, dynamic>> goals = await LocalDB.rawQuery('''
+        SELECT 
+          pg.locId,
+          pg.goalID, 
+          pg.projectID, 
+          pg.goalDescription, 
+          pg.isCompleted,
+          pg.lastUpdate
+        FROM 
+          projectGoal pg
+        JOIN 
+          project p ON pg.projectID = p.projectID
+        JOIN 
+          userProject up ON p.projectID = up.projectID
+        WHERE 
+          up.userID = ?
+      ''', [userID]);
+
+      if (goals.isEmpty) {
+        AppLog.d("No goals found for user $userID");
+        this.goals.clear();
+      } else {
+        this.goals.assignAll(
+            goals.map((data) => ProjectGoal.fromJson(data)).toList());
+        AppLog.d("Goals: ${jsonEncode(this.goals)}");
+      }
+    } else {
+      AppLog.d("No user selected or LocalDB not initialized");
+      this.goals.clear();
+    }
+  }
+
+  Future<void> deleteGoal(ProjectGoal projectGoal) async {
+    AppLog.d(
+        "Deleting goal with locId: ${projectGoal.locId} and data ${projectGoal.toJson()}");
+
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MainController.getVar('userID'),
+      projectID: projectGoal.projectID,
+      activityType: 'delete',
+      activityDetails: {
+        'table': 'projectGoal',
+        'locId': projectGoal.locId,
+        'goalID': projectGoal.goalID
+      },
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
+    ));
+
+    await LocalDB.delete('projectGoal',
+        where: 'locId = ?', whereArgs: [projectGoal.locId]);
+    goals.remove(projectGoal);
+
+    await SyncController.pushData();
+  }
+
+  Future<bool> updateGoal(ProjectGoal projectGoal) async {
+    AppLog.d(
+        "Updating goal with locId: ${projectGoal.locId} and data ${projectGoal.toJson()}");
+    projectGoal.lastUpdate = DateTime.now().toUtc();
+
+    var res = await LocalDB.update(
+      "projectGoal",
+      projectGoal.toMap(),
+      where: 'locId = ?',
+      whereArgs: [projectGoal.locId],
+    );
+
+    await LocalDB.insertActivityLog(ActivityLog(
+      userID: MainController.getVar('userID'),
+      projectID: projectGoal.projectID,
+      activityType: 'update',
+      activityDetails: {
+        'table': 'projectGoal',
+        'locId': projectGoal.locId,
+        'goalID': projectGoal.goalID,
+      },
+      timestamp: DateTime.now().toUtc(),
+      lastUpdate: DateTime.now().toUtc(),
+    ));
+
+    int index = goals.indexWhere((goal) => goal.locId == projectGoal.locId);
+    if (index != -1) {
+      goals[index] = projectGoal;
+    }
+
+    await SyncController.pushData();
+    return res == 1;
+  }
+
+  Future<List<ProjectGoal>> getGoalsByProjectId(int projectId) async {
+    try {
+      List<Map<String, dynamic>> maps = await LocalDB.query(
+        'projectGoal',
+        where: 'projectID = ?',
+        whereArgs: [projectId],
+      );
+      return maps.isNotEmpty
+          ? maps.map((goal) => ProjectGoal.fromJson(goal)).toList()
+          : [];
+    } catch (e) {
+      AppLog.e("Error getting project goals by projectId: $e");
+      return [];
+    }
   }
 
   static updateProjectID(int locId, int projectId) {

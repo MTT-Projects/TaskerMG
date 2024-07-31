@@ -27,6 +27,7 @@ class _LogActivityPageState extends State<LogActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       body: Obx(() {
         if (_controller.isLoading.value) {
           return Center(

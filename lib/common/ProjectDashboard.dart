@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:taskermg/common/collaboratorsPage.dart';
 import 'package:taskermg/common/edit_project.dart';
 import 'package:taskermg/common/pages/logs.dart';
+import 'package:taskermg/common/pages/projectGoals.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/tasks_page.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/models/project.dart';
 import 'package:taskermg/controllers/project_controller.dart';
 import 'package:taskermg/common/settings_page.dart';
@@ -65,12 +68,15 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
         screenTitle.value = "Tareas";
         break;
       case 1:
-        screenTitle.value = "Colaboradores";
+        screenTitle.value = "Objetivos";
         break;
       case 2:
-        screenTitle.value = "Registros";
+        screenTitle.value = "Colaboradores";
         break;
       case 3:
+        screenTitle.value = "Registros";
+        break;
+      case 4:
         screenTitle.value = "Editar Proyecto";
         break;
     }
@@ -164,6 +170,7 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
                       index: selectedIndex.value,
                       children: [
                         tasksPage,
+                        ProjectGoalsPage(project: project),
                         CollaboratorsPage(project: project),
                         logActivityPage!,
                         EditProjectScreen(project: project),
@@ -247,10 +254,19 @@ class CustomDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(Icons.contacts),
-              title: Text("Colaboradores"),
+              title: Text("Objetivos"),
               textColor: AppColors.textColor,
               onTap: () {
                 changePage(1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.contacts),
+              title: Text("Colaboradores"),
+              textColor: AppColors.textColor,
+              onTap: () {
+                changePage(2);
                 Navigator.pop(context);
               },
             ),
@@ -259,7 +275,7 @@ class CustomDrawer extends StatelessWidget {
               title: Text("Actividad"),
               textColor: AppColors.textColor,
               onTap: () {
-                changePage(2);
+                changePage(3);
                 Navigator.pop(context);
               },
             ),
@@ -271,7 +287,7 @@ class CustomDrawer extends StatelessWidget {
               title: Text("Editar"),
               textColor: AppColors.textColor,
               onTap: () {
-                changePage(3);
+                changePage(4);
                 Navigator.pop(context);
               },
             ): Container(),
@@ -288,93 +304,194 @@ class ProjectDetailsHeader extends StatelessWidget {
 
   ProjectDetailsHeader({required this.project, required this.taskInfo});
 
+  String _getDeadlineStatus(DateTime? deadline) {
+    if (deadline == null) return 'N/A';
+    final now = DateTime.now();
+    final difference = deadline.difference(now).inDays;
+    if (difference > 0) {
+      return 'Días restantes: $difference';
+    } else if (difference < 0) {
+      return 'Días de retraso: ${-difference}';
+    } else {
+      return 'Hoy es la fecha límite';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            Color.fromRGBO(158, 0, 109, 1),
-            Color.fromRGBO(90, 87, 255, 1),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            project.name ?? "Nombre del Proyecto",
-            style: TextStyle(
-                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            project.description ?? "Descripción del Proyecto",
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "Fecha límite: ${project.deadline?.toIso8601String() ?? 'N/A'}",
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          SizedBox(height: 16),
-          LinearPercentIndicator(
-            animation: true,
-            animationDuration: 1200,
-            lineHeight: 20.0,
-            percent: taskInfo['percentage'],
-            center: Text(
-              '${(taskInfo['percentage'] * 100).toStringAsFixed(0)}%',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getOwnerData(project.proprietaryID!),
+      builder: (context, snapshot) {
+        final ownerData = snapshot.data;
+
+        return Container(
+          padding: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
             ),
-            progressColor: Color.fromRGBO(249, 2, 181, 1),
-            backgroundColor: Color.fromRGBO(87, 1, 61, 1),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                Color.fromRGBO(158, 0, 109, 1),
+                Color.fromRGBO(90, 87, 255, 1),
+              ],
+            ),
           ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Total de tareas",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "${taskInfo['tasks']}",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              if (ownerData != null)
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: ownerData['profilePicUrl'] != null
+                          ? NetworkImage(ownerData['profilePicUrl'])
+                          : AssetImage('Assets/images/profile.png')
+                              as ImageProvider,
+                      radius: 20,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      ownerData['username'] ?? 'Propietario desconocido',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 16),
+              Text(
+                project.name ?? "Nombre del Proyecto",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Tareas completadas",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+              SizedBox(height: 8),
+              Text(
+                project.description ?? "Descripción del Proyecto",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Fecha límite: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                    TextSpan(
+                      text: DateFormat('dd-MM-yyyy').format(project.deadline?.toLocal() ?? DateTime.now()),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 8),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: _getDeadlineStatus(project.deadline).contains('Días de retraso')
+                          ? 'Días de retraso: '
+                          : 'Días restantes: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                    TextSpan(
+                      text: _getDeadlineStatus(project.deadline).replaceAll(RegExp(r'^\D+'), ''),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+              LinearPercentIndicator(
+                animation: true,
+                animationDuration: 1200,
+                lineHeight: 20.0,
+                percent: taskInfo['percentage'],
+                center: Text(
+                  '${(taskInfo['percentage'] * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    "${taskInfo['completed']}",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                progressColor: Color.fromRGBO(249, 2, 181, 1),
+                backgroundColor: Color.fromRGBO(87, 1, 61, 1),
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Total de tareas",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "${taskInfo['tasks']}",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Tareas completadas",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "${taskInfo['completed']}",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  Future<Map<String, dynamic>> _getOwnerData(int userID) async {
+    final profilePicUrl = await UserController.getProfilePicture(userID);
+    final username = await UserController.getUserName(userID);
+    return {
+      'profilePicUrl': profilePicUrl,
+      'username': username,
+    };
   }
 }

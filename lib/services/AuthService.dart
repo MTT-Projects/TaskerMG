@@ -58,7 +58,7 @@ class AuthService {
             await setUserdataFromDB(username);
 
             if (validated != 1) {
-              if(validatedCode == null) {
+              if (validatedCode == null) {
                 validatedCode = generateValidationCode();
                 await DBHelper.query(
                   'UPDATE user SET validatedCode = ? WHERE email = ?',
@@ -67,7 +67,10 @@ class AuthService {
               }
               // Enviar código de validación por correo electrónico
               await sendValidationCode(email, validatedCode);
-
+              await storageWriteUserData({
+                'username': username,
+                'password': password,
+              });
               return {
                 'validated': 0,
                 'userID': userID,
@@ -75,12 +78,11 @@ class AuthService {
               };
             }
 
-            return 
-              {
-                'validated': 1,
-                'userID': userID,
-                'email': email,
-              };
+            return {
+              'validated': 1,
+              'userID': userID,
+              'email': email,
+            };
           }
         }
       }
@@ -136,7 +138,10 @@ class AuthService {
       var userObj = User.fromJson(userData);
       MainController.setVar('currentUser', userObj.userID ?? userObj.locId);
       MainController.setVar('userID', userObj.userID ?? userObj.locId);
-      MainController.setVar('profileData', await UserController.getProfileData(userObj.userID ?? userObj.locId!));
+      MainController.setVar(
+          'profileData',
+          await UserController.getProfileData(
+              userObj.userID ?? userObj.locId!));
     }
   }
 
@@ -148,7 +153,15 @@ class AuthService {
       var validationCode = generateValidationCode();
       var response = await DBHelper.query(
           "INSERT INTO user (username, name, email, password, salt, validated, validatedCode) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [user.username, user.name, user.email, hashedPassword, salt, 0, validationCode]);
+          [
+            user.username,
+            user.name,
+            user.email,
+            hashedPassword,
+            salt,
+            0,
+            validationCode
+          ]);
 
       if (response is mysql.Results) {
         // Registrar usuario en Firebase Auth
@@ -197,12 +210,26 @@ class AuthService {
   }
 
   static int generateValidationCode() {
-    return 100000 + (DateTime.now().millisecondsSinceEpoch % 900000); // Código de 6 dígitos
+    return 100000 +
+        (DateTime.now().millisecondsSinceEpoch % 900000); // Código de 6 dígitos
   }
 
   static Future<void> sendValidationCode(String email, int code) async {
     // Implementar el envío de correo electrónico aquí
-    await MailService.sendMail(to: 
-    email, subject: "Verificación TaskerMG", code: code.toString());
+    await MailService.sendMail(
+        to: email, subject: "Verificación TaskerMG", code: code.toString());
+  }
+
+  static storageWriteUserData(Map<String, dynamic> user) async {
+    var username = user['username'];
+    var password = user['password'];
+
+    await storage.write(key: 'isLoggedIn', value: "true");
+    await storage.write(key: 'username', value: username);
+    await storage.write(key: 'password', value: password);
+  }
+
+  static storageWrite({key= String , value = dynamic}) async {
+    await storage.write(key: key, value: value);
   }
 }

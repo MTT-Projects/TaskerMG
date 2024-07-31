@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously, prefer_const_constructors
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -6,14 +8,11 @@ import 'package:taskermg/common/profileEditPage.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/common/widgets/splash.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
-import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/services/AuthService.dart';
 import 'package:taskermg/services/theme_services.dart';
 import 'package:taskermg/utils/AppLog.dart';
-
-import '../auth/login.dart';
 
 class SettingsScr extends StatefulWidget {
   const SettingsScr({super.key});
@@ -54,93 +53,135 @@ class _SettingsScrState extends State<SettingsScr> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Saludo y perfil
-              Text(
-                'Hola, $username',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              SizedBox(height: 20),
-              CircleAvatar(
-                radius: 60,
-                backgroundImage: profileImageUrl.isNotEmpty
-                    ? NetworkImage(profileImageUrl)
-                    : AssetImage('Assets/images/profile.png') as ImageProvider,
-                backgroundColor: Colors.grey,
-              ),
-              SizedBox(height: 40),
-              // Editar perfil
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text('Editar perfil', style: titleStyle),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (context) => const ProfileEditPage()));
-                    },
-                    child: Text(
-                      "Editar",
-                      style: TextStyle(color: AppColors.primaryColor),
-                    ),
-                  ),
-                ],
-              ),
-              // Modo oscuro
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text('Modo oscuro', style: titleStyle),
-                  CupertinoSwitch(
-                    value: _giveVerse,
-                    onChanged: (bool value) {
-                      //cambiar el tema del sistema
-                      _themeController.switchTheme();
-                      setState(() {
-                        _giveVerse = value;
-                      });
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (context) => const Splash()));
-                    },
-                  ),
-                ],
-              ),
-              // Cerrar sesión
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text('Cerrar sesión', style: titleStyle),
-                  TextButton(
-                    onPressed: () async {
-                      AppLog.d('Logout task started');
-                      await AuthService.logout();
-                      //delete db
-                      await LocalDB.dropDB();
-                      await const FlutterSecureStorage().deleteAll();
-
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (context) => const Splash()));
-                    },
-                    child: Text(
-                      "Cerrar",
-                      style: TextStyle(color: AppColors.primaryColor),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      backgroundColor: AppColors.backgroundColor,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30.0),
+            bottomRight: Radius.circular(30.0),
+          ),
+          child: AppBar(
+            title: Text('Configuración', style: TextStyle(color: AppColors.secTextColor)),
+            backgroundColor: AppColors.secBackgroundColor,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.secTextColor),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
           ),
         ),
       ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: Column(
+          children: [
+            // Saludo y perfil
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Hola, $username',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  CircleAvatar(
+                    radius: 100,
+                    backgroundImage: profileImageUrl.isNotEmpty
+                        ? NetworkImage(profileImageUrl)
+                        : const AssetImage('Assets/images/profile.png')
+                            as ImageProvider,
+                    backgroundColor: Colors.grey,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Opciones
+            Expanded(
+              child: ListView(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.edit, color: AppColors.secondaryColor),
+                    title: Text('Editar perfil', style: titleStyle),
+                    trailing: Icon(Icons.arrow_forward_ios, color: AppColors.secondaryColor),
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const ProfileEditPage()));
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.dark_mode, color: AppColors.secondaryColor),
+                    title: Text('Modo oscuro', style: titleStyle),
+                    trailing: CupertinoSwitch(
+                      value: _giveVerse,
+                      onChanged: (bool value) {
+                        _themeController.switchTheme();
+                        setState(() {
+                          _giveVerse = value;
+                        });
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Splash()),
+                          (Route<dynamic> route) => false,
+                        );
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.logout, color: AppColors.secondaryColor),
+                    title: Text('Cerrar sesión', style: titleStyle),
+                    trailing: Icon(Icons.arrow_forward_ios, color: AppColors.secondaryColor),
+                    onTap: () {
+                      _showLogoutDialog();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Cerrar sesión'),
+          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                AppLog.d('Logout task started');
+                await AuthService.logout();
+                await LocalDB.dropDB();
+                await const FlutterSecureStorage().deleteAll();
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Splash()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

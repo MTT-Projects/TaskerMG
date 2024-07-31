@@ -29,9 +29,9 @@ class SyncScreen extends StatefulWidget {
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-    // Inicializa el SyncController
+  // Inicializa el SyncController
   final SyncController syncController = Get.put(SyncController());
-  
+
   String _message = 'Sincronizando información...';
   double _progress = 0.0;
   List<String> _syncSteps = [
@@ -97,7 +97,7 @@ class _SyncScreenState extends State<SyncScreen> {
         await SyncAttachment.pullAttachments();
         await SyncAttachment.pushAttachments();
         break;
-      case 6: 
+      case 6:
         await SyncActivityLogs.pullActivityLogs();
         break;
     }
@@ -151,9 +151,10 @@ class _SyncScreenState extends State<SyncScreen> {
             // Button to continue
             ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => Dashboard()),
+                  (Route<dynamic> route) => false,
                 );
               },
               child: Text('Continuar'),

@@ -95,11 +95,6 @@ class ProjectCard extends StatelessWidget {
             await Get.to(() => ProyectDashboard(project: project));
             ProjectPage.updateProjects(); // Update projects after returning from project dashboard
           },
-          onLongPress: () async {
-            // Go to edit screen
-            await Get.to(() => EditProjectScreen(project: project));
-            ProjectPage.updateProjects(); // Update projects after editing
-          },
           child: Container(
             margin: EdgeInsetsDirectional.only(top: 5, start: 10, end: 10, bottom: 5),
             decoration: BoxDecoration(

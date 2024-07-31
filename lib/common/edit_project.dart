@@ -31,17 +31,96 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   }
 
   _pickDeadline() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDeadline,
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
+    DateTime? pickedDate = await _selectDate(context, _selectedDeadline);
+    if (pickedDate != null) {
       setState(() {
-        _selectedDeadline = picked;
+        _selectedDeadline = pickedDate;
       });
     }
+  }
+
+  Future<DateTime?> _selectDate(
+      BuildContext context, DateTime selectedDate) async {
+    DateTime? pickedDate;
+    return showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return Theme(
+          data: Get.isDarkMode ? darkDatePickerTheme : lightDatePickerTheme,
+          child: Builder(
+            builder: (context) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.secondaryColor,
+                            AppColors.secondaryColor,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12.0),
+                        ),
+                      ),
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: Text(
+                          'Seleccionar Fecha',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 400,
+                      child: Builder(
+                        builder: (context) {
+                          return CalendarDatePicker(
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                            onDateChanged: (DateTime value) {
+                              pickedDate = value;
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    ButtonBar(
+                      children: <Widget>[
+                        TextButton(
+                          child: Text('CANCELAR'),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                        TextButton(
+                          child: Text('SELECCIONAR'),
+                          onPressed: () {
+                            Navigator.pop(context, pickedDate);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   _saveProject() {
@@ -79,6 +158,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
+      
       body: Container(
         padding: EdgeInsets.all(16),
         child: SingleChildScrollView(
@@ -90,7 +170,13 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                 decoration: InputDecoration(
                   labelText: "Nombre",
                   labelStyle: TextStyle(color: AppColors.textColor),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.secondaryColor),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -99,7 +185,13 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                 decoration: InputDecoration(
                   labelText: "Descripción",
                   labelStyle: TextStyle(color: AppColors.textColor),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.secondaryColor),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 maxLines: 3,
               ),
@@ -113,40 +205,19 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.calendar_today, color: AppColors.primaryColor),
+                    icon: Icon(Icons.calendar_today, color: AppColors.secondaryColor),
                     onPressed: _pickDeadline,
                   ),
                 ],
               ),
-              SizedBox(height: 16),
-              Center(
-                child: Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: _saveProject,
-                      style: ElevatedButton.styleFrom(
-                        primary: AppColors.primaryColor,
-                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      child: Text("Guardar"),
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _deleteProject,
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.red,
-                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      child: Text("Eliminar"),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _saveProject,
+        child: Icon(Icons.save),
+        backgroundColor: AppColors.secondaryColor,
       ),
     );
   }

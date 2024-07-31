@@ -29,38 +29,44 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isVisible = false;
   bool? isLoginTrue;
 
-  final storage = const FlutterSecureStorage();
-
   // Ahora deberíamos llamar a esta función en el botón de inicio de sesión
   Future<void> login(String username, String password) async {
+    _showLoadingDialog(context); // Mostrar el diálogo de carga
     var response = await AuthService.login(username, password);
+    Navigator.pop(context); // Cerrar el diálogo de carga
+
     if (response != null) {
       if (response['validated'] != 1) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
             builder: (context) {
-              var validationScreen = ValidationScreen(userId: response['userID'],  email: response['email']);
+              var validationScreen = ValidationScreen(
+                  userId: response['userID'], email: response['email']);
               return validationScreen;
             },
           ),
+          (Route<dynamic> route) => false,
         );
       } else {
-        await storage.write(key: 'isLoggedIn', value: "true");
-        await storage.write(key: 'username', value: username);
-        await storage.write(key: 'password', value: password);
-
-        //check if has profileData
+        // Check if has profileData
         var profileData = await ProfileDataController.getProfileDataByUserID(
             MainController.getVar('currentUser'));
         if (profileData != null) {
-          await storage.write(key: 'profileData', value: profileData.toString());
+          await AuthService.storageWrite(
+              key: 'profileData', value: profileData.toString());
           if (!mounted) return;
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => SyncScreen()));
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => SyncScreen()),
+            (Route<dynamic> route) => false,
+          );
         } else {
-          Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => ProfileEditPage()));
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => ProfileEditPage()),
+            (Route<dynamic> route) => false,
+          );
           setState(() {
             isLoginTrue = true;
           });
@@ -71,8 +77,33 @@ class _LoginScreenState extends State<LoginScreen> {
         isLoginTrue = false;
       });
     }
+  }
 
-    // Si el inicio de sesión es correcto, redirige a la página principal
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents closing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 15),
+                Text("Cargando..."),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Tenemos que crear una clave global para nuestro formulario
@@ -90,8 +121,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 children: [
                   // Campo de nombre de usuario
-
-                  // Antes de mostrar la imagen, después de copiar la imagen, necesitamos definir la ubicación en pubspec.yaml
                   Container(
                     margin: const EdgeInsets.all(30.0),
                     padding: const EdgeInsets.all(10.0),
@@ -109,8 +138,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 15),
                   Container(
                     margin: const EdgeInsets.all(8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         color: Colors.deepPurple.withOpacity(.2)),
@@ -133,8 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Campo de contraseña
                   Container(
                     margin: const EdgeInsets.all(8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         color: Colors.deepPurple.withOpacity(.2)),
@@ -178,9 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (formKey.currentState!.validate()) {
                             // El método de inicio de sesión estará aquí
                             login(username.text, password.text);
-
-                            // Ahora tenemos una respuesta de nuestro método sqlite
-                            // Vamos a crear un usuario
                           }
                         },
                         child: const Text(
