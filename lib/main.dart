@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:taskermg/common/widgets/splash.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/sync_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -16,8 +17,9 @@ import 'api/firebase_api.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
+  await ConnectionChecker.checkConnection();
   WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
+  await GetStorage.init();  
   await DBHelper.initialize();
   AppLog.d("DB initialized");
   var localdb = await LocalDB.initDb();

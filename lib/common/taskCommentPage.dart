@@ -77,19 +77,28 @@ class _TaskCommentsPageState extends State<TaskCommentsPage> {
   @override
   Widget build(BuildContext context) {
     var isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Comentarios de la Tarea',
-            style: TextStyle(color: AppColors.secTextColor)),
-        backgroundColor: AppColors.secBackgroundColor,
-        leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: AppColors.backgroundColor),
-                onPressed: () {
-                  //pop
-                  Navigator.pop(context);
-                },)
+   return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30.0),
+            bottomRight: Radius.circular(30.0),
+          ),
+          child: AppBar(
+            title: Text('Comentarios', style: TextStyle(color: AppColors.secTextColor)),
+            backgroundColor: AppColors.secBackgroundColor,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.secTextColor),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        ),
       ),
-      body: FutureBuilder<void>(
+      body:  FutureBuilder<void>(
         future: _fetchCommentsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

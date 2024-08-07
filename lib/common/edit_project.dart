@@ -149,8 +149,9 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
     }
   }
 
-  _deleteProject() {
-    _projectController.deleteProject(widget.project);
+  _deleteProject() async {
+    await _projectController.deleteProject(widget.project);
+    //volver a dashboard
     Get.back();
   }
 
@@ -210,6 +211,37 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
                   ),
                 ],
               ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                   //mostrar dialogo de confirmación
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('Eliminar Proyecto'),
+                        content: Text('¿Estás seguro de que deseas eliminar este proyecto?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: _deleteProject,
+                            child: Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: Text('Eliminar Proyecto'),
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.redAccent,
+                ),
+              ),
             ],
           ),
         ),
@@ -219,6 +251,7 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
         child: Icon(Icons.save),
         backgroundColor: AppColors.secondaryColor,
       ),
+      
     );
   }
 }

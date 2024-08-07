@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -82,6 +83,10 @@ class SyncAttachment {
   }
 
   static Future<void> pushAttachments() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d("No hay conexión a internet, saltando la sincronización de attachments");
+      return;
+    }
     try {
       var unsyncedAttachments = await LocalDB.queryUnsyncedCreations('attachment');
       AppLog.d("Attachments sin sincronizar: ${jsonEncode(unsyncedAttachments)}");

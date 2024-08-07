@@ -1,15 +1,12 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/sync_controller.dart';
-
-import '../controllers/maincontroller.dart';
-import '../controllers/project_controller.dart';
-import '../models/project.dart';
+import 'package:taskermg/controllers/maincontroller.dart';
+import 'package:taskermg/controllers/project_controller.dart';
+import 'package:taskermg/models/project.dart';
 
 class AddProjectPage extends StatefulWidget {
   const AddProjectPage({super.key});
@@ -20,10 +17,13 @@ class AddProjectPage extends StatefulWidget {
 
 class _AddProjectPageState extends State<AddProjectPage> {
   final ProjectController _projectController = Get.put(ProjectController());
+  final ProjectGoalController _goalController = Get.put(ProjectGoalController());
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _goalControllerText = TextEditingController();
   final SyncController syncController = Get.put(SyncController());
   DateTime _selectedDeadline = DateTime.now().toUtc();
+  List<String> goals = [];
 
   @override
   Widget build(BuildContext context) {
@@ -41,43 +41,83 @@ class _AddProjectPageState extends State<AddProjectPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Nombre del Proyecto'),
-            ),
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(labelText: 'Descripción'),
-            ),
-            SizedBox(height: 20),
-            Text('Fecha de Entrega'),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "${_selectedDeadline.toLocal()}".split(' ')[0],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Nombre del Proyecto'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: 'Descripción'),
+              ),
+              SizedBox(height: 20),
+              Text('Fecha de Entrega'),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "${_selectedDeadline.toLocal()}".split(' ')[0],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () async {
-                    DateTime? pickedDate =
-                        await _selectDate(context, _selectedDeadline);
-                    if (pickedDate != null) {
-                      setState(() {
-                        _selectedDeadline = pickedDate;
-                      });
-                      print('Fecha seleccionada: $pickedDate');
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
+                  IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      DateTime? pickedDate =
+                          await _selectDate(context, _selectedDeadline);
+                      if (pickedDate != null) {
+                        setState(() {
+                          _selectedDeadline = pickedDate;
+                        });
+                        print('Fecha seleccionada: $pickedDate');
+                      }
+                    },
+                  ),
+                ],
+              ),
+              // SizedBox(height: 20),
+              // TextField(
+              //   controller: _goalControllerText,
+              //   decoration: InputDecoration(
+              //     labelText: 'Objetivo del Proyecto',
+              //     suffixIcon: IconButton(
+              //       icon: Icon(Icons.add),
+              //       onPressed: () {
+              //         setState(() {
+              //           goals.add(_goalControllerText.text);
+              //           _goalControllerText.clear();
+              //         });
+              //       },
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(height: 20),
+              // Text(
+              //   'Objetivos',
+              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              // ),
+              // ListView.builder(
+              //   shrinkWrap: true,
+              //   itemCount: goals.length,
+              //   itemBuilder: (context, index) {
+              //     return ListTile(
+              //       title: Text(goals[index]),
+              //       trailing: IconButton(
+              //         icon: Icon(Icons.delete),
+              //         onPressed: () {
+              //           setState(() {
+              //             goals.removeAt(index);
+              //           });
+              //         },
+              //       ),
+              //     );
+              //   },
+              // ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -88,8 +128,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
     );
   }
 
-  Future<DateTime?> _selectDate(
-      BuildContext context, DateTime selectedDate) async {
+  Future<DateTime?> _selectDate(BuildContext context, DateTime selectedDate) async {
     DateTime? pickedDate;
     return showDialog<DateTime>(
       context: context,
@@ -189,7 +228,17 @@ class _AddProjectPageState extends State<AddProjectPage> {
         lastUpdate: DateTime.now().toUtc(),
       );
 
-      await _projectController.addProject(project);
+      int projectId = await _projectController.addProject(project);
+      
+      // for (String goal in goals) {
+      //   await _goalController.addProjectGoal(ProjectGoal(
+      //     projectID: projectId,
+      //     goalDescription: goal,
+      //     isCompleted: 0,
+      //     lastUpdate: DateTime.now().toUtc(),
+      //   ));
+      // }
+      
       await ProjectPage.projectController.getProjects();
       syncController.switchCanSync();
       Get.back();

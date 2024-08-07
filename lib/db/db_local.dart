@@ -489,8 +489,8 @@ class LocalDB {
 
   static Future<Map<String, dynamic>?> queryProjectGoalByLocalID(
       int projectGoalId) async {
-    var result = await _db!
-        .query('projectGoal', where: 'locId = ?', whereArgs: [projectGoalId]);
+    var result = await _db!.query('projectGoal', 
+        where: 'locId = ?', whereArgs: [projectGoalId]);
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -567,7 +567,7 @@ class LocalDB {
   }
 
   static Future<int> insertProject(Project project) async {
-    return await _db!.rawInsert(
+    var response = await _db!.rawInsert(
       'INSERT INTO project (projectID, name, description, deadline, proprietaryID, creationDate, lastUpdate) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         project.projectID,
@@ -579,6 +579,8 @@ class LocalDB {
         project.lastUpdate?.toIso8601String(),
       ],
     );
+
+    return response;
   }
 
   static Future<int> insertTask(Task task) async {
@@ -850,6 +852,15 @@ class LocalDB {
       where: 'locId = ?',
       whereArgs: [locId],
     );
+  }
+
+  static dropProjectsTable() async {
+    try {
+      await _db!.execute('DROP TABLE IF EXISTS project');
+      await Project.createTable(_db!);
+    } catch (e) {
+      print("Error deleting project table: $e");
+    }
   }
 
 

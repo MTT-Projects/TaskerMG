@@ -8,6 +8,7 @@ import 'package:taskermg/models/activity_log.dart';
 import 'package:taskermg/models/project.dart';
 import 'package:taskermg/models/task.dart';
 import 'package:taskermg/utils/AppLog.dart';
+import 'package:taskermg/utils/sync/sync_projectGoals.dart';
 
 import 'dbRelationscontroller.dart';
 import 'maincontroller.dart';
@@ -25,9 +26,9 @@ class ProjectController extends GetxController {
 
   var projectList = <Project>[].obs;
 
-  Future<void> addProject(Project project) async {
+  Future<int> addProject(Project project) async {
     int locId = await LocalDB.insertProject(project);
-
+    project.locId = locId;
     // Asignar el proyecto al usuario actual
     DbRelationsCtr.addUserProject(MainController.getVar('userID'), locId);
 
@@ -46,6 +47,7 @@ class ProjectController extends GetxController {
     AppLog.d("Project added with locId: $locId with data: ${project.toJson()}");
     //sync tables
     await SyncController.pushData();
+    return locId;
   }
 
   Future<void> getProjects() async {
@@ -60,7 +62,7 @@ class ProjectController extends GetxController {
       if (onlyMine) {
         AppLog.d("Getting only mine projects with propetaryID: $userID");
         projects = await LocalDB.rawQuery('''
-          SELECT 
+          SELECT DISTINCT
             p.locId,
             p.projectID, 
             p.name, 
@@ -71,8 +73,13 @@ class ProjectController extends GetxController {
             p.lastUpdate 
           FROM 
               project p
-          INNER JOIN 
-              userProject up ON p.projectID = up.projectID
+          JOIN 
+              userProject up 
+          ON (CASE 
+                WHEN p.projectID IS NOT NULL 
+                THEN p.projectID = up.projectID 
+                ELSE p.locId = up.projectID 
+              END)
           WHERE 
               p.proprietaryID = ?
               AND up.userID = ?''', [userID, userID]);
@@ -246,7 +253,6 @@ class ProjectGoalController extends GetxController {
   Future<void> addProjectGoal(ProjectGoal projectGoal) async {
     int locId = await LocalDB.insertProjectGoal(projectGoal);
     projectGoal.locId = locId;
-    goals.add(projectGoal);
 
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('userID'),
@@ -255,6 +261,7 @@ class ProjectGoalController extends GetxController {
       activityDetails: {
         'table': 'projectGoal',
         'locId': locId,
+        'goalID': projectGoal.goalID
       },
       timestamp: DateTime.now().toUtc(),
       lastUpdate: DateTime.now().toUtc(),
@@ -262,10 +269,12 @@ class ProjectGoalController extends GetxController {
     AppLog.d(
         "ProjectGoal added with locId: $locId with data: ${projectGoal.toJson()}");
 
-    await SyncController.pushData();
+    await SyncProjectGoals.pushProjectGoals();
+    getGoals();
   }
 
   Future<void> getGoals() async {
+    goals.clear();
     AppLog.d("Getting goals for User: ${MainController.getVar('userID')}");
     final userID = MainController.getVar('userID');
     final localDBinit = MainController.getVar('initLDB');
@@ -324,7 +333,7 @@ class ProjectGoalController extends GetxController {
         where: 'locId = ?', whereArgs: [projectGoal.locId]);
     goals.remove(projectGoal);
 
-    await SyncController.pushData();
+    await SyncProjectGoals.pushProjectGoals();
   }
 
   Future<bool> updateGoal(ProjectGoal projectGoal) async {
@@ -352,12 +361,9 @@ class ProjectGoalController extends GetxController {
       lastUpdate: DateTime.now().toUtc(),
     ));
 
-    int index = goals.indexWhere((goal) => goal.locId == projectGoal.locId);
-    if (index != -1) {
-      goals[index] = projectGoal;
-    }
-
-    await SyncController.pushData();
+    goals.clear();
+    await getGoals();
+    await SyncProjectGoals.pushProjectGoals();
     return res == 1;
   }
 

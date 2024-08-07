@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/dbRelationscontroller.dart';
 import 'package:taskermg/db/db_helper.dart';
@@ -81,6 +82,10 @@ class SyncUserProjects {
   }
 
   static Future<void> pushUserProjects() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d("No hay conexión a internet, saltando la sincronización de proyectosusuario");
+      return;
+    }
     //applog all user projects
     var alluserproject = await LocalDB.queryUserProjects();
     AppLog.d("Proyectosusuario: ${jsonEncode(alluserproject)}");

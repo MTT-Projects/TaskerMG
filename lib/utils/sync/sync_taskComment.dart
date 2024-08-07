@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -80,6 +81,10 @@ class SyncTaskComment {
   }
 
   static Future<void> pushTaskComments() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d("No hay conexión a internet, saltando la sincronización de comentarios.");
+      return;
+    }
     try {
       var unsyncedComments =
           await LocalDB.queryUnsyncedCreations('taskComment');

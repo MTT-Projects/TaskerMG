@@ -49,11 +49,27 @@ class _AssignTaskPageState extends State<AssignTaskPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Asignar Tarea'),
-        backgroundColor: AppColors.secBackgroundColor,
+      backgroundColor: AppColors.backgroundColor,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30.0),
+            bottomRight: Radius.circular(30.0),
+          ),
+          child: AppBar(
+            title: Text('Asignar Tarea', style: TextStyle(color: AppColors.secTextColor)),
+            backgroundColor: AppColors.secBackgroundColor,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.secTextColor),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        ),
       ),
-      body: Column(
+      body:  Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),

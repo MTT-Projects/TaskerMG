@@ -9,6 +9,7 @@ import 'package:taskermg/common/pages/projectGoals.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/common/tasks_page.dart';
 import 'package:taskermg/common/theme.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/user_controller.dart';
 import 'package:taskermg/models/project.dart';
@@ -24,7 +25,8 @@ class ProyectDashboard extends StatefulWidget {
   _ProyectDashboardState createState() => _ProyectDashboardState();
 }
 
-class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerProviderStateMixin {
+class _ProyectDashboardState extends State<ProyectDashboard>
+    with SingleTickerProviderStateMixin {
   static var screenTitle = "Tareas".obs;
   static var selectedIndex = 0.obs;
 
@@ -56,7 +58,8 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
 
   void _handleTabSelection() {
     if (_tabController.index == 2) {
-      logActivityPage = LogActivityPage(project: widget.project); // Reload log activity page
+      logActivityPage =
+          LogActivityPage(project: widget.project); // Reload log activity page
     }
     changePage(_tabController.index);
   }
@@ -84,7 +87,8 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
 
   Future<Map<String, dynamic>> getTaskInfo(Project project) async {
     var taskController = TaskController();
-    var tasks = await taskController.getTasks(project.projectID ?? project.locId);
+    var tasks =
+        await taskController.getTasks(project.projectID ?? project.locId);
     int totalTasks = tasks.length;
     int completedTasks = 0;
     for (var task in tasks) {
@@ -162,7 +166,8 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(30)),
+                    borderRadius:
+                        BorderRadius.only(topLeft: Radius.circular(30)),
                     color: AppColors.backgroundColor,
                   ),
                   child: Obx(() {
@@ -180,7 +185,10 @@ class _ProyectDashboardState extends State<ProyectDashboard> with SingleTickerPr
                 ),
               ),
             ),
-            endDrawer: CustomDrawer(project: widget.project, getTaskInfo: getTaskInfo, changePage: changePage),
+            endDrawer: CustomDrawer(
+                project: widget.project,
+                getTaskInfo: getTaskInfo,
+                changePage: changePage),
           ),
         ),
       ),
@@ -193,7 +201,10 @@ class CustomDrawer extends StatelessWidget {
   final Project project;
   final Future<Map<String, dynamic>> Function(Project) getTaskInfo;
   final Function(int) changePage;
-  CustomDrawer({required this.project, required this.getTaskInfo, required this.changePage});
+  CustomDrawer(
+      {required this.project,
+      required this.getTaskInfo,
+      required this.changePage});
   bool imOwner() {
     return MainController.getVar("currentUser") == project.proprietaryID;
   }
@@ -253,7 +264,7 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.contacts),
+              leading: Icon(Icons.checklist),
               title: Text("Objetivos"),
               textColor: AppColors.textColor,
               onTap: () {
@@ -282,15 +293,17 @@ class CustomDrawer extends StatelessWidget {
             SizedBox(
               height: 25,
             ),
-            imOwner() ? ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Editar"),
-              textColor: AppColors.textColor,
-              onTap: () {
-                changePage(4);
-                Navigator.pop(context);
-              },
-            ): Container(),
+            imOwner()
+                ? ListTile(
+                    leading: Icon(Icons.settings),
+                    title: Text("Editar"),
+                    textColor: AppColors.textColor,
+                    onTap: () {
+                      changePage(4);
+                      Navigator.pop(context);
+                    },
+                  )
+                : Container(),
           ],
         ),
       ),
@@ -319,7 +332,7 @@ class ProjectDetailsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
+    return FutureBuilder<Map<String, dynamic>?>(
       future: _getOwnerData(project.proprietaryID!),
       builder: (context, snapshot) {
         final ownerData = snapshot.data;
@@ -390,7 +403,8 @@ class ProjectDetailsHeader extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: DateFormat('dd-MM-yyyy').format(project.deadline?.toLocal() ?? DateTime.now()),
+                      text: DateFormat('dd-MM-yyyy').format(
+                          project.deadline?.toLocal() ?? DateTime.now()),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -404,7 +418,8 @@ class ProjectDetailsHeader extends StatelessWidget {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: _getDeadlineStatus(project.deadline).contains('Días de retraso')
+                      text: _getDeadlineStatus(project.deadline)
+                              .contains('Días de retraso')
                           ? 'Días de retraso: '
                           : 'Días restantes: ',
                       style: TextStyle(
@@ -414,7 +429,8 @@ class ProjectDetailsHeader extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: _getDeadlineStatus(project.deadline).replaceAll(RegExp(r'^\D+'), ''),
+                      text: _getDeadlineStatus(project.deadline)
+                          .replaceAll(RegExp(r'^\D+'), ''),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -486,12 +502,16 @@ class ProjectDetailsHeader extends StatelessWidget {
     );
   }
 
-  Future<Map<String, dynamic>> _getOwnerData(int userID) async {
-    final profilePicUrl = await UserController.getProfilePicture(userID);
-    final username = await UserController.getUserName(userID);
-    return {
-      'profilePicUrl': profilePicUrl,
-      'username': username,
-    };
+  Future<Map<String, dynamic>?> _getOwnerData(int userID) async {
+    if (!await ConnectionChecker.checkConnection()) {
+      return null;
+    } else {
+      final profilePicUrl = await UserController.getProfilePicture(userID);
+      final username = await UserController.getUserName(userID);
+      return {
+        'profilePicUrl': profilePicUrl,
+        'username': username,
+      };
+    }
   }
 }

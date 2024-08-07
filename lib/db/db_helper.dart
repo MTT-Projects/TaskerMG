@@ -22,6 +22,8 @@ class DBHelper {
       AppLog.d("No internet connection, skipping DB initialization");
       return;
     }
+    else
+    {
     AppLog.d("Initializing DBHelper");
     
     _settings = ConnectionSettings(
@@ -32,14 +34,17 @@ class DBHelper {
       db: dotenv.env['DB_NAME'] ?? 'taskermg',
     );
     await _connect();
+    }
   }
 
   static Future<void> _connect() async {
+
     if (_connection == null) {
       if (_settings == null) {
-        throw Exception(
+         AppLog.d(
             'DBHelper is not initialized. Call initialize() first.');
       }
+      else{
       try {
         _connection = await MySqlConnection.connect(_settings!);
       } catch (e) {
@@ -47,14 +52,16 @@ class DBHelper {
         await Future.delayed(Duration(seconds: 5));
         _connection = await MySqlConnection.connect(_settings!);
       }
+      }
     }
   }
 
-  static Future<MySqlConnection> get connection async {
+  static Future<MySqlConnection?> get connection async {
+    
     if (_connection == null) {
       AppLog.d('DBHelper connection is not initialized.');
       await _connect();
-      return _connection!;
+      return _connection;
     }
     return _connection!;
   }
@@ -67,10 +74,15 @@ class DBHelper {
   }
 
   static Future<dynamic> query(String sql, List<dynamic> values) async {
+    if(await ConnectionChecker.checkConnection() == false)
+    {
+      AppLog.d("No internet connection, skipping DB initialization");
+      return [];
+    }
     AppLog.d("Query: $sql - $values");
     final conn = await connection;
     try {
-      var result = await conn.query(sql, values);
+      var result = await conn?.query(sql, values);
       return result;
     } catch (e) {
       AppLog.d("Error en query: $e");

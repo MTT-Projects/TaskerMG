@@ -9,6 +9,7 @@ import 'package:taskermg/common/theme.dart';
 import 'package:taskermg/controllers/attatchmentController.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/utils/sync/sync_attatchments.dart';
+import 'package:taskermg/utils/sync/sync_projectGoals.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
 import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
@@ -41,7 +42,9 @@ class _SyncScreenState extends State<SyncScreen> {
     'Sincronizando asignaciones...',
     'Sincronizando comentarios...',
     'Sincronizando archivos...',
+    'Sincronizando metas de proyecto...',
     'Sincronizando registros de actividad...',
+
     // Agrega más pasos de sincronización aquí
   ];
 
@@ -98,6 +101,10 @@ class _SyncScreenState extends State<SyncScreen> {
         await SyncAttachment.pushAttachments();
         break;
       case 6:
+        await SyncProjectGoals.pullProjectGoals();
+        await SyncProjectGoals.pushProjectGoals();
+        break;
+      case 7:
         await SyncActivityLogs.pullActivityLogs();
         break;
     }
@@ -146,18 +153,6 @@ class _SyncScreenState extends State<SyncScreen> {
               value: _progress,
               backgroundColor: Colors.grey,
               color: AppColors.primaryColor,
-            ),
-            SizedBox(height: 20),
-            // Button to continue
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => Dashboard()),
-                  (Route<dynamic> route) => false,
-                );
-              },
-              child: Text('Continuar'),
             ),
           ],
         ),

@@ -56,6 +56,12 @@ class AuthService {
             AppLog.d("token de usuario: ${token}");
 
             await setUserdataFromDB(username);
+            await storageWriteUserData({
+                'username': username,
+                'password': password,
+                'userID': userID,
+                'validated': validated,
+              });
 
             if (validated != 1) {
               if (validatedCode == null) {
@@ -67,16 +73,12 @@ class AuthService {
               }
               // Enviar código de validación por correo electrónico
               await sendValidationCode(email, validatedCode);
-              await storageWriteUserData({
-                'username': username,
-                'password': password,
-              });
               return {
                 'validated': 0,
                 'userID': userID,
                 'email': email,
               };
-            }
+            }          
 
             return {
               'validated': 1,
@@ -182,7 +184,10 @@ class AuthService {
             [token, user.email],
           );
         }
-
+        await storageWriteUserData({
+                'username': user.username,
+                'password': hashedPassword,
+              });
         // Enviar código de validación por correo electrónico
         await sendValidationCode(user.email, validationCode);
 
@@ -206,7 +211,6 @@ class AuthService {
 
   static Future<void> logout() async {
     await _auth.signOut();
-    await storage.deleteAll();
   }
 
   static int generateValidationCode() {
@@ -226,7 +230,11 @@ class AuthService {
 
     await storage.write(key: 'isLoggedIn', value: "true");
     await storage.write(key: 'username', value: username);
+    //userid
+    await storage.write(key: 'userID', value: user['userID'].toString());
+    AppLog.d("User ID: ${user['userID']}");
     await storage.write(key: 'password', value: password);
+    await storage.write(key: 'validated', value: user['validated'].toString());
   }
 
   static storageWrite({key= String , value = dynamic}) async {

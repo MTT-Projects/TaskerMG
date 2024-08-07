@@ -40,11 +40,26 @@ class _EditTaskPageState extends State<EditTaskPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Editar Tarea'),
-         backgroundColor: AppColors.secBackgroundColor,
-      ),
       backgroundColor: AppColors.backgroundColor,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(60.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30.0),
+            bottomRight: Radius.circular(30.0),
+          ),
+          child: AppBar(
+            title: Text('Editar Tarea', style: TextStyle(color: AppColors.secTextColor)),
+            backgroundColor: AppColors.secBackgroundColor,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.secTextColor),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

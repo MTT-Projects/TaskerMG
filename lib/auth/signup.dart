@@ -250,8 +250,9 @@ class _SignUpState extends State<SignUp> {
       var response = await AuthService.register(newUser);
       if (response == true) {
         // ignore: use_build_context_synchronously
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()));
+        Navigator.pushAndRemoveUntil(context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false);
       } else {
         AppLog.d(response.toString());
         showpopuperror(response.toString());

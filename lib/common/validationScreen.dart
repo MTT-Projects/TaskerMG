@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/widgets/splash.dart';
 import 'package:taskermg/services/MailService.dart';
 import 'package:taskermg/controllers/user_controller.dart';
@@ -101,9 +102,11 @@ class _ValidationScreenState extends State<ValidationScreen> {
                         borderRadius: BorderRadius.circular(75),
                         border: Border.all(color: Colors.deepPurple, width: 5),
                       ),
-                      child: Image.network(
-                        'https://raw.githubusercontent.com/Matiw172/matiw172.github.io/main/images/MTT_Logo_complet.png',
-                        fit: BoxFit.cover,
+                      //lottie email verify
+                      child: Icon(
+                        Icons.email,
+                        size: 100,
+                        color: AppColors.secondaryColor,
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -120,7 +123,16 @@ class _ValidationScreenState extends State<ValidationScreen> {
                     Text(
                       'Ingresa el código de verificación que se ha enviado a tu correo electrónico.',
                       style: TextStyle(
-                          fontSize: 16, color: AppColors.secTextColor),
+                          fontSize: 16, color: AppColors.textColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    //pista de correo electronico
+
+                    Text(
+                      //censurar parte del correo
+                      '${widget.email.substring(0, 4)}****${widget.email.substring(widget.email.indexOf('@'))}',
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textColor),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 30),

@@ -21,7 +21,7 @@ class _LogActivityPageState extends State<LogActivityPage> {
   @override
   void initState() {
     super.initState();
-    _controller.fetchActivityLogs(widget.project.projectID!);
+    _controller.fetchActivityLogs(widget.project.projectID?? widget.project.locId!);
   }
 
   @override

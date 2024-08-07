@@ -39,10 +39,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Añadir Tarea",
-                style: headingStyle,
-              ),
               MyInputField(
                 title: "Título",
                 hint: "Ingresa el título",
@@ -173,6 +169,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   _appBar(BuildContext context) {
     return AppBar(
+      title: Text(
+        'Nueva Tarea',
+        style: TextStyle(color: AppColors.textColor),
+      ),
       elevation: 0,
       backgroundColor: AppColors.backgroundColor,
       leading: GestureDetector(
@@ -185,14 +185,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
           color: AppColors.textColor,
         ),
       ),
-      actions: const [
-        CircleAvatar(
-          backgroundImage: AssetImage(
-            "Assets/images/profile.png",
-          ),
-        ),
-        SizedBox(width: 20),
-      ],
     );
   }
 

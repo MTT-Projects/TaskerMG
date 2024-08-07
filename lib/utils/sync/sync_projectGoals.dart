@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/db/db_helper.dart';
 import 'package:taskermg/db/db_local.dart';
@@ -13,23 +15,32 @@ class SyncProjectGoals {
     return formatter.format(dateTime);
   }
 
-  static Future<void> pullProjectGoals(int projectId) async {
+  static Future<void> pullProjectGoals() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d(
+          "No hay conexión a internet, saltando la sincronización de metas del proyecto.");
+      return;
+    }
     try {
       var result = await DBHelper.query('''
         SELECT 
-          goalID, 
-          projectID, 
-          goalDescription, 
-          isCompleted, 
-          lastUpdate 
+            pg.goalID, 
+            pg.projectID, 
+            pg.goalDescription, 
+            pg.isCompleted, 
+            pg.lastUpdate 
         FROM 
-          projectGoal 
+            projectGoal pg
         WHERE 
-          projectID = ?
-      ''', [projectId]);
+            pg.projectID IN (
+                SELECT up.projectID
+                FROM userProject up
+                WHERE up.userID = ? 
+    )
+      ''', [MainController.getVar('currentUser')]);
 
       var remoteGoals = result.map((goalMap) => goalMap['goalID']).toList();
-      var localGoals = await LocalDB.queryProjectGoalsByProjectID(projectId);
+      var localGoals = await LocalDB.queryProjectGoals();
 
       var localGoalIDs = localGoals.map((goal) => goal['goalID']).toList();
       for (var localGoalID in localGoalIDs) {
@@ -46,9 +57,9 @@ class SyncProjectGoals {
         var goalMapped = ProjectGoal(
           goalID: goalMap['goalID'],
           projectID: goalMap['projectID'],
-          goalDescription: goalMap['goalDescription'],
-          isCompleted: goalMap['isCompleted'] == 1,
-          lastUpdate: DateTime.parse(goalMap['lastUpdate']),
+          goalDescription: goalMap['goalDescription'].toString(),
+          isCompleted: goalMap['isCompleted'],
+          lastUpdate: goalMap['lastUpdate'],
         ).toJson();
         await handleGoalSync(goalMapped);
       }
@@ -60,12 +71,18 @@ class SyncProjectGoals {
   }
 
   static Future<void> pushProjectGoals() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d(
+          "No hay conexión a internet, saltando la sincronización de metas del proyecto.");
+      return;
+    }
     try {
       var unsyncedGoals = await LocalDB.queryUnsyncedCreations('projectGoal');
       AppLog.d("Unsynced project goals: ${jsonEncode(unsyncedGoals)}");
       for (var actMap in unsyncedGoals) {
         var details = jsonDecode(actMap['activityDetails']);
-        var hasDeletion = await hasDeletionLog(details['goalID'] ?? details['locId']);
+        var hasDeletion =
+            await hasDeletionLog(details['goalID'] ?? details['locId']);
         if (!hasDeletion) {
           await handleRemoteGoalInsert(actMap);
         } else {
@@ -73,15 +90,22 @@ class SyncProjectGoals {
         }
       }
 
-      var unsyncedGoalUpdates = await LocalDB.queryUnsyncedUpdates('projectGoal');
-      AppLog.d("Unsynced project goal updates: ${jsonEncode(unsyncedGoalUpdates)}");
+      var unsyncedGoalUpdates =
+          await LocalDB.queryUnsyncedUpdates('projectGoal');
+      AppLog.d(
+          "Unsynced project goal updates: ${jsonEncode(unsyncedGoalUpdates)}");
       for (var actMap in unsyncedGoalUpdates) {
         var details = jsonDecode(actMap['activityDetails']);
-        var hasDeletion = await hasDeletionLog(details['goalID'] ?? details['locId']);
+        var hasDeletion =
+            await hasDeletionLog(details['goalID'] ?? details['locId']);
         if (!hasDeletion) {
-          var creationActivity = await getCreationActivityByGoalID(details['goalID'] ?? details['locId']);
+          var creationActivity = await getCreationActivityByGoalID(
+              details['goalID'] ?? details['locId']);
           if (creationActivity != null) {
             if (creationActivity['isSynced'] == 0) {
+              await handleRemoteGoalUpdate(actMap);
+            }
+            else {
               await handleRemoteGoalUpdate(actMap);
             }
           } else {
@@ -92,8 +116,10 @@ class SyncProjectGoals {
         }
       }
 
-      var unsyncedDeletions = await LocalDB.queryUnsyncedDeletions('projectGoal');
-      AppLog.d("Unsynced project goal deletions: ${jsonEncode(unsyncedDeletions)}");
+      var unsyncedDeletions =
+          await LocalDB.queryUnsyncedDeletions('projectGoal');
+      AppLog.d(
+          "Unsynced project goal deletions: ${jsonEncode(unsyncedDeletions)}");
       for (var deletion in unsyncedDeletions) {
         await handleRemoteGoalDeletion(deletion);
       }
@@ -104,7 +130,8 @@ class SyncProjectGoals {
     }
   }
 
-  static Future<Map<String, dynamic>?> getCreationActivityByGoalID(int goalID) async {
+  static Future<Map<String, dynamic>?> getCreationActivityByGoalID(
+      int goalID) async {
     var activities = await LocalDB.rawQuery(
       "SELECT * FROM activityLog WHERE activityType = 'create'",
     );
@@ -125,13 +152,15 @@ class SyncProjectGoals {
       await LocalDB.insertProjectGoal(ProjectGoal.fromJson(goalMap));
     } else {
       goalMap['locId'] = localGoal['locId'];
-      if (DateTime.parse(goalMap['lastUpdate']).isAfter(DateTime.parse(localGoal['lastUpdate']))) {
+      if (DateTime.parse(goalMap['lastUpdate'])
+          .isAfter(DateTime.parse(localGoal['lastUpdate']))) {
         await LocalDB.updateProjectGoal(ProjectGoal.fromJson(goalMap));
       }
     }
   }
 
-  static Future<void> handleRemoteGoalInsert(Map<String, dynamic> actMap) async {
+  static Future<void> handleRemoteGoalInsert(
+      Map<String, dynamic> actMap) async {
     var actDetails = jsonDecode(actMap['activityDetails']);
     var goalMap = <String, dynamic>{};
     if (actDetails['goalID'] != null) {
@@ -141,7 +170,7 @@ class SyncProjectGoals {
     }
 
     String goalDescription = goalMap['goalDescription'];
-    int isCompleted = goalMap['isCompleted'] ? 1 : 0;
+    int isCompleted = goalMap['isCompleted'];
     String lastUpdate = formatDateTime(DateTime.parse(goalMap['lastUpdate']));
 
     var response = await DBHelper.query(
@@ -160,17 +189,19 @@ class SyncProjectGoals {
     }
   }
 
-  static Future<void> handleRemoteGoalUpdate(Map<String, dynamic> actMap) async {
+  static Future<void> handleRemoteGoalUpdate(
+      Map<String, dynamic> actMap) async {
     var actDetails = jsonDecode(actMap['activityDetails']);
     var goalMap = <String, dynamic>{};
     if (actDetails['goalID'] != null) {
-      goalMap = (await LocalDB.queryProjectGoalByRemoteID(actDetails['goalID']))!;
+      goalMap =
+          (await LocalDB.queryProjectGoalByRemoteID(actDetails['goalID']))!;
     } else {
       goalMap = (await LocalDB.queryProjectGoalByLocalID(actDetails['locId']))!;
     }
 
     String goalDescription = goalMap['goalDescription'];
-    int isCompleted = goalMap['isCompleted'] ? 1 : 0;
+    int isCompleted = goalMap['isCompleted'];
     String lastUpdate = formatDateTime(DateTime.parse(goalMap['lastUpdate']));
 
     var remoteGoal = await DBHelper.query(
@@ -178,7 +209,7 @@ class SyncProjectGoals {
       [goalMap['goalID']],
     );
     if (remoteGoal.isNotEmpty) {
-      var remoteLastUpdate = DateTime.parse(remoteGoal.first['lastUpdate']);
+      var remoteLastUpdate = remoteGoal.first['lastUpdate'];
       var localLastUpdate = DateTime.parse(goalMap['lastUpdate']);
       if (remoteLastUpdate.isAfter(localLastUpdate)) {
         AppLog.d("Remote goal is more recent, not updating.");
@@ -198,7 +229,8 @@ class SyncProjectGoals {
     }
   }
 
-  static Future<void> handleRemoteGoalDeletion(Map<String, dynamic> deletion) async {
+  static Future<void> handleRemoteGoalDeletion(
+      Map<String, dynamic> deletion) async {
     var activityDetails = jsonDecode(deletion['activityDetails']);
     var remoteID = activityDetails['goalID'] ?? activityDetails['locId'];
     var existGoal = await DBHelper.query(

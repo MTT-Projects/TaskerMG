@@ -98,7 +98,7 @@ class ProjectGoal {
   int? goalID;
   int? projectID;
   String? goalDescription;
-  bool? isCompleted;
+  int? isCompleted;
   DateTime? lastUpdate;
 
   ProjectGoal({
@@ -157,11 +157,11 @@ class ProjectGoal {
   static Future<void> createTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS projectGoal (
-          locId INT AUTO_INCREMENT PRIMARY KEY,
+          locId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           goalID INT UNIQUE,
           projectID INT,
           goalDescription TEXT NOT NULL,
-          isCompleted BOOLEAN DEFAULT FALSE,
+          isCompleted INT DEFAULT 0,
           lastUpdate TEXT,
           FOREIGN KEY (projectID) REFERENCES project(projectID) ON DELETE CASCADE
       );

@@ -19,7 +19,7 @@ class _NoInternetScrState extends State<NoInternetScr> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Lottie.asset(
-              'Assets/lottie/noConnection.json',
+              'Assets/lotties/noConnection.json',
               width: 200,
               height: 200,
             ),
@@ -33,23 +33,7 @@ class _NoInternetScrState extends State<NoInternetScr> {
               ),
             ),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                // Acción para intentar reconectar
-              },
-              style: ElevatedButton.styleFrom(
-                primary: AppColors.secondaryColor, // Fondo del botón
-                onPrimary: Colors.white, // Color del texto
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: Text(
-                'Reintentar',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
+            
           ],
         ),
       ),

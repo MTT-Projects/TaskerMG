@@ -5,7 +5,9 @@ import 'package:lottie/lottie.dart';
 import 'package:taskermg/common/dashboard.dart';
 import 'package:taskermg/common/projects_page.dart';
 import 'package:taskermg/controllers/conecctionChecker.dart';
+import 'package:taskermg/db/db_local.dart';
 import 'package:taskermg/utils/sync/sync_attatchments.dart';
+import 'package:taskermg/utils/sync/sync_projectGoals.dart';
 import 'package:taskermg/utils/sync/sync_projects.dart';
 import 'package:taskermg/utils/sync/sync_taskComment.dart';
 import 'package:taskermg/utils/sync/sync_task_assignment.dart';
@@ -73,8 +75,12 @@ class SyncController extends GetxController {
       AppLog.d("Already pulling data, skipping");
       return;
     }
+
+    await LocalDB.dropDB();
+
     isPulling = true;
     await SyncProjects.pullProjects();
+    await SyncProjectGoals.pullProjectGoals();
     await SyncTasks.pullTasks();
     await SyncUserProjects.pullUserProjects();
     await SyncTaskAssignment.pullTaskAssignments();
@@ -92,6 +98,7 @@ class SyncController extends GetxController {
     }
     isPushing = true;
     await SyncProjects.pushProjects();
+    await SyncProjectGoals.pushProjectGoals();
     await SyncTasks.pushTasks();
     await SyncUserProjects.pushUserProjects();
     await SyncTaskAssignment.pushTaskAssignments();

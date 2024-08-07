@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:googleapis/admob/v1.dart';
 import 'package:mysql1/mysql1.dart';
+import 'package:taskermg/controllers/conecctionChecker.dart';
 import 'package:taskermg/controllers/maincontroller.dart';
 import 'package:taskermg/controllers/task_controller.dart';
 import 'package:taskermg/db/db_helper.dart';
@@ -74,6 +75,10 @@ class SyncTaskAssignment {
   }
 
   static Future<void> pushTaskAssignments() async {
+    if (await ConnectionChecker.checkConnection() == false) {
+      AppLog.d("No hay conexión a internet, saltando la sincronización de asignaciones.");
+      return;
+    }
     try {
       // Mostrar todas las actividades
       var allActivityLog = await LocalDB.query("activityLog");

@@ -34,7 +34,7 @@ class TaskController extends GetxController {
 
   Future<int> addTask({required Task task}) async {
     int locId = await LocalDB.insertTask(task);
-
+    task.locId = locId;
     // Registrar la actividad
     await LocalDB.insertActivityLog(ActivityLog(
       userID: MainController.getVar('userID'),

@@ -209,7 +209,7 @@ Color getProgressColor(double progress) {
 Future<Map<String, dynamic>> getTaskInfo(Project project) async {
   var taskController = TaskController();
   var tasks = await taskController
-      .getTasks(project.projectID ?? project.locId); // Usa el ID del proyecto
+      .getTasks(project.projectID); // Usa el ID del proyecto
   int totalTasks = tasks.length;
   int completedTasks = 0;
   for (var task in tasks) {

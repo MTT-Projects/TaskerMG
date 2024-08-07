@@ -26,7 +26,7 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
   }
 
   Future<void> _loadProjectGoals() async {
-    _projectGoals = await _goalController.getGoalsByProjectId(widget.project.projectID!);
+    _projectGoals = await _goalController.getGoalsByProjectId(widget.project.projectID ?? widget.project.locId!);
     setState(() {});
   }
 
@@ -35,7 +35,7 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
       ProjectGoal newGoal = ProjectGoal(
         projectID: widget.project.projectID,
         goalDescription: _goalDescriptionController.text,
-        isCompleted: false,
+        isCompleted: 0,
         lastUpdate: DateTime.now(),
       );
       _goalController.addProjectGoal(newGoal);
@@ -47,20 +47,30 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
   }
 
   void _toggleGoalCompletion(ProjectGoal goal) {
-    goal.isCompleted = !goal.isCompleted!;
+    goal.isCompleted = goal.isCompleted == 1 ? 0 : 1;
     goal.lastUpdate = DateTime.now();
     _goalController.updateGoal(goal);
     _loadProjectGoals();
   }
 
   void _deleteGoal(ProjectGoal goal) {
-    _goalController.deleteGoal(goal);
-    _loadProjectGoals();
+    Get.defaultDialog(
+      title: "Confirmar Eliminación",
+      middleText: "¿Estás seguro de que deseas eliminar este objetivo?",
+      textCancel: "Cancelar",
+      textConfirm: "Eliminar",
+      confirmTextColor: Colors.white,
+      onConfirm: () {
+        _goalController.deleteGoal(goal);
+        _loadProjectGoals();
+        Get.back();
+      },
+    );
   }
 
   double _calculateProgress() {
     if (_projectGoals.isEmpty) return 0.0;
-    int completedGoals = _projectGoals.where((goal) => goal.isCompleted!).length;
+    int completedGoals = _projectGoals.where((goal) => goal.isCompleted == 1).length;
     return completedGoals / _projectGoals.length;
   }
 
@@ -79,28 +89,13 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
               percent: _calculateProgress(),
               center: Text(
                 '${(_calculateProgress() * 100).toStringAsFixed(1)}%',
-                style: TextStyle(color: AppColors.textColor),
+                style: TextStyle(color: AppColors.secTextColor),
               ),
               linearStrokeCap: LinearStrokeCap.roundAll,
               progressColor: AppColors.primaryColor,
               backgroundColor: AppColors.secBackgroundColor,
             ),
             SizedBox(height: 20),
-            TextField(
-              controller: _goalDescriptionController,
-              decoration: InputDecoration(
-                labelText: 'Descripción del Objetivo',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _addGoal,
-              child: Text('Agregar Objetivo'),
-              style: ElevatedButton.styleFrom(
-                primary: AppColors.primaryColor,
-              ),
-            ),
             Expanded(
               child: ListView.builder(
                 itemCount: _projectGoals.length,
@@ -110,7 +105,7 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
                     title: Text(
                       goal.goalDescription ?? '',
                       style: TextStyle(
-                        decoration: goal.isCompleted!
+                        decoration: goal.isCompleted == 1
                             ? TextDecoration.lineThrough
                             : TextDecoration.none,
                       ),
@@ -120,23 +115,40 @@ class _ProjectGoalsPageState extends State<ProjectGoalsPage> {
                       children: [
                         IconButton(
                           icon: Icon(
-                            goal.isCompleted! ? Icons.check_box : Icons.check_box_outline_blank,
+                            goal.isCompleted == 1 ? Icons.check_box : Icons.check_box_outline_blank,
                             color: AppColors.primaryColor,
                           ),
                           onPressed: () {
                             _toggleGoalCompletion(goal);
                           },
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _deleteGoal(goal);
-                          },
-                        ),
                       ],
                     ),
+                    onLongPress: () {
+                      _deleteGoal(goal);
+                    },
                   );
                 },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _goalDescriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Descripción del Objetivo',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add, color: AppColors.primaryColor),
+                    onPressed: _addGoal,
+                  ),
+                ],
               ),
             ),
           ],

@@ -170,6 +170,7 @@ class _SettingsScrState extends State<SettingsScr> {
                 AppLog.d('Logout task started');
                 await AuthService.logout();
                 await LocalDB.dropDB();
+          
                 await const FlutterSecureStorage().deleteAll();
 
                 Navigator.pushAndRemoveUntil(
